@@ -1,731 +1,265 @@
-Edit
-
 # Hyprland From Scratch
 
-Guía paso a paso para construir un escritorio basado en Arch Linux y Hyprland desde cero, con control total sobre los componentes instalados y sus configuraciones.
+A step-by-step guide to build a clean, minimal and fully understood Hyprland desktop on Arch Linux.
+
+The goal is not to install a desktop as fast as possible, but to understand every component that is installed and keep the entire configuration under version control.
 
 ---
 
-# Fase 0 - Instalación de Arch Linux
+# Project Goals
 
-## Objetivo
-
-Instalar una base mínima de Arch Linux sobre la cual construiremos todo el escritorio.
-
-Al finalizar esta fase el equipo deberá iniciar únicamente en una consola TTY, sin ningún entorno gráfico instalado.
+- Build everything from scratch.
+- Install only what is needed.
+- Understand every package before installing it.
+- Version all dotfiles.
+- Reproduce the entire desktop from this repository.
 
 ---
 
-# Paso 1 - Iniciar desde la USB de Arch
+# Repository Structure
 
-Crear una memoria USB con la imagen oficial de Arch Linux y arrancar desde ella.
-
-Cuando aparezca el prompt del live ISO verificar que existe conexión a Internet.
-
-Para conexiones cableadas normalmente ya estará disponible.
-
-Comprobar:
-
-```bash
-ping archlinux.org
+```
+hyprland-from-scratch/
+├── guide/
+├── dotfiles/
+├── scripts/
+├── assets/
+├── .gitignore
+└── README.md
 ```
 
-Deberías obtener respuesta.
-
 ---
 
-# Paso 2 - Iniciar el instalador
+# Phase 0 — Arch Linux
 
-Ejecutar:
+Boot the official Arch ISO and start the installer.
 
 ```bash
 archinstall
 ```
 
----
-
-# Paso 3 - Configurar archinstall
-
-En el menú configurar las opciones en el siguiente orden.
-
-## Mirrors
-
-Seleccionar el país más cercano o dejar la selección automática.
-
----
-
-## Locales
-
-Configurar:
-
-- Keyboard layout: `latam` (o `us`, según preferencia)
-- Locale: `en_US.UTF-8`
-
----
-
-## Disk Configuration
-
-Seleccionar el disco donde se instalará Arch.
-
-Elegir:
-
-```
-Use entire disk
-```
-
-Particionado automático.
-
-No utilizar particionado manual para esta guía.
-
----
-
-## Bootloader
-
-Dejar la opción por defecto.
-
-Actualmente suele ser:
-
-```
-systemd-boot
-```
-
----
-
-## Swap
-
-Dejar la opción automática.
-
----
-
-## Hostname
-
-Elegir el nombre que tendrá la máquina.
-
-Ejemplo:
-
-```
-arch-hypr
-```
-
----
-
-## Root Password
-
-Configurar una contraseña para root.
-
----
-
-## User Account
-
-Crear el usuario principal.
-
-Activar:
-
-```
-✓ Add user to wheel group
-```
-
-Esto permitirá utilizar `sudo`.
-
----
-
-## Profile
-
-Seleccionar:
-
-```
-Minimal
-```
-
-o
-
-```
-None
-```
-
-**No instalar ningún entorno gráfico.**
-
-No seleccionar:
-
-- GNOME
-- KDE Plasma
-- XFCE
-- Cinnamon
-- LXQt
-- Hyprland
-
----
-
-## Audio
-
-Seleccionar:
-
-```
-PipeWire
-```
-
----
-
-## Network
-
-Seleccionar:
-
-```
-NetworkManager
-```
-
----
-
-## Additional Packages
-
-Agregar únicamente:
-
-```text
-git
-curl
-base-devel
-```
-
-No instalar nada más en esta etapa.
-
----
-
-## Timezone
-
-Seleccionar la zona horaria correspondiente.
-
-Ejemplo:
-
-```
-America/Guatemala
-```
-
----
-
-## Confirmar instalación
-
-Revisar el resumen.
-
-Si todo está correcto seleccionar:
-
-```
-Install
-```
-
-Esperar a que finalice la instalación.
-
----
-
-# Paso 4 - Reiniciar
-
-Cuando finalice:
+Use the following configuration:
+
+| Setting | Value |
+|----------|-------|
+| Locale | en_US.UTF-8 |
+| Keyboard | us *(or latam if preferred)* |
+| Mirrors | Automatic |
+| Disk | Use entire disk |
+| Bootloader | systemd-boot (default) |
+| Swap | Default |
+| Hostname | Your choice |
+| Root Password | Configure |
+| User Account | Create user + wheel |
+| Profile | Minimal / None |
+| Audio | PipeWire |
+| Network | NetworkManager |
+| Timezone | Your timezone |
+| Additional packages | `git curl base-devel openssh` |
+
+Install the system and reboot.
 
 ```bash
 reboot
 ```
 
-Retirar la memoria USB cuando el equipo lo solicite.
+Expected state:
+
+- Arch boots into a TTY.
+- Internet works.
+- No desktop environment installed.
+- No display manager installed.
 
 ---
 
-# Resultado esperado
+# Phase 0.5 — Initial System Setup
 
-Al arrancar nuevamente el equipo deberías ver únicamente una consola similar a esta:
+Update the system.
 
-```text
-Arch Linux
-
-arch-hypr login:
+```bash
+sudo pacman -Syu
 ```
 
-Todavía no existe:
+Enable SSH.
 
-- Entorno gráfico
-- Hyprland
-- Waybar
-- Display Manager
-- Login gráfico
-
-Este será nuestro punto de partida para construir todo el escritorio.
-
----
-
-# Fase 0.5 — Preparación del entorno de trabajo
-
-## Objetivo
-
-Poder administrar el equipo completamente por SSH y dejar preparado el repositorio donde se versionarán los dotfiles y la guía.
-
----
-
-## 0.5.1 Configurar OpenSSH
-
-Instalar (si no se instaló antes):
-
-```
-sudo pacman -S openssh
-```
-
-Habilitar el servicio:
-
-```
+```bash
 sudo systemctl enable --now sshd
 ```
 
-Verificar:
+Get the machine IP.
 
-```
-systemctl status sshd
-```
-
-Debe aparecer:
-
-```
-Active: active (running)
-```
-
----
-
-## 0.5.2 Obtener la IP del equipo
-
-```
+```bash
 hostname -I
 ```
 
-Ejemplo:
+Connect from the main computer.
 
-```
-192.168.1.120
-```
-
----
-
-## 0.5.3 Conectarse desde la computadora principal
-
-Desde la máquina principal:
-
-```
-ssh TU_USUARIO@192.168.1.120
+```bash
+ssh user@<ip>
 ```
 
-Aceptar la huella digital la primera vez.
+Configure Git.
 
----
-
-## 0.5.4 Generar llave SSH para GitHub
-
-En la máquina de pruebas:
-
-```
-ssh-keygen -t ed25519 -C "tu_correo@example.com"
-```
-
-Aceptar la ruta por defecto.
-
-Mostrar la clave pública:
-
-```
-cat ~/.ssh/id_ed25519.pub
-```
-
-Copiarla y agregarla en GitHub:
-
-**Settings → SSH and GPG keys → New SSH key**
-
----
-
-## 0.5.5 Probar conexión con GitHub
-
-```
-ssh -T git@github.com
-```
-
-La primera vez responder `yes`.
-
-Debe aparecer un mensaje similar a:
-
-```
-Hi usuario! You've successfully authenticated...
-```
-
----
-
-## 0.5.6 Configurar Git
-
-```
-git config --global user.name "Tu Nombre"
-git config --global user.email "tu_correo@example.com"
+```bash
+git config --global user.name "Your Name"
+git config --global user.email "you@example.com"
 git config --global init.defaultBranch main
 ```
 
-Verificar:
+Generate an SSH key.
 
+```bash
+ssh-keygen -t ed25519 -C "you@example.com"
 ```
-git config --list
+
+Display the public key.
+
+```bash
+cat ~/.ssh/id_ed25519.pub
 ```
+
+Add it to GitHub.
+
+Test the connection.
+
+```bash
+ssh -T git@github.com
+```
+
+Clone the repository.
+
+```bash
+mkdir -p ~/Projects
+cd ~/Projects
+
+git clone git@github.com:<user>/hyprland-from-scratch.git
+cd hyprland-from-scratch
+```
+
+Expected state:
+
+- SSH access works.
+- Git is configured.
+- GitHub authentication works.
+- Repository cloned locally.
 
 ---
 
-## 0.5.7 Crear estructura del proyecto
+# Phase 1 — Minimal Hyprland
 
-```
-mkdir -p ~/Projects/hyprland-from-scratch/{guide,dotfiles,scripts,assets}
-cd ~/Projects/hyprland-from-scratch
-```
+Install only the required packages.
 
-Inicializar Git:
-
-```
-git init
-```
-
----
-
-## 0.5.8 Crear README inicial
-
-```
-cat > README.md <<'EOF'
-# Hyprland From Scratch
-
-Guía paso a paso para construir un escritorio basado en Arch Linux y Hyprland desde cero.
-EOF
-```
-
----
-
-## 0.5.9 Primer commit
-
-```
-git add .
-git commit -m "Initial project structure"
-```
-
----
-
-## Estado esperado
-
-* Acceso SSH funcionando
-
-* Llave SSH generada
-
-* Conexión con GitHub funcionando
-
-* Git configurado
-
-* Repositorio inicial creado
-
-* Primer commit realizado
-
----
-
-# Fase 1 — Hyprland mínimo
-
-## Objetivo
-
-Instalar únicamente lo necesario para iniciar una sesión Wayland con Hyprland y abrir una terminal.
-
-No se instalarán barras, launchers, wallpapers ni temas.
-
----
-
-## 1.1 Instalar Hyprland y componentes mínimos
-
-```
+```bash
 sudo pacman -S \
-  hyprland \
-  xdg-desktop-portal-hyprland \
-  xdg-desktop-portal \
-  kitty
+    hyprland \
+    kitty \
+    xdg-desktop-portal \
+    xdg-desktop-portal-hyprland
 ```
 
-Qué instala cada paquete:
+Create the configuration directory.
 
-* `hyprland`: gestor de ventanas Wayland.
-
-* `xdg-desktop-portal`: interfaz estándar para aplicaciones Wayland.
-
-* `xdg-desktop-portal-hyprland`: implementación específica para Hyprland.
-
-* `kitty`: terminal gráfica para la sesión.
-
----
-
-## 1.2 Crear directorio de configuración
-
-```
+```bash
 mkdir -p ~/.config/hypr
 ```
 
----
+Copy the default configuration.
 
-## 1.3 Crear configuración mínima
-
-```
-cat > ~/.config/hypr/hyprland.conf <<'EOF'
-monitor=,preferred,auto,1
-
-$terminal = kitty
-$mainMod = SUPER
-
-bind = $mainMod, RETURN, exec, $terminal
-bind = $mainMod SHIFT, Q, killactive
-bind = $mainMod, M, exit
-EOF
+```bash
+cp /usr/share/hypr/hyprland.conf ~/.config/hypr/
 ```
 
-Esta configuración permite:
+Start Hyprland.
 
-* `Super + Enter` → abrir terminal
-
-* `Super + Shift + Q` → cerrar ventana activa
-
-* `Super + M` → salir de Hyprland
-
----
-
-## 1.4 Iniciar Hyprland manualmente
-
-Desde la TTY:
-
-```
+```bash
 Hyprland
 ```
 
-Si todo funciona aparecerá una pantalla vacía.
+Verify:
 
-Presionar `Super + Enter` para abrir Kitty.
-
-Salir con `Super + M`.
-
----
-
-## 1.5 Verificaciones
-
-Dentro de la terminal en Hyprland:
-
-```
+```bash
 echo $XDG_SESSION_TYPE
 ```
 
-Debe devolver:
+Expected output:
 
-```
+```text
 wayland
 ```
 
-Comprobar que el portal está instalado:
+Expected state:
 
-```
-pacman -Q xdg-desktop-portal-hyprland
-```
-
----
-
-## Estado esperado
-
-* Hyprland inicia desde TTY
-
-* Se puede abrir Kitty con `Super + Enter`
-
-* Se puede cerrar ventanas
-
-* Se puede salir de la sesión
-
-* La sesión reporta `wayland`
+- Hyprland starts successfully.
+- Kitty opens.
+- Basic keybinds work.
+- Session runs on Wayland.
 
 ---
 
-# Fase 2 — Configuración base de Hyprland
+# Phase 2 — Repository Integration
 
-## Objetivo
+Create the dotfiles structure.
 
-Tener una configuración mínima pero cómoda para uso diario, manteniendo el sistema lo más limpio posible.
+```text
+dotfiles/
+└── hypr/
+```
+
+Move the configuration into the repository.
+
+```bash
+mkdir -p ~/Projects/hyprland-from-scratch/dotfiles
+
+mv ~/.config/hypr \
+   ~/Projects/hyprland-from-scratch/dotfiles/
+```
+
+Create a symbolic link.
+
+```bash
+ln -s \
+~/Projects/hyprland-from-scratch/dotfiles/hypr \
+~/.config/hypr
+```
+
+Verify.
+
+```bash
+ls -l ~/.config
+```
+
+Expected output:
+
+```text
+hypr -> ~/Projects/hyprland-from-scratch/dotfiles/hypr
+```
+
+Commit the current state.
+
+```bash
+git add .
+git commit -m "Initial Hyprland setup"
+```
+
+Expected state:
+
+- Hyprland works.
+- Configuration is stored inside the repository.
+- ~/.config only contains a symbolic link.
+- Git detects configuration changes automatically.
 
 ---
 
-## 2.1 Crear copia de seguridad del archivo actual
+# Next Phases
 
-```
-cp ~/.config/hypr/hyprland.conf ~/.config/hypr/hyprland.conf.bak
-```
+The remaining phases will be developed incrementally.
 
----
-
-## 2.2 Reemplazar por configuración base
-
-```
-cat > ~/.config/hypr/hyprland.conf <<'EOF'
-################
-### MONITOR ###
-################
-
-monitor=,preferred,auto,1
-
-###############
-### INPUT ###
-###############
-
-input {
-    kb_layout = latam
-    follow_mouse = 1
-    touchpad {
-        natural_scroll = false
-    }
-    sensitivity = 0
-}
-
-####################
-### VARIABLES ###
-####################
-
-$terminal = kitty
-$mainMod = SUPER
-
-#################
-### GENERAL ###
-#################
-
-general {
-    gaps_in = 5
-    gaps_out = 10
-    border_size = 2
-}
-
-####################
-### DECORATION ###
-####################
-
-decoration {
-    rounding = 8
-}
-
-##################
-### ANIMATIONS ###
-##################
-
-animations {
-    enabled = true
-}
-
-################
-### KEYBINDS ###
-################
-
-bind = $mainMod, RETURN, exec, $terminal
-bind = $mainMod SHIFT, Q, killactive
-bind = $mainMod, M, exit
-
-# Workspaces
-bind = $mainMod, 1, workspace, 1
-bind = $mainMod, 2, workspace, 2
-bind = $mainMod, 3, workspace, 3
-bind = $mainMod, 4, workspace, 4
-bind = $mainMod, 5, workspace, 5
-
-# Mover ventanas a workspaces
-bind = $mainMod SHIFT, 1, movetoworkspace, 1
-bind = $mainMod SHIFT, 2, movetoworkspace, 2
-bind = $mainMod SHIFT, 3, movetoworkspace, 3
-bind = $mainMod SHIFT, 4, movetoworkspace, 4
-bind = $mainMod SHIFT, 5, movetoworkspace, 5
-
-# Ventana flotante
-bind = $mainMod, F, togglefloating
-
-# Recargar configuración
-bind = $mainMod SHIFT, R, exec, hyprctl reload
-EOF
-```
-
----
-
-## 2.3 Recargar configuración
-
-Dentro de Hyprland:
-
-```
-hyprctl reload
-```
-
-O usar el atajo:
-
-`Super + Shift + R`
-
----
-
-## 2.4 Probar workspaces
-
-* `Super + 1` → workspace 1
-
-* `Super + 2` → workspace 2
-
-* `Super + Shift + 2` → mover ventana al workspace 2
-
----
-
-## 2.5 Probar ventana flotante
-
-Abrir una terminal y presionar:
-
-`Super + F`
-
-La ventana debe alternar entre modo tiling y flotante.
-
----
-
-## 2.6 Guardar configuración en el repositorio
-
-Copiar el archivo al repositorio:
-
-```
-mkdir -p ~/Projects/hyprland-from-scratch/dotfiles/hypr
-cp ~/.config/hypr/hyprland.conf ~/Projects/hyprland-from-scratch/dotfiles/hypr/
-```
-
-Realizar commit:
-
-```
-cd ~/Projects/hyprland-from-scratch
-git add dotfiles/hypr/hyprland.conf
-git commit -m "Add minimal Hyprland configuration"
-```
-
----
-
-## Estado esperado
-
-* Hyprland inicia correctamente
-
-* Teclado configurado en español latinoamericano
-
-* Workspaces funcionando
-
-* Movimiento de ventanas entre workspaces funcionando
-
-* Ventanas flotantes funcionando
-
-* Recarga de configuración funcionando
-
-* Configuración guardada en el repositorio
-
----
-
-# Resultado al finalizar la Fase 2
-
-En este punto se dispone de:
-
-* Arch Linux mínimo y actualizado.
-
-* Acceso remoto por SSH.
-
-* Repositorio Git inicializado.
-
-* Hyprland funcional.
-
-* Terminal gráfica integrada.
-
-* Configuración base versionada.
-
-* Workspaces y atajos esenciales configurados.
-
-A partir de aquí el sistema ya es utilizable y las siguientes fases se centrarán en añadir componentes del escritorio (barra, launcher, notificaciones, wallpaper, bloqueo, etc.) evaluando cada uno antes de integrarlo definitivamente en la guía.
+- Waybar
+- Application Launcher
+- Notifications
+- Wallpapers
+- Lock Screen
+- Idle Management
+- Theming
+- SDDM (optional)
+- Utility Scripts
