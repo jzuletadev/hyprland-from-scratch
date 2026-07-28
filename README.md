@@ -83,13 +83,14 @@ sudo pacman -Syu
 Enable SSH.
 
 ```bash
+sudo pacman -S openssh
 sudo systemctl enable --now sshd
 ```
 
 Get the machine IP.
 
 ```bash
-hostname -I
+ip a
 ```
 
 Connect from the main computer.
