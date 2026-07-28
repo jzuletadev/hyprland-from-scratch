@@ -1,0 +1,53 @@
+// ~/hyprland-from-scratch/dotfiles/rofi/config.rasi
+//
+// Minimal Rofi config — Phase 4 baseline.
+// Just the app-launcher mode with basic sizing/behavior. Colors/theme
+// come later once the base setup is fully working.
+
+configuration {
+    modi: "drun";
+    show-icons: true;
+    icon-theme: "hicolor";
+    display-drun: "Apps";
+    drun-display-format: "{name}";
+    font: "JetBrainsMono Nerd Font 11";
+}
+
+@theme "/dev/null"
+
+window {
+    width: 30%;
+    border: 2px;
+    border-color: #88c0d0;
+    border-radius: 6px;
+    background-color: #1e1e2e;
+}
+
+mainbox {
+    background-color: transparent;
+    children: [ "inputbar", "listview" ];
+}
+
+inputbar {
+    background-color: #313244;
+    text-color: #cdd6f4;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+listview {
+    background-color: transparent;
+    lines: 8;
+    scrollbar: false;
+}
+
+element {
+    padding: 6px;
+    text-color: #cdd6f4;
+}
+
+element selected {
+    background-color: #45475a;
+    text-color: #89b4fa;
+}
+

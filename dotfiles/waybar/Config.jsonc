@@ -1,0 +1,25 @@
+// ~/hyprland-from-scratch/dotfiles/waybar/config.jsonc
+//
+// Minimal Waybar config — Phase 3 baseline.
+// Only workspaces + clock. More modules (network, battery, audio, tray)
+// get added one at a time in later passes, each understood before adding.
+{
+    "layer": "top",
+    "position": "top",
+    "height": 32,
+    "spacing": 4,
+
+    "modules-left": ["hyprland/workspaces"],
+    "modules-center": ["clock"],
+    "modules-right": [],
+
+    "hyprland/workspaces": {
+        "format": "{id}",
+        "on-click": "activate"
+    },
+
+    "clock": {
+        "format": "{:%H:%M   %d %b %Y}",
+        "tooltip-format": "{:%A, %d %B %Y}"
+    }
+}
