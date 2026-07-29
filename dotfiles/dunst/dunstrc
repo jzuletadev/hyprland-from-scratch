@@ -1,0 +1,35 @@
+# ~/hyprland-from-scratch/dotfiles/dunst/dunstrc
+#
+# Minimal dunst config — Phase 5 baseline.
+# INI-style sections. Kept small on purpose: per-app rules, scripting,
+# and history navigation get added later once this base is understood.
+
+[global]
+    monitor = 0
+    follow = mouse
+    origin = top-right
+    offset = 10x10
+    width = 320
+    height = 100
+    font = JetBrainsMono Nerd Font 11
+    format = "<b>%s</b>\n%b"
+    timeout = 5
+    frame_width = 2
+    frame_color = "#88c0d0"
+    separator_color = frame
+
+[urgency_low]
+    background = "#1e1e2e"
+    foreground = "#cdd6f4"
+    timeout = 4
+
+[urgency_normal]
+    background = "#1e1e2e"
+    foreground = "#cdd6f4"
+    timeout = 5
+
+[urgency_critical]
+    background = "#1e1e2e"
+    foreground = "#f38ba8"
+    frame_color = "#f38ba8"
+    timeout = 0
