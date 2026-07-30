@@ -1,0 +1,128 @@
+/* ~/hyprland-from-scratch/dotfiles/waybar/style.css
+ *
+ * Tokyo Night styling — Phase 10, restyled into pill clusters in the
+ * polish pass. Palette: bg #1a1b26, surface #24283b, fg #c0caf5,
+ * muted #565f89, accent blue #7aa2f7 / purple #bb9af7, warning #e0af68,
+ * critical #f7768e.
+ */
+* {
+    font-family: "JetBrainsMono Nerd Font";
+    font-size: 13px;
+    min-height: 0;
+}
+
+window#waybar {
+    background: transparent;
+    color: #c0caf5;
+}
+
+/* shared pill look for every top-level cluster (mpris deliberately excluded:
+   Brave registers an MPRIS interface even with nothing playing, so the
+   module never disappears — GTK's CSS has no :empty, so giving it a
+   background would leave a visible empty pill; text-only avoids that) */
+#custom-arch,
+#workspaces,
+#status,
+#tray,
+#clock {
+    background: rgba(26, 27, 38, 0.85);
+    border-radius: 10px;
+    margin: 5px 3px;
+}
+
+#custom-arch {
+    padding: 0 14px;
+    margin-left: 6px;
+    color: #7aa2f7;
+    font-size: 15px;
+}
+
+#custom-arch:hover {
+    color: #bb9af7;
+}
+
+#workspaces {
+    padding: 0 4px;
+}
+
+#workspaces button {
+    padding: 0 8px;
+    margin: 4px 2px;
+    border-radius: 8px;
+    color: #565f89;
+}
+
+#workspaces button.active {
+    background: #292e42;
+    color: #7aa2f7;
+    font-weight: bold;
+}
+
+#workspaces button:hover {
+    color: #bb9af7;
+}
+
+#mpris {
+    padding: 0 6px;
+    color: #9ece6a;
+}
+
+#window {
+    color: #a9b1d6;
+    padding: 0 12px;
+}
+
+/* the status pill: children sit flush, no per-child background */
+#status {
+    padding: 0 4px;
+}
+
+#idle_inhibitor,
+#backlight,
+#network,
+#wireplumber,
+#custom-bluetooth,
+#battery {
+    padding: 0 10px;
+    color: #c0caf5;
+}
+
+#idle_inhibitor.activated {
+    color: #e0af68;
+}
+
+#battery.warning {
+    color: #e0af68;
+}
+
+#battery.critical {
+    color: #f7768e;
+}
+
+#wireplumber.muted {
+    color: #565f89;
+}
+
+#network.disconnected {
+    color: #f7768e;
+}
+
+#tray {
+    padding: 0 12px;
+}
+
+#tray > .passive {
+    -gtk-icon-effect: dim;
+}
+
+#tray > .needs-attention {
+    -gtk-icon-effect: highlight;
+    background: #f7768e;
+}
+
+#clock {
+    padding: 0 14px;
+    margin-right: 6px;
+    color: #c0caf5;
+    font-weight: bold;
+}

@@ -1,0 +1,114 @@
+// ~/hyprland-from-scratch/dotfiles/waybar/config.jsonc
+//
+// Waybar config — Phase 3 baseline, expanded in Phase 10 (Tokyo Night),
+// restyled into grouped "pill" clusters and given a bluetooth control in
+// Phase 11. Arch icon + workspaces + music on the left, window title
+// centered, a single status pill (idle/brightness/network/audio/
+// bluetooth/battery) + tray + clock on the right. All modules use
+// libraries already on the system (NetworkManager, wireplumber,
+// playerctl, upower, amdgpu backlight, bluez, libdbusmenu-gtk3 for tray)
+// — nothing extra to install.
+//
+// Icon glyphs below are Nerd Font Private Use Area codepoints written as
+// \uXXXX escapes in the generating script rather than typed directly —
+// typing them raw in an editor/tool call silently strips them in this
+// environment (verified: a first pass at this file had zero PUA
+// characters anywhere despite every format string "having" an icon).
+{
+    "layer": "top",
+    "position": "top",
+    "height": 34,
+    "spacing": 0,
+
+    "modules-left": ["custom/arch", "hyprland/workspaces", "mpris"],
+    "modules-center": ["hyprland/window"],
+    "modules-right": ["group/status", "tray", "clock"],
+
+    "custom/arch": {
+        "format": "",
+        "tooltip-format": "Open launcher",
+        "on-click": "rofi -show drun"
+    },
+
+    "hyprland/workspaces": {
+        "format": "{id}",
+        "on-click": "activate"
+    },
+
+    "mpris": {
+        "format": " {title}",
+        "format-paused": " {title}",
+        "format-stopped": "",
+        "max-length": 30
+    },
+
+    "hyprland/window": {
+        "format": "{title}",
+        "max-length": 50,
+        "separate-outputs": true
+    },
+
+    "group/status": {
+        "orientation": "horizontal",
+        "modules": ["idle_inhibitor", "backlight", "network", "wireplumber", "custom/bluetooth", "battery"]
+    },
+
+    "idle_inhibitor": {
+        "format": "{icon}",
+        "format-icons": {
+            "activated": "",
+            "deactivated": ""
+        },
+        "tooltip-format-activated": "Idle management paused (hypridle won't dim/lock/suspend)",
+        "tooltip-format-deactivated": "Idle management active"
+    },
+
+    "backlight": {
+        "format": " {percent}%",
+        "on-scroll-up": "brightnessctl set 5%+",
+        "on-scroll-down": "brightnessctl set 5%-"
+    },
+
+    "network": {
+        "format-wifi": "  {essid}",
+        "format-ethernet": "  {ifname}",
+        "format-disconnected": "  disconnected",
+        "tooltip-format": "{ifname} via {gwaddr}",
+        "on-click": "~/hyprland-from-scratch/scripts/rofi-wifi.sh"
+    },
+
+    "wireplumber": {
+        "format": "{icon}  {volume}%",
+        "format-muted": "  muted",
+        "format-icons": ["", "", ""],
+        "on-click": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+        "on-click-right": "~/hyprland-from-scratch/scripts/rofi-audio.sh"
+    },
+
+    "custom/bluetooth": {
+        "exec": "bluetoothctl show | grep -q 'Powered: yes' && echo '{\"text\":\"\",\"class\":\"on\"}' || echo '{\"text\":\"\",\"class\":\"off\"}'",
+        "return-type": "json",
+        "interval": 5,
+        "tooltip-format": "Bluetooth",
+        "on-click": "~/hyprland-from-scratch/scripts/rofi-bluetooth.sh"
+    },
+
+    "battery": {
+        "format": "{icon}  {capacity}%",
+        "format-icons": ["", "", "", "", ""],
+        "format-charging": "  {capacity}%",
+        "states": {
+            "warning": 25,
+            "critical": 10
+        }
+    },
+
+    "tray": {
+        "spacing": 8
+    },
+
+    "clock": {
+        "format": "{:%H:%M   %d %b %Y}",
+        "tooltip-format": "{:%A, %d %B %Y}"
+    }
+}

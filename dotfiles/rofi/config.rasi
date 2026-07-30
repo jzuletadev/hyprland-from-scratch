@@ -1,11 +1,11 @@
 // ~/hyprland-from-scratch/dotfiles/rofi/config.rasi
 //
-// Minimal Rofi config — Phase 4 baseline.
-// Just the app-launcher mode with basic sizing/behavior. Colors/theme
-// come later once the base setup is fully working.
+// Minimal Rofi config — Phase 4 baseline, themed in Phase 10 (Tokyo Night),
+// mode-switcher row added in Phase 11. Apps/run/files/windows, all built
+// into Rofi — no extra modi packages needed.
 
 configuration {
-    modi: "drun";
+    modi: "drun,run,filebrowser,window";
     show-icons: true;
     icon-theme: "hicolor";
     display-drun: "Apps";
@@ -18,36 +18,81 @@ configuration {
 window {
     width: 30%;
     border: 2px;
-    border-color: #88c0d0;
-    border-radius: 6px;
-    background-color: #1e1e2e;
+    border-color: #7aa2f7;
+    border-radius: 10px;
+    background-color: #1a1b26;
 }
 
 mainbox {
     background-color: transparent;
-    children: [ "inputbar", "listview" ];
+    padding: 12px;
+    children: [ "inputbar", "listview", "mode-switcher" ];
 }
 
 inputbar {
-    background-color: #313244;
-    text-color: #cdd6f4;
-    padding: 10px;
-    border-radius: 4px;
+    background-color: #24283b;
+    text-color: #c0caf5;
+    padding: 10px 12px;
+    border-radius: 6px;
+    children: [ "entry" ];
+}
+
+entry {
+    background-color: transparent;
+    text-color: #c0caf5;
+    placeholder: "Search apps...";
+    placeholder-color: #565f89;
 }
 
 listview {
     background-color: transparent;
+    margin: 10px 0 0 0;
     lines: 8;
+    spacing: 4px;
     scrollbar: false;
 }
 
 element {
-    padding: 6px;
-    text-color: #cdd6f4;
+    background-color: transparent;
+    padding: 8px;
+    spacing: 10px;
+    border-radius: 6px;
+    text-color: #c0caf5;
+}
+
+element-icon {
+    background-color: transparent;
+    size: 26px;
+}
+
+element-text {
+    background-color: transparent;
+    vertical-align: 0.5;
 }
 
 element selected {
-    background-color: #45475a;
-    text-color: #89b4fa;
+    background-color: #292e42;
+    text-color: #ffffff;
+}
+
+mode-switcher {
+    background-color: transparent;
+    spacing: 8px;
+    margin: 10px 0 0 0;
+}
+
+button {
+    border: 0px;
+    border-color: transparent;
+    padding: 8px;
+    background-color: #24283b;
+    text-color: #c0caf5;
+    border-radius: 6px;
+}
+
+button selected {
+    border: 0px;
+    background-color: #292e42;
+    text-color: #7aa2f7;
 }
 

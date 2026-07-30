@@ -1,6 +1,6 @@
 # ~/hyprland-from-scratch/dotfiles/dunst/dunstrc
 #
-# Minimal dunst config — Phase 5 baseline.
+# Minimal dunst config — Phase 5 baseline, themed in Phase 10 (Tokyo Night).
 # INI-style sections. Kept small on purpose: per-app rules, scripting,
 # and history navigation get added later once this base is understood.
 
@@ -15,21 +15,22 @@
     format = "<b>%s</b>\n%b"
     timeout = 5
     frame_width = 2
-    frame_color = "#88c0d0"
+    frame_color = "#7aa2f7"
     separator_color = frame
+    corner_radius = 10
 
 [urgency_low]
-    background = "#1e1e2e"
-    foreground = "#cdd6f4"
+    background = "#1a1b26"
+    foreground = "#565f89"
     timeout = 4
 
 [urgency_normal]
-    background = "#1e1e2e"
-    foreground = "#cdd6f4"
+    background = "#1a1b26"
+    foreground = "#c0caf5"
     timeout = 5
 
 [urgency_critical]
-    background = "#1e1e2e"
-    foreground = "#f38ba8"
-    frame_color = "#f38ba8"
+    background = "#1a1b26"
+    foreground = "#f7768e"
+    frame_color = "#f7768e"
     timeout = 0

@@ -1,0 +1,44 @@
+// ~/hyprland-from-scratch/dotfiles/fastfetch/config.jsonc
+//
+// fastfetch config — Phase 11 baseline. Curated field list (not fastfetch's
+// full default set) so it stays readable. Colors are named ANSI keywords
+// (blue/cyan/magenta/etc), not hex — they pick up Tokyo Night automatically
+// because kitty.conf (same phase) remaps those ANSI colors to the theme.
+// Not runnable until fastfetch is installed (`sudo pacman -S fastfetch`).
+{
+    "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+    "logo": {
+        "type": "builtin",
+        "source": "arch_small",
+        "padding": {
+            "top": 1,
+            "right": 2
+        }
+    },
+    "display": {
+        "separator": "  ",
+        "color": {
+            "keys": "blue",
+            "title": "magenta"
+        }
+    },
+    "modules": [
+        "title",
+        "separator",
+        "os",
+        "host",
+        "kernel",
+        "uptime",
+        "packages",
+        "shell",
+        "wm",
+        "terminal",
+        "break",
+        "cpu",
+        "gpu",
+        "memory",
+        "disk",
+        "break",
+        "colors"
+    ]
+}
