@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~/hyprland-from-scratch/dotfiles/Thunar/uca.xml
+  Thunar custom actions (right-click menu). Phase 17: "Set as wallpaper" calls
+  scripts/wallpaper.sh, since Thunar's built-in wallpaper option needs xfdesktop
+  (XFCE's desktop), which this setup doesn't have; "Open Terminal Here" opens
+  kitty instead of going through exo-open.
+-->
+<actions>
+<action>
+	<icon>utilities-terminal</icon>
+	<name>Open Terminal Here</name>
+	<submenu></submenu>
+	<unique-id>1791249224580590-1</unique-id>
+	<command>kitty --directory %f</command>
+	<description>Open kitty in this folder</description>
+	<range></range>
+	<patterns>*</patterns>
+	<startup-notify/>
+	<directories/>
+</action>
+<action>
+	<icon>preferences-desktop-wallpaper</icon>
+	<name>Set as wallpaper</name>
+	<submenu></submenu>
+	<unique-id>hyprland-from-scratch-set-wallpaper</unique-id>
+	<command>sh -c '"$HOME/hyprland-from-scratch/scripts/wallpaper.sh" set "$1"' _ %f</command>
+	<description>Use this image as the desktop and lock-screen wallpaper</description>
+	<range>1</range>
+	<patterns>*</patterns>
+	<image-files/>
+</action>
+</actions>

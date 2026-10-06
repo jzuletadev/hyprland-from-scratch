@@ -1,15 +1,11 @@
 # Hyprland From Scratch
 
-[#hyprland-from-scratch](#hyprland-from-scratch)
-
 A step-by-step guide to build a clean, minimal and fully understood Hyprland desktop on Arch Linux.
 The goal is not to install a desktop as fast as possible, but to understand every component that is installed and keep the entire configuration under version control.
 
 ---
 
 # Project Goals
-
-[#project-goals](#project-goals)
 
 - Build everything from scratch.
 - Install only what is needed.
@@ -21,27 +17,142 @@ The goal is not to install a desktop as fast as possible, but to understand ever
 
 # Repository Structure
 
-[#repository-structure](#repository-structure)
-
-```
+```text
 hyprland-from-scratch/
-├── guide/
-├── dotfiles/
-├── scripts/
-├── assets/
-├── .gitignore
+├── dotfiles/          # one folder per app, each symlinked as a whole into ~/.config/
+├── scripts/           # Rofi menus used by Waybar + link-dotfiles.sh (restore helper)
+├── assets/wallpapers/ # wallpapers referenced by hyprland.conf and hyprlock.conf
+├── packages/          # package lists per layer (base, nvidia-hybrid, apps, aur)
+├── system/            # files that live outside ~/.config (copied with sudo, never symlinked)
+│   └── nvidia-hybrid/ # Phase 12 only — hybrid iGPU + NVIDIA laptops
 └── README.md
 ```
+
+> **The repo must be cloned at `~/hyprland-from-scratch`.** Waybar, Hyprland, hyprlock and the
+> Rofi scripts reference files by that absolute path.
+
+---
+
+# How to Use This Guide
+
+There are two different ways to use this repository. Pick one:
+
+| Situation | Path | What you do |
+|-----------|------|-------------|
+| Learning / building it for the first time | **Path A — From scratch** | Follow Phase 0 → Phase 23 in order. Every package and config is explained. |
+| New machine, reinstall, or disaster recovery | **Path B — Restore** | Skip the explanations: install packages, clone, run one script. See [Restore on a New Machine](#restore-on-a-new-machine). |
+
+The phases explain **why** each piece exists and the bugs found along the way; Path B relies on
+that work already being done and committed. When something breaks after a restore, the matching
+phase is where to look.
+
+## Hardware this was built on
+
+Most of the guide is hardware-independent. The parts that are **not**:
+
+| Phase | Applies to | On other hardware |
+|-------|-----------|-------------------|
+| 5.5 — Brightness | Laptops (internal panel with a backlight) | Skip. Remove `backlight` from `waybar/config.jsonc`. |
+| 5.6 — Touchpad | Laptops | Harmless on desktops (the block is ignored without a touchpad). |
+| Waybar `battery` module | Laptops | Remove `battery` from `waybar/config.jsonc` on desktops. |
+| 13 — `monitor = desc:AOC 27G2G4 ...` | That exact external monitor (144 Hz) | Harmless — other monitors fall back to `preferred`. Add a `desc:` rule for any monitor whose preferred mode isn't its fastest one. |
+| 12 — NVIDIA hybrid GPU | **Only** laptops with an AMD/Intel iGPU **plus** an NVIDIA dGPU (Turing/RTX 20 or newer, open kernel module) | **Skip entirely.** AMD-only or Intel-only machines need nothing extra. A desktop with a single NVIDIA GPU needs a different setup that this guide does not cover — see the [Hyprland NVIDIA wiki page](https://wiki.hypr.land/Nvidia/). |
+
+Reference machine: Dell G15 Ryzen Edition (5000 series) — AMD Radeon Vega iGPU (Cezanne) +
+NVIDIA GeForce RTX 3060 Mobile (GA106M, Ampere), internal panel on the AMD, HDMI/DP on the NVIDIA.
+
+---
+
+# Restore on a New Machine
+
+Path B. Use this when the repo is already complete and you just need the same desktop on another
+(or a freshly reinstalled) machine. Expect ~30 minutes, most of it downloads.
+
+### 1. Base system
+
+Do [Phase 0](#phase-0--arch-linux) (archinstall with the same table) and the Git/SSH parts of
+[Phase 0.5](#phase-05--initial-system-setup). `linux-headers` in the archinstall packages only
+matters for Phase 12, but it doesn't hurt elsewhere.
+
+Clone **to the exact path**:
+
+```bash
+git clone git@github.com:<user>/hyprland-from-scratch.git ~/hyprland-from-scratch
+cd ~/hyprland-from-scratch
+```
+
+### 2. Packages
+
+```bash
+grep -v '^#' packages/base.txt | sudo pacman -S --needed -
+fc-cache -f
+```
+
+Optional layers:
+
+```bash
+# Personal apps (Docker, Node, Steam, ...). Steam needs [multilib] enabled in /etc/pacman.conf first.
+grep -v '^#' packages/apps.txt | sudo pacman -S --needed -
+
+# AUR helper, then AUR apps (Brave, VS Code)
+git clone https://aur.archlinux.org/paru.git /tmp/paru && (cd /tmp/paru && makepkg -si)
+grep -v '^#' packages/aur.txt | paru -S --needed -
+```
+
+### 3. Dotfiles
+
+```bash
+~/hyprland-from-scratch/scripts/link-dotfiles.sh --dry-run   # preview
+~/hyprland-from-scratch/scripts/link-dotfiles.sh
+```
+
+The script symlinks every folder in `dotfiles/` into `~/.config/` (moving any existing folder to
+`<name>.bak-<timestamp>` instead of deleting it) and creates `~/Pictures/screenshots`. It's
+idempotent — re-run it after adding a new `dotfiles/<app>/` folder.
+
+### 4. Services
+
+```bash
+sudo systemctl enable sddm
+sudo systemctl enable --now bluetooth
+systemctl --user enable waybar.service   # the bar (Phase 22); no sudo — it's a user service
+```
+
+(NetworkManager is already enabled by archinstall. If you installed `apps.txt`:
+`sudo systemctl enable --now docker power-profiles-daemon`.)
+
+### 5. Hardware-specific steps
+
+- **Hybrid iGPU + NVIDIA laptop only:** do [Phase 12](#phase-12--nvidia-hybrid-gpu) now, using the
+  ready-made files in `system/nvidia-hybrid/`. **Check the PCI addresses** in
+  `99-gpu-symlinks.rules` with `lspci` — they differ between laptop models.
+- **Desktop (no battery/backlight):** remove `backlight` and `battery` from `waybar/config.jsonc`.
+- **Any machine:** check `kb_layout` in `hyprland.conf`, and run `hyprctl monitors all` — if a
+  monitor runs below its fastest refresh rate, add a `desc:` rule for it (Phase 13).
+
+### 6. Reboot and verify
+
+```bash
+sudo reboot
+```
+
+At SDDM pick **Hyprland (uwsm)**. Then confirm:
+
+- Wallpaper, Waybar (pills + Arch logo), and dunst start on their own.
+- `SUPER+T` opens kitty in the Arch Neutral colors (Phase 15); tapping `SUPER` opens Rofi.
+- `SUPER+L` locks; volume keys move the Waybar volume level.
+- `ls -l ~/.config` shows every app pointing into `~/hyprland-from-scratch/dotfiles/`.
+
+**Not restored by this repo** (re-create by hand): SSH keys and `git config`, browser/VS Code
+profiles (use their own account sync), Wi-Fi passwords, and anything in `~/Documents`.
 
 ---
 
 # Phase 0 — Arch Linux
 
-[#phase-0--arch-linux](#phase-0--arch-linux)
-
 Boot the official Arch ISO and start the installer.
 
-```
+```bash
 archinstall
 ```
 
@@ -49,7 +160,7 @@ Use the following configuration:
 
 | Setting             | Value                                           |
 | ------------------- | ----------------------------------------------- |
-| Locale              | en\_US.UTF-8                                    |
+| Locale              | en_US.UTF-8                                    |
 | Keyboard            | us *(or latam if preferred)*                    |
 | Mirrors             | Automatic                                       |
 | Disk                | Use entire disk                                 |
@@ -72,7 +183,7 @@ Use the following configuration:
 
 Install the system and reboot.
 
-```
+```bash
 reboot
 ```
 
@@ -87,36 +198,34 @@ Expected state:
 
 # Phase 0.5 — Initial System Setup
 
-[#phase-05--initial-system-setup](#phase-05--initial-system-setup)
-
 Update the system.
 
-```
+```bash
 sudo pacman -Syu
 ```
 
 Enable SSH.
 
-```
+```bash
 sudo pacman -S openssh
 sudo systemctl enable --now sshd
 ```
 
 Get the machine IP.
 
-```
+```bash
 ip a
 ```
 
 Connect from the main computer.
 
-```
+```bash
 ssh user@<ip>
 ```
 
 Configure Git.
 
-```
+```bash
 git config --global user.name "Your Name"
 git config --global user.email "you@example.com"
 git config --global init.defaultBranch main
@@ -124,25 +233,25 @@ git config --global init.defaultBranch main
 
 Generate an SSH key.
 
-```
+```bash
 ssh-keygen -t ed25519 -C "you@example.com"
 ```
 
 Display the public key.
 
-```
+```bash
 cat ~/.ssh/id_ed25519.pub
 ```
 
 Add it to GitHub. Test the connection.
 
-```
+```bash
 ssh -T git@github.com
 ```
 
 Clone the repository.
 
-```
+```bash
 cd ~
 git clone git@github.com:<user>/hyprland-from-scratch.git
 cd hyprland-from-scratch
@@ -163,11 +272,9 @@ Expected state:
 
 # Phase 1 — Minimal Hyprland
 
-[#phase-1--minimal-hyprland](#phase-1--minimal-hyprland)
-
 Install only the required packages.
 
-```
+```bash
 sudo pacman -S \
     hyprland \
     kitty \
@@ -185,21 +292,21 @@ sudo pacman -S \
 
 Refresh the font cache and confirm it resolves:
 
-```
+```bash
 fc-cache -fv
 fc-match monospace
 ```
 
 Create the configuration directory.
 
-```
+```bash
 mkdir -p ~/.config/hypr
 nano ~/.config/hypr/hyprland.conf
 ```
 
 Set minimal and basic configuration.
 
-```
+```text
 monitor = ,preferred,auto,1
 bind = SUPER, T, exec, kitty
 bind = SUPER, M, exit
@@ -209,33 +316,31 @@ Save (`Ctrl+O`, `Enter`, `Ctrl+X`).
 
 ### Before launching: make sure no stale session is running
 
-[#before-launching-make-sure-no-stale-session-is-running](#before-launching-make-sure-no-stale-session-is-running)
-
 If you've tried launching Hyprland before and it crashed, closed abruptly, or you switched
 TTYs without exiting it properly, a leftover process or lockfile can silently block the new
 session (you'll see `Unable to lock lockfile ... maybe another compositor is running` in the
 log, and keybinds like opening a terminal simply won't do anything, even though Hyprland
 appears to be running).
 
-```
+```bash
 ps aux | grep -i hypr
 ```
 
 If a `Hyprland` process shows up, kill it:
 
-```
+```bash
 killall -9 Hyprland
 ```
 
 Check for a leftover lock:
 
-```
+```bash
 ls -la /run/user/$(id -u)/ | grep wayland
 ```
 
 If a `wayland-*.lock` file exists with no live process behind it, remove it:
 
-```
+```bash
 rm -f /run/user/$(id -u)/wayland-1.lock
 ```
 
@@ -249,20 +354,16 @@ rm -f /run/user/$(id -u)/wayland-1.lock
 
 ### Start Hyprland
 
-[#start-hyprland](#start-hyprland)
-
 Launch it wrapped in a D-Bus session (plain `Hyprland` triggers a
 "launched without start-hyprland" warning and D-Bus/portal activation failures):
 
-```
+```bash
 dbus-run-session Hyprland
 ```
 
 ### Verify the config actually loaded
 
-[#verify-the-config-actually-loaded](#verify-the-config-actually-loaded)
-
-```
+```bash
 hyprctl binds | grep -A2 kitty
 ```
 
@@ -272,26 +373,26 @@ read — recheck the file path and that it was saved.
 If a keybind is present but still doesn't do anything, confirm kitty is actually installed
 and reachable:
 
-```
+```bash
 which kitty
 ```
 
 Verify:
 
-```
+```bash
 echo $XDG_SESSION_TYPE
 ```
 
 Expected output:
 
-```
+```text
 wayland
 ```
 
 If you already have Hyprland running and just changed the config, you don't need to restart
 the whole session — reload it live:
 
-```
+```bash
 hyprctl reload
 ```
 
@@ -306,18 +407,16 @@ Expected state:
 
 # Phase 2 — Repository Integration
 
-[#phase-2--repository-integration](#phase-2--repository-integration)
-
 Create the dotfiles structure.
 
-```
+```text
 dotfiles/
 └── hypr/
 ```
 
 Move the configuration into the repository.
 
-```
+```bash
 mkdir -p ~/hyprland-from-scratch/dotfiles
 mv ~/.config/hypr \
    ~/hyprland-from-scratch/dotfiles/
@@ -325,7 +424,7 @@ mv ~/.config/hypr \
 
 Create a symbolic link.
 
-```
+```bash
 ln -s \
 ~/hyprland-from-scratch/dotfiles/hypr \
 ~/.config/hypr
@@ -333,19 +432,19 @@ ln -s \
 
 Verify.
 
-```
+```bash
 ls -l ~/.config
 ```
 
 Expected output:
 
-```
+```text
 hypr -> ~/hyprland-from-scratch/dotfiles/hypr
 ```
 
 Commit the current state.
 
-```
+```bash
 git add .
 git commit -m "Initial Hyprland setup"
 ```
@@ -357,16 +456,17 @@ Expected state:
 - `~/.config` only contains a symbolic link.
 - Git detects configuration changes automatically.
 
+> Every later phase repeats this same pattern (`dotfiles/<app>/` + `ln -s` into `~/.config/`).
+> `scripts/link-dotfiles.sh` does it for all folders at once — that's what Path B uses.
+
 ---
 
 # Phase 3 — Waybar
 
-[#phase-3--waybar](#phase-3--waybar)
-
 Waybar is the status bar. Install empty/minimal first, confirm it renders, then add modules
 one at a time.
 
-```
+```bash
 sudo pacman -S waybar
 mkdir -p ~/hyprland-from-scratch/dotfiles/waybar
 ```
@@ -376,24 +476,27 @@ model as normal CSS) at `~/hyprland-from-scratch/dotfiles/waybar/`. Baseline: on
 
 Symlink:
 
-```
+```bash
 ln -s ~/hyprland-from-scratch/dotfiles/waybar ~/.config/waybar
 ```
 
 Test manually first:
 
-```
+```bash
 waybar &
 ```
 
 Once confirmed working, autostart it in `hyprland.conf`:
 
-```
+```text
 exec-once = waybar
 ```
 
 `exec-once` (vs `bind ... exec`) runs once at session start only — using plain `exec` here
 would spawn a new Waybar instance on every `hyprctl reload`.
+
+> **Phase 22 replaces this `exec-once` with a systemd user service** that restarts Waybar if it
+> crashes. From then on, restart it with `systemctl --user restart waybar`.
 
 Expected state:
 
@@ -404,14 +507,12 @@ Expected state:
 
 # Phase 4 — Application Launcher (Rofi)
 
-[#phase-4--application-launcher-rofi](#phase-4--application-launcher-rofi)
-
 Rofi vs Wofi: Wofi is more minimal and Wayland-native from the start; Rofi is more mature,
 far more feature-rich (emoji picker, clipboard manager, extensions via `rofi-calc` etc.), and
 is what most Hyprland community configs and documentation reference. Rofi is used here for
 that ceiling — the goal is deep customization later, not just "an app launcher."
 
-```
+```bash
 sudo pacman -S rofi
 mkdir -p ~/hyprland-from-scratch/dotfiles/rofi
 ```
@@ -419,25 +520,25 @@ mkdir -p ~/hyprland-from-scratch/dotfiles/rofi
 Place `config.rasi` at `~/hyprland-from-scratch/dotfiles/rofi/config.rasi`. Key points:
 
 - `modi: "drun"` — "desktop run" mode: reads installed `.desktop` files to build the app list.
-Other modes exist (`run`, `window`, `ssh`) and can be added later.
+  Other modes exist (`run`, `window`, `ssh`) and can be added later.
 - `@theme "/dev/null"` — disables any system default theme so every color rendered comes
-explicitly from this file, not a hidden default.
+  explicitly from this file, not a hidden default.
 
 Symlink:
 
-```
+```bash
 ln -s ~/hyprland-from-scratch/dotfiles/rofi ~/.config/rofi
 ```
 
 Add a bind in `hyprland.conf`:
 
-```
+```text
 bind = $mainMod, R, exec, rofi -show drun
 ```
 
 Reload and test:
 
-```
+```bash
 hyprctl reload
 ```
 
@@ -447,21 +548,19 @@ hyprctl reload
 
 # Phase 5 — Notifications (dunst)
 
-[#phase-5--notifications-dunst](#phase-5--notifications-dunst)
-
 Two main options exist: **mako** (native Wayland, minimal, key=value config) or **dunst** (more mature, more configurable — per-app rules, urgency levels, scripting, history). Dunst is
 used here: the goal is deep future customization, and dunst's extra surface area is exactly
 the kind of thing worth learning early rather than working around later.
 
 Install:
 
-```
+```bash
 sudo pacman -S dunst libnotify
 ```
 
 Create the config directory in the repo:
 
-```
+```bash
 mkdir -p ~/hyprland-from-scratch/dotfiles/dunst
 ```
 
@@ -471,19 +570,19 @@ critical notifications never auto-dismiss.
 
 Symlink:
 
-```
+```bash
 ln -s ~/hyprland-from-scratch/dotfiles/dunst ~/.config/dunst
 ```
 
 Autostart in `hyprland.conf`:
 
-```
+```text
 exec-once = dunst
 ```
 
 Reload and test all three urgency levels:
 
-```
+```bash
 hyprctl reload
 notify-send "Normal" "Standard notification"
 notify-send -u low "Low" "Low priority"
@@ -495,7 +594,7 @@ notify-send -u critical "Critical" "Should not auto-dismiss"
 > file (and its symlink) applied, you get generic default styling and no custom urgency
 > behavior, not an error. After symlinking, restart the daemon to pick up the new config:
 >
-> ```
+> ```bash
 > killall dunst
 > dunst &
 > ```
@@ -510,33 +609,34 @@ Expected state:
 
 # Phase 5.5 — Brightness control
 
-[#phase-55--brightness-control](#phase-55--brightness-control)
+> **Laptops only.** External desktop monitors don't expose a kernel backlight; skip this phase
+> and remove the `backlight` module from Waybar.
 
 Hyprland doesn't handle brightness on its own — brightness keys just send a keycode; actually
 changing the panel's backlight needs dedicated tooling.
 
 Install:
 
-```
+```bash
 sudo pacman -S brightnessctl
 ```
 
 Confirm the backlight device is detected:
 
-```
+```bash
 brightnessctl
 ```
 
 Test manually before binding to keys:
 
-```
+```bash
 brightnessctl set 10%-
 brightnessctl set 10%+
 ```
 
 Find the actual key names your keyboard sends:
 
-```
+```bash
 sudo libinput debug-events
 ```
 
@@ -544,7 +644,7 @@ sudo libinput debug-events
 
 Add binds in `hyprland.conf`:
 
-```
+```text
 bindel = ,XF86MonBrightnessUp, exec, brightnessctl set 5%+
 bindel = ,XF86MonBrightnessDown, exec, brightnessctl set 5%-
 ```
@@ -554,7 +654,7 @@ is locked later on (`l`), once hyprlock is in place.
 
 Reload and test with the physical keys:
 
-```
+```bash
 hyprctl reload
 ```
 
@@ -562,11 +662,9 @@ hyprctl reload
 
 # Phase 5.6 — Touchpad scroll direction
 
-[#phase-56--touchpad-scroll-direction](#phase-56--touchpad-scroll-direction)
-
 If two-finger scroll feels inverted, it's controlled by `natural_scroll` in the `touchpad` block of `hyprland.conf`. `true` = content follows finger direction (like mobile/macOS); `false` = classic inverted-wheel behavior.
 
-```
+```text
 input {
     touchpad {
         natural_scroll = true
@@ -576,7 +674,7 @@ input {
 
 Reload to apply:
 
-```
+```bash
 hyprctl reload
 ```
 
@@ -587,7 +685,8 @@ hyprctl reload
 
 # Phase 6 — Wallpaper (awww)
 
-[#phase-6--wallpaper-awww](#phase-6--wallpaper-awww)
+> Phase 17 adds a picker (`SUPER+W`) on top of what's set up here, and the last choice is restored
+> at login instead of a fixed file.
 
 > **Naming note:** the tool referenced across most community guides as `swww` was renamed by
 > its creator to **awww** after the original `swww` project was archived. Arch's official
@@ -597,38 +696,38 @@ hyprctl reload
 
 Install:
 
-```
+```bash
 sudo pacman -S awww
 ```
 
-Create the repo folders (this is the first real use of the `assets/` folder reserved from the
-start of the repo structure):
+awww has no config file — it's driven entirely by command-line flags — so there's no
+`dotfiles/awww/` folder and no symlink. The only repo folder it needs is for the images:
 
-```
-mkdir -p ~/hyprland-from-scratch/dotfiles/awww
+```bash
 mkdir -p ~/hyprland-from-scratch/assets/wallpapers
 ```
 
-Place a wallpaper image at `~/hyprland-from-scratch/assets/wallpapers/`. No image handy? Generate
+Place a wallpaper image at `~/hyprland-from-scratch/assets/wallpapers/`. This repo ships three
+(`1.jpg`, `2.png`, `3.jpeg`); `1.jpg` is the one set at startup and reused by hyprlock (Phase 7). No image handy? Generate
 a solid-color placeholder locally (no internet needed beyond the Arch mirrors already used for
 pacman):
 
-```
+```bash
 sudo pacman -S imagemagick
-convert -size 1920x1080 xc:'#1e1e2e' ~/hyprland-from-scratch/assets/wallpapers/wallpaper.jpg
+magick -size 1920x1080 xc:'#1a1b26' ~/hyprland-from-scratch/assets/wallpapers/1.jpg
 ```
 
 awww needs its daemon running before it can set a wallpaper:
 
-```
+```bash
 awww-daemon &
-awww img ~/hyprland-from-scratch/assets/wallpapers/wallpaper.jpg
+awww img ~/hyprland-from-scratch/assets/wallpapers/1.jpg
 ```
 
 Test an animated transition (this is the actual reason to prefer this tool over hyprpaper):
 
-```
-awww img ~/hyprland-from-scratch/assets/wallpapers/wallpaper.jpg --transition-type wipe --transition-duration 1.5
+```bash
+awww img ~/hyprland-from-scratch/assets/wallpapers/1.jpg --transition-type wipe --transition-duration 1.5
 ```
 
 > **How to actually see the transition:** the transition is a property of the `awww img` command itself, not a separate toggle — but it's only visible when switching *between two
@@ -636,7 +735,7 @@ awww img ~/hyprland-from-scratch/assets/wallpapers/wallpaper.jpg --transition-ty
 > the transition, but with no visual difference between "before" and "after" there's nothing to
 > see. Keep at least two test images in `assets/wallpapers/` and alternate between them:
 >
-> ```
+> ```bash
 > awww img ~/hyprland-from-scratch/assets/wallpapers/2.png --transition-type wipe --transition-duration 1.5
 > awww img ~/hyprland-from-scratch/assets/wallpapers/3.jpeg --transition-type grow --transition-duration 1.5
 > ```
@@ -645,14 +744,14 @@ awww img ~/hyprland-from-scratch/assets/wallpapers/wallpaper.jpg --transition-ty
 
 Autostart in `hyprland.conf`:
 
-```
+```text
 exec-once = awww-daemon
-exec-once = awww img ~/hyprland-from-scratch/assets/wallpapers/wallpaper.jpg
+exec-once = awww img ~/hyprland-from-scratch/assets/wallpapers/1.jpg
 ```
 
 Reload:
 
-```
+```bash
 hyprctl reload
 ```
 
@@ -663,9 +762,7 @@ wallpaper appears on its own, without running any command by hand.
 
 # Phase 7 — Lock Screen (hyprlock)
 
-[#phase-7--lock-screen-hyprlock](#phase-7--lock-screen-hyprlock)
-
-```
+```bash
 sudo pacman -S hyprlock
 ```
 
@@ -686,13 +783,13 @@ Baseline `hyprlock.conf` has three blocks:
 
 Add a bind in `hyprland.conf`:
 
-```
+```text
 bind = $mainMod, L, exec, hyprlock
 ```
 
 Reload and test:
 
-```
+```bash
 hyprctl reload
 ```
 
@@ -705,12 +802,10 @@ hyprctl reload
 
 # Phase 8 — Idle Management (hypridle)
 
-[#phase-8--idle-management-hypridle](#phase-8--idle-management-hypridle)
-
 hypridle watches for inactivity and fires staged actions — dim, lock, screen off, suspend —
 integrating directly with hyprlock from Phase 7.
 
-```
+```bash
 sudo pacman -S hypridle
 ```
 
@@ -718,27 +813,26 @@ Baseline `hypridle.conf` structure:
 
 - `general` block — `lock_cmd` (what locks the session), `before_sleep_cmd`/`after_sleep_cmd` (run right before/after suspend).
 - One `listener { }` block per stage, each independent: its own `timeout` (seconds) and
-`on-timeout` action, with `on-resume` reverting it once activity resumes. Baseline staging:
-dim at 150s, lock at 300s, screen off at 330s, suspend at 900s.
+  `on-timeout` action, with `on-resume` reverting it once activity resumes. Current staging:
+  dim at 15 min (`900`), lock at 30 min (`1800`), screen off at 35 min (`2100`), suspend at
+  75 min (`4500`). (The first baseline was 150/300/330/900 seconds — too aggressive for daily use.)
 
 Place the file alongside the others (no new symlink needed) and autostart it:
 
-```
+```text
 exec-once = hypridle
 ```
 
-```
+```bash
 hyprctl reload
 ```
 
 > **Testing tip:** minute-long timeouts are slow to verify. Temporarily lower every `timeout` to a handful of seconds, restart the daemon (`pkill hypridle && hypridle &`), confirm each
-> stage fires in order, then restore the real values (150/300/330/900) once confirmed.
+> stage fires in order, then restore the real values (900/1800/2100/4500) once confirmed.
 
 ---
 
 # Phase 9 — SDDM (login screen)
-
-[#phase-9--sddm-login-screen](#phase-9--sddm-login-screen)
 
 SDDM provides a traditional graphical login (username + password) instead of TTY autologin,
 and — as a side benefit — launches Hyprland correctly on its own, resolving the earlier
@@ -746,14 +840,17 @@ and — as a side benefit — launches Hyprland correctly on its own, resolving 
 
 Install:
 
-```
-sudo pacman -S sddm
+```bash
+sudo pacman -S sddm uwsm
 sudo systemctl enable sddm
 ```
 
-Confirm Hyprland exposes its session file (installed automatically by the `hyprland` package):
+> `uwsm` is a separate package. The `hyprland-uwsm.desktop` session file below ships with
+> `hyprland`, but selecting it without `uwsm` installed just drops you back at the login screen.
 
-```
+Confirm Hyprland exposes its session files (installed automatically by the `hyprland` package):
+
+```bash
 ls /usr/share/wayland-sessions/
 ```
 
@@ -764,7 +861,7 @@ correctly, replacing both the old `start-hyprland` script and a manual `dbus-run
 > **Before rebooting**, make sure no TTY autologin override is left configured — it can
 > conflict with SDDM taking over the login:
 >
-> ```
+> ```bash
 > cat /etc/systemd/system/getty@tty1.service.d/override.conf 2>/dev/null
 > ```
 >
@@ -772,7 +869,7 @@ correctly, replacing both the old `start-hyprland` script and a manual `dbus-run
 
 Reboot:
 
-```
+```bash
 sudo reboot
 ```
 
@@ -789,7 +886,9 @@ Expected state:
 
 # Phase 10 — Theming (Tokyo Night)
 
-[#phase-10--theming-tokyo-night](#phase-10--theming-tokyo-night)
+> **Superseded by [Phase 15](#phase-15--arch-neutral-theme-replaces-tokyo-night) (Arch Neutral).**
+> The palette below is kept as history; the approach — one palette applied to every component —
+> is still how the theme works.
 
 Everything up to now used ad hoc colors picked per file (a stray Nord cyan border here, a
 Catppuccin-ish background there). This phase formalizes one palette and applies it consistently
@@ -812,8 +911,6 @@ Nothing new gets installed — this is config only.
 
 ## Hyprland: borders, blur, rounding
 
-[#hyprland-borders-blur-rounding](#hyprland-borders-blur-rounding)
-
 `col.active_border` becomes a blue-to-purple gradient, `col.inactive_border` a translucent
 dark surface color, corner `rounding` goes from 6 to 10, and window blur gets enabled (small `size`/`passes` — this machine's internal panel is driven by the AMD iGPU, not the NVIDIA GPU,
 see Phase 12 below, so a light blur has headroom to spare). `active_opacity` / `inactive_opacity` add a subtle transparency to unfocused windows.
@@ -824,18 +921,16 @@ alpha-transparent background.
 
 ## Waybar: from 2 modules to a real bar
 
-[#waybar-from-2-modules-to-a-real-bar](#waybar-from-2-modules-to-a-real-bar)
-
 The Phase 3 baseline only had workspaces + a clock. This phase adds:
 
 - `hyprland/window` (center) — the focused window's title.
 - `network`, `wireplumber`, `battery` (right, before the clock) — all backed by daemons already
-running on this system (NetworkManager, wireplumber, upower), so no new packages needed.
+  running on this system (NetworkManager, wireplumber, upower), so no new packages needed.
 
 Verify the modules Waybar was actually built with, since a distro package can be compiled
 without some of them:
 
-```
+```bash
 pacman -Qi waybar | grep Depends
 ```
 
@@ -849,13 +944,11 @@ pacman -Qi waybar | grep Depends
 > Renamed to `config.jsonc` / `style.css` — verify with the same debug flag after any future
 > Waybar change:
 >
-> ```
+> ```bash
 > waybar --log-level debug 2>&1 | grep "Found config file"
 > ```
 
 ## Rofi, dunst, hyprlock
-
-[#rofi-dunst-hyprlock](#rofi-dunst-hyprlock)
 
 Same palette swapped into `rofi/config.rasi`, `dunst/dunstrc`, and `hyprlock.conf` — background,
 borders/frame, text, and the critical-urgency/red accent all point at the same hex values as
@@ -863,11 +956,9 @@ Waybar and Hyprland now.
 
 ## Media keys
 
-[#media-keys](#media-keys)
-
 Since Waybar now shows volume, the media keys to actually change it were missing. Added to `hyprland.conf`, next to the existing brightness keys:
 
-```
+```text
 bindel = ,XF86AudioRaiseVolume, exec, wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+
 bindel = ,XF86AudioLowerVolume, exec, wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
 bindel = ,XF86AudioMute, exec, wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
@@ -878,35 +969,36 @@ running audio session manager — no extra package.
 
 ## Polish pass
 
-[#polish-pass](#polish-pass)
-
 A few loose ends closed once the base theme was actually verified on screen (see the
 "Bug found" note above — that verification is what surfaced these):
 
 - **`layerrule = blur, <namespace>` was dropped.** This is the documented syntax across
-Hyprland community configs, but on this install (0.56.1) `hyprctl keyword layerrule "blur, waybar"` reliably returns `invalid field blur: missing a value`, and trying variants
-(`blur 1, namespace ...`, colon syntax, etc.) only ever produced the same generic
-"unrecognized field" error — not enough signal to reverse-engineer the real syntax for this
-version. Window blur (`decoration { blur { ... } }`) works fine on its own; Waybar/Rofi keep
-their alpha-transparent backgrounds without the extra blur-through effect.
+  Hyprland community configs, but on this install (0.56.1) `hyprctl keyword layerrule "blur, waybar"` reliably returns `invalid field blur: missing a value`, and trying variants
+  (`blur 1, namespace ...`, colon syntax, etc.) only ever produced the same generic
+  "unrecognized field" error — not enough signal to reverse-engineer the real syntax for this
+  version. Window blur (`decoration { blur { ... } }`) works fine on its own; Waybar/Rofi keep
+  their alpha-transparent backgrounds without the extra blur-through effect.
+  **Resolved in Phase 13:** Hyprland 0.53 changed the rule syntax to
+  `<effect> <value>, match:<prop> <value>` — the working form is
+  `layerrule = blur on, match:namespace waybar`.
 - **`hypridle` is now actually started.** `exec-once = hypridle` had been commented out in
-`hyprland.conf` since Phase 8 — the staged dim/lock/dpms/suspend timeouts in
-`hypridle.conf` were fully written but never running. Uncommented it.
+  `hyprland.conf` since Phase 8 — the staged dim/lock/dpms/suspend timeouts in
+  `hypridle.conf` were fully written but never running. Uncommented it.
 - **`animations` block added** (`hyprland.conf`) — a single `tokyoNight` bezier
-(`0.16, 1, 0.3, 1`, a standard "ease-out-expo"-ish curve) reused across windows/border/fade/
-workspace animations instead of Hyprland's built-in defaults.
+  (`0.16, 1, 0.3, 1`, a standard "ease-out-expo"-ish curve) reused across windows/border/fade/
+  workspace animations instead of Hyprland's built-in defaults.
 - **Waybar gained `idle_inhibitor`, `backlight`, and `tray`** — idle_inhibitor toggles whether
-hypridle's timeouts apply (useful now that hypridle actually runs), backlight mirrors the
-existing `brightnessctl` keybinds (scroll on it to adjust), tray holds icons for any
-future tray-registering app (empty today — nothing currently registers one).
+  hypridle's timeouts apply (useful now that hypridle actually runs), backlight mirrors the
+  existing `brightnessctl` keybinds (scroll on it to adjust), tray holds icons for any
+  future tray-registering app (empty today — nothing currently registers one).
 - **Rofi spacing/icons polished** — larger `element-icon` (26px), row spacing, a search
-placeholder, and padding around the whole window instead of edge-to-edge elements.
+  placeholder, and padding around the whole window instead of edge-to-edge elements.
 
 Reload and restart the bar/idle daemon to pick everything up:
 
-```
+```bash
 hyprctl reload
-killall waybar && waybar &
+systemctl --user restart waybar   # Phase 22+ (before: killall waybar && waybar &)
 killall hypridle && hypridle &
 killall dunst && dunst &
 ```
@@ -915,19 +1007,17 @@ Expected state:
 
 - Active window border shows a blue→purple gradient; inactive windows have a muted dark border.
 - Windows have a soft blur; opening/closing/switching windows and workspaces animate with the
-same easing curve instead of Hyprland's defaults.
+  same easing curve instead of Hyprland's defaults.
 - Waybar shows the focused window's title in the center; idle/brightness/network/volume/
-battery/tray/clock on the right, all in Tokyo Night colors.
+  battery/tray/clock on the right, all in Tokyo Night colors.
 - Volume keys change the level shown in Waybar; scrolling on the backlight icon changes
-brightness.
+  brightness.
 - The system actually dims/locks/suspends per `hypridle.conf`'s staged timeouts now.
 - Rofi, dunst notifications, and the hyprlock screen all share the same palette.
 
 ---
 
 # Phase 11 — Desktop pass (Waybar pills, kitty, fastfetch, btop, Rofi control center)
-
-[#phase-11--desktop-pass-waybar-pills-kitty-fastfetch-btop-rofi-control-center](#phase-11--desktop-pass-waybar-pills-kitty-fastfetch-btop-rofi-control-center)
 
 A second, more ambitious pass driven directly by reference screenshots (r/unixporn-style
 setups) instead of just filling in a minimal baseline. Goal: a cohesive "everything is one
@@ -936,8 +1026,6 @@ Caelestia's `quickshell`-based stack — liked the look, not the weight).
 
 ## A real bug: Nerd Font icons were never actually rendering
 
-[#a-real-bug-nerd-font-icons-were-never-actually-rendering](#a-real-bug-nerd-font-icons-were-never-actually-rendering)
-
 Every icon glyph added across Phase 10 and this phase (idle inhibitor, backlight, network,
 volume, battery, the new Arch logo) silently failed to save — typing a Nerd Font Private Use
 Area character directly into a config file produced an empty string on disk, with zero
@@ -945,63 +1033,71 @@ indication anything was wrong (no parse error; the format string is still valid,
 Confirmed by scanning the written file in Python for characters above `0x7f`: none found, despite
 every module "having" an icon. Fix: generate the file with a small `python3` script using `\uXXXX` escapes instead of the literal character, e.g.:
 
-```
-icon = ""  # Arch logo, nf-linux-archlinux
+```python
+icon = "\uf303"  # Arch logo, nf-linux-archlinux — escape, not the literal glyph
 ```
 
 Verify a codepoint is actually in the installed font before using it:
 
-```
+```bash
 fc-query -f "%{charset}\n" /usr/share/fonts/TTF/JetBrainsMonoNerdFontMono-Regular.ttf
 ```
 
 ## Waybar: pill clusters, Arch logo, music, Bluetooth
 
-[#waybar-pill-clusters-arch-logo-music-bluetooth](#waybar-pill-clusters-arch-logo-music-bluetooth)
-
 - Modules now render as separate rounded "pill" groups instead of one flat strip, using
-Waybar's native `"group/name"` module type to cluster related items under one background.
+  Waybar's native `"group/name"` module type to cluster related items under one background.
 - New leftmost module: an Arch logo (`custom/arch`) that opens Rofi on click — a "start button".
 - New `mpris` module (music widget) — free, since `playerctl` was already a Waybar dependency.
-One quirk: Brave registers an MPRIS interface even with nothing playing, so the module can't
-just be hidden via GTK CSS `:empty` (GTK's CSS engine doesn't support that pseudo-class at
-all — using it crashes Waybar outright with `Invalid name of pseudo-class`, confirmed live).
-Fix: no background/pill on `#mpris` at all, just colored text — an empty label is then
-genuinely invisible instead of a visible empty box.
+  One quirk: Brave registers an MPRIS interface even with nothing playing, so the module can't
+  just be hidden via GTK CSS `:empty` (GTK's CSS engine doesn't support that pseudo-class at
+  all — using it crashes Waybar outright with `Invalid name of pseudo-class`, confirmed live).
+  Fix: no background/pill on `#mpris` at all, just colored text — an empty label is then
+  genuinely invisible instead of a visible empty box.
 - New `custom/bluetooth` status icon (on/off color via `bluetoothctl show`), click opens the
-Bluetooth picker script below.
+  Bluetooth picker script below. Needs the Bluetooth stack installed and its service running —
+  without it `bluetoothctl show` finds no controller and the icon stays permanently "off":
+
+  ```bash
+  sudo pacman -S bluez bluez-utils
+  sudo systemctl enable --now bluetooth
+  ```
 - Full module list now: `custom/arch`, `hyprland/workspaces`, `mpris` (left) — `hyprland/window` (center) — one `group/status` pill (idle_inhibitor, backlight, network, wireplumber,
-custom/bluetooth, battery), tray, clock (right).
+  custom/bluetooth, battery), tray, clock (right).
 
 ## kitty — first real theme since Phase 1
 
-[#kitty--first-real-theme-since-phase-1](#kitty--first-real-theme-since-phase-1)
+`dotfiles/kitty/kitty.conf` — Tokyo Night ANSI palette, JetBrainsMono Nerd Font, subtle
+`background_opacity`. Window rounding/blur come from Hyprland's compositor-level `decoration`
+block, not kitty itself. `~/.config/kitty` was an empty directory before this, so remove it
+before linking:
 
-`dotfiles/kitty/kitty.conf` (new file, new `~/.config/kitty` symlink — it was an empty directory
-before this). Tokyo Night ANSI palette, JetBrainsMono Nerd Font, subtle `background_opacity`.
-Window rounding/blur come from Hyprland's compositor-level `decoration` block, not kitty itself.
+```bash
+rmdir ~/.config/kitty 2>/dev/null
+ln -s ~/hyprland-from-scratch/dotfiles/kitty ~/.config/kitty
+```
 
-## fastfetch and btop — not runnable yet
+## fastfetch and btop
 
-[#fastfetch-and-btop--not-runnable-yet](#fastfetch-and-btop--not-runnable-yet)
+```bash
+sudo pacman -S fastfetch btop
+ln -s ~/hyprland-from-scratch/dotfiles/fastfetch ~/.config/fastfetch
+ln -s ~/hyprland-from-scratch/dotfiles/btop ~/.config/btop
+```
 
-Both configs are written and ready but **need packages this session couldn't install** (`sudo pacman -S fastfetch btop` requires an interactive sudo password, which an agent session
-can't supply):
+The symlinks matter: without them both tools run fine but with their stock config, so it's easy
+to think the theme is applied when it isn't.
 
 - `dotfiles/fastfetch/config.jsonc` — curated module list (not fastfetch's full default set),
-Arch ASCII logo. Colors are named ANSI keywords (`blue`, `magenta`, ...) rather than hex —
-they inherit Tokyo Night automatically from kitty's ANSI remap above, so the config doesn't
-need to duplicate hex values.
+  Arch ASCII logo. Colors are named ANSI keywords (`blue`, `magenta`, ...) rather than hex —
+  they inherit Tokyo Night automatically from kitty's ANSI remap above, so the config doesn't
+  need to duplicate hex values.
 - `dotfiles/btop/btop.conf` + `dotfiles/btop/themes/tokyonight.theme` — full Tokyo Night theme
-covering CPU/mem/net/proc boxes and gradients.
-- Keybind already wired in `hyprland.conf`: `$mainMod, Escape` opens btop in a floating,
-centered kitty window. This exposes a second Hyprland gotcha (see below).
-
-Once installed, symlinks aren't needed for a manual first run — just run `fastfetch` or `btop`.
+  covering CPU/mem/net/proc boxes and gradients.
+- Keybind in `hyprland.conf`: `$mainMod, Escape` opens btop in a floating, centered kitty
+  window. This exposes a second Hyprland gotcha (see below).
 
 ## A second Hyprland gotcha: `windowrulev2` looks like it works but doesn't
-
-[#a-second-hyprland-gotcha-windowrulev2-looks-like-it-works-but-doesnt](#a-second-hyprland-gotcha-windowrulev2-looks-like-it-works-but-doesnt)
 
 The documented way to make one specific window float/size/center
 (`windowrulev2 = float, class:^(name)$`) prints a "deprecated, see wiki" notice but — confirmed
@@ -1012,28 +1108,43 @@ tell a wrong-syntax error from an unrecognized-field error through trial and err
 
 **What actually works:** inline bracket rules on the `exec` dispatcher itself, verified with `hyprctl dispatch exec` then checking `hyprctl clients -j` for the resulting window geometry:
 
-```
+```text
 bind = $mainMod, Escape, exec, [float;size 800 500;center] kitty --class btop-floating -e btop
 ```
 
+> **Update (Phase 13): both problems above had different root causes.**
+>
+> - `windowrulev2` is gone and `windowrule` uses a new syntax since Hyprland 0.53:
+>   `<effect> <value>, match:<prop> <value>`. Verified on 0.56.2:
+>
+>   ```text
+>   windowrule = float on, match:class btop-floating
+>   windowrule = size 800 500, match:class btop-floating
+>   windowrule = center on, match:class btop-floating
+>   ```
+>
+> - The window kept opening at full size — with *both* the inline rule and `windowrule` —
+>   because **kitty remembers its last window size** (`remember_window_size yes` by default) and
+>   overrides the compositor's size. `remember_window_size no` in `kitty.conf` fixes it; the
+>   inline bind above then gives a centered 800x500 window. Checked with test windows:
+>   `float`/`center` always applied, `size` only applied once kitty stopped restoring its size.
+
 ## Rofi: mode-switcher + a lightweight control center
 
-[#rofi-mode-switcher--a-lightweight-control-center](#rofi-mode-switcher--a-lightweight-control-center)
-
 - `configuration.modi` now lists `drun,run,filebrowser,window`, and `mode-switcher` was added
-to `mainbox`'s children — Rofi draws a row of mode buttons at the bottom, all built in, no
-new packages.
+  to `mainbox`'s children — Rofi draws a row of mode buttons at the bottom, all built in, no
+  new packages.
 - Three new scripts under `scripts/`, each a self-contained Rofi `-dmenu` menu instead of
-installing a dedicated control-panel app:
-  * `rofi-wifi.sh` — lists networks via `nmcli`, prompts for a password with `rofi -password` if the network is secured, connects.
+  installing a dedicated control-panel app:
+  * `rofi-wifi.sh` (renamed `rofi-network.sh` in Phase 16) — lists networks via `nmcli`, prompts for a password with `rofi -password` if the network is secured, connects.
   * `rofi-bluetooth.sh` — lists paired devices via `bluetoothctl`, connect/disconnect toggle,
-plus a power on/off entry.
+  plus a power on/off entry.
   * `rofi-audio.sh` — lists audio sinks by parsing `wpctl status` (piped through a small Python
-regex — more reliable than awk/sed against `wpctl`'s tree-drawing output), switches default
-sink, toggles mute.
+  regex — more reliable than awk/sed against `wpctl`'s tree-drawing output), switches default
+  sink, toggles mute.
 - Wired into Waybar: click the network icon → `rofi-wifi.sh`; click the Bluetooth icon →
-`rofi-bluetooth.sh`; left-click volume → mute toggle (unchanged), right-click volume →
-`rofi-audio.sh`.
+  `rofi-bluetooth.sh`; left-click volume → mute toggle (unchanged), right-click volume →
+  `rofi-audio.sh`. (Phase 16 reworks all three menus and the click map.)
 
 > **Bug found after this section first shipped:** every app row rendered as a white card with
 > a drop shadow — theme-looking-unapplied, even though `rofi -show drun -dump-theme` echoed
@@ -1049,27 +1160,86 @@ sink, toggles mute.
 
 Reload and restart the bar to pick everything up:
 
-```
+```bash
 hyprctl reload
-killall waybar && waybar &
+systemctl --user restart waybar   # Phase 22+ (before: killall waybar && waybar &)
 ```
 
 Expected state:
 
 - Waybar reads as distinct rounded pill groups, not one flat bar; an Arch logo sits at the far
-left and opens Rofi when clicked.
+  left and opens Rofi when clicked.
 - A music widget appears in the bar only when something is actually playing.
 - Bluetooth has a status icon in the bar; clicking network/Bluetooth/right-clicking volume opens
-a themed Rofi menu that actually changes the setting.
+  a themed Rofi menu that actually changes the setting.
 - Opening a new kitty window shows the Tokyo Night theme, not kitty's defaults.
-- `$mainMod, Escape` opens btop floating and centered (once btop is installed).
+- `$mainMod, Escape` opens btop floating and centered; `fastfetch` shows the Arch logo in Tokyo Night colors.
 - Rofi's launcher shows a row of mode buttons (apps/run/files/windows) at the bottom.
 
 ---
 
-# Phase 12 — NVIDIA Hybrid GPU (new approach)
+# Phase 11.5 — Screenshots and file manager
 
-[#phase-12--nvidia-hybrid-gpu-new-approach](#phase-12--nvidia-hybrid-gpu-new-approach)
+Two everyday tools whose binds already live in `hyprland.conf`.
+
+## Screenshots (grim + slurp)
+
+`grim` captures the screen, `slurp` lets you drag a region and prints its geometry, and
+`wl-clipboard` (`wl-copy`) puts the image on the clipboard — three small single-purpose tools
+instead of one screenshot app.
+
+```bash
+sudo pacman -S grim slurp wl-clipboard
+mkdir -p ~/Pictures/screenshots
+```
+
+The folder must exist: grim doesn't create parent directories, so without it the binds fail
+silently.
+
+| Bind | Action |
+|------|--------|
+| `SUPER+S` | Full screen → `~/Pictures/screenshots/<timestamp>.png` |
+| `SUPER+SHIFT+S` | Selected region → same folder |
+| `SUPER+CTRL+S` | Selected region → clipboard only (paste with `Ctrl+V`) |
+
+> Phase 23 replaces these binds: every screenshot is saved **and** copied, and `SUPER+CTRL+S`
+> captures the focused window instead.
+
+## File manager (Thunar)
+
+```bash
+sudo pacman -S thunar gvfs tumbler
+```
+
+- `gvfs` — trash, USB auto-mount, and network locations inside Thunar.
+- `tumbler` — image/video thumbnails.
+
+Bound to `SUPER+E`.
+
+Expected state:
+
+- All three screenshot binds produce an image (file or clipboard).
+- `SUPER+E` opens Thunar; USB drives show up in its sidebar.
+
+---
+
+# Phase 12 — NVIDIA Hybrid GPU
+
+> **Applies only to hybrid laptops: an AMD or Intel iGPU plus an NVIDIA dGPU from the Turing
+> generation (RTX 20 / GTX 16) or newer.** Check with `lspci | grep -E 'VGA|3D'` — you need to see
+> **two** lines, one of them NVIDIA. If you see only AMD or only Intel, skip this phase
+> entirely: Mesa drives those GPUs out of the box and nothing here is needed. A single-GPU NVIDIA
+> desktop is a different setup (NVIDIA drives everything, global NVIDIA env vars *are* needed) and
+> is not covered by this guide.
+>
+> **Applying any of this on the wrong hardware breaks the session**: `AQ_DRM_DEVICES` would point
+> at `/dev/dri/*` symlinks that don't exist and Hyprland fails to start. That's why these files
+> live in `system/nvidia-hybrid/` and are never symlinked automatically by
+> `scripts/link-dotfiles.sh`.
+
+Ready-made copies of every file this phase creates are in `system/nvidia-hybrid/`
+(`nvidia.conf`, `99-gpu-symlinks.rules`, `env-hyprland`). The steps below show their content and
+the matching `sudo cp` command.
 
 Hardware context on this build: Dell G15 Ryzen Edition, AMD Radeon Vega iGPU
 (`0000:05:00.0`) + NVIDIA RTX 3060 dGPU (`0000:01:00.0`). The internal panel
@@ -1089,30 +1259,28 @@ hybrid-NVIDIA guides and is deliberately avoided here.
 
 ## Install the driver stack
 
-[#install-the-driver-stack](#install-the-driver-stack)
-
-```
+```bash
 sudo pacman -S --needed nvidia-open-dkms nvidia-utils nvidia-settings nvidia-prime libva-nvidia-driver
 ```
 
 - `nvidia-open-dkms` — the only officially-supported NVIDIA driver on Arch for
-Ampere and newer (`nvidia-dkms`, the closed one, was discontinued for these
-GPUs in Dec 2025).
+  Ampere and newer (`nvidia-dkms`, the closed one, was discontinued for these
+  GPUs in Dec 2025).
 - `nvidia-prime` — provides the `prime-run` wrapper used below for per-app
-offload to the dGPU.
+  offload to the dGPU.
 - `linux-headers` must already be installed (see Phase 0) — DKMS compiles the
-module against the running kernel's headers at install time.
+  module against the running kernel's headers at install time.
 
 Verify DKMS actually built the module:
 
-```
+```bash
 dkms status
 ```
 
 Expected output (version numbers will vary):
 
-```
-nvidia-open/615.71.09, 7.2.8-arch1-2, x86_64: installed
+```text
+nvidia/615.71.09, 7.2.8-arch1-2, x86_64: installed
 ```
 
 If this comes back empty, headers are missing — install `linux-headers` and
@@ -1120,29 +1288,29 @@ run `sudo dkms autoinstall`.
 
 ## Load the modules early
 
-[#load-the-modules-early](#load-the-modules-early)
-
 Edit `/etc/mkinitcpio.conf` and set `MODULES` to:
 
-```
+```text
 MODULES=(amdgpu nvidia nvidia_modeset nvidia_uvm nvidia_drm)
 ```
 
 Then regenerate the initramfs:
 
-```
+```bash
 sudo mkinitcpio -P
 ```
 
 ## Module options
 
-[#module-options](#module-options)
-
 Create `/etc/modprobe.d/nvidia.conf`:
 
-```
+```text
 options nvidia NVreg_PreserveVideoMemoryAllocations=1 NVreg_TemporaryFilePath=/var/tmp
 options nvidia_drm modeset=1 fbdev=1
+```
+
+```bash
+sudo cp ~/hyprland-from-scratch/system/nvidia-hybrid/nvidia.conf /etc/modprobe.d/nvidia.conf
 ```
 
 > **Why these and not the older set:**
@@ -1160,36 +1328,40 @@ options nvidia_drm modeset=1 fbdev=1
 
 ## Stable device paths via udev
 
-[#stable-device-paths-via-udev](#stable-device-paths-via-udev)
-
 `/dev/dri/card*` numbering is not stable across boots, and `AQ_DRM_DEVICES`
 uses `:` as a separator so the raw `/dev/dri/by-path/pci-...` paths can't be
 used directly either. Fix by creating named symlinks pinned to PCI addresses.
 
 Confirm the PCI addresses on this machine:
 
-```
+```bash
 lspci | grep -E 'VGA|3D'
 ```
 
-Create `/etc/udev/rules.d/99-gpu-symlinks.rules` (adjust the PCI addresses to
-match the output above):
+Create `/etc/udev/rules.d/99-gpu-symlinks.rules`. **The PCI addresses below are this
+laptop's** — on another model they will differ, so edit them to match the `lspci` output
+(`05:00.0` becomes `0000:05:00.0`):
 
-```
+```text
 KERNEL=="card*", KERNELS=="0000:05:00.0", SUBSYSTEM=="drm", SUBSYSTEMS=="pci", SYMLINK+="dri/amd-igpu"
 KERNEL=="card*", KERNELS=="0000:01:00.0", SUBSYSTEM=="drm", SUBSYSTEMS=="pci", SYMLINK+="dri/nvidia-dgpu"
 ```
 
+```bash
+sudo cp ~/hyprland-from-scratch/system/nvidia-hybrid/99-gpu-symlinks.rules /etc/udev/rules.d/
+sudoedit /etc/udev/rules.d/99-gpu-symlinks.rules   # only if your PCI addresses differ
+```
+
 Reload and apply:
 
-```
+```bash
 sudo udevadm control --reload-rules
 sudo udevadm trigger
 ```
 
 Verify:
 
-```
+```bash
 ls -l /dev/dri/ | grep -E 'amd-igpu|nvidia-dgpu'
 ```
 
@@ -1197,22 +1369,24 @@ Expected: two symlinks pointing at the correct `card*` for each GPU.
 
 ## Hyprland GPU selection via uwsm
 
-[#hyprland-gpu-selection-via-uwsm](#hyprland-gpu-selection-via-uwsm)
-
 This is the step the historical appendix got wrong. For uwsm-launched Hyprland
 sessions (Phase 9), `AQ_*` variables must live in `~/.config/uwsm/env-hyprland`
 — not in `hyprland.conf` and not in `~/.config/uwsm/env`. Setting them anywhere
 else means they're silently absent from the Hyprland process environment at
 runtime, which is exactly how the old setup failed.
 
-```
+```bash
 mkdir -p ~/.config/uwsm
 ```
 
 Create `~/.config/uwsm/env-hyprland`:
 
-```
+```bash
 export AQ_DRM_DEVICES=/dev/dri/amd-igpu:/dev/dri/nvidia-dgpu
+```
+
+```bash
+cp ~/hyprland-from-scratch/system/nvidia-hybrid/env-hyprland ~/.config/uwsm/env-hyprland
 ```
 
 AMD first = compositor and ordinary apps render on the iGPU. NVIDIA listed as
@@ -1227,22 +1401,20 @@ designed to avoid.
 
 ## Reboot and verify
 
-[#reboot-and-verify](#reboot-and-verify)
-
-```
+```bash
 sudo reboot
 ```
 
 At the SDDM login (Phase 9), select the **Hyprland (uwsm)** session, log in,
 then from a kitty terminal:
 
-```
+```bash
 printenv | grep AQ_DRM
 ```
 
 Expected:
 
-```
+```text
 AQ_DRM_DEVICES=/dev/dri/amd-igpu:/dev/dri/nvidia-dgpu
 ```
 
@@ -1251,7 +1423,7 @@ exactly (common mistake: placing it in `~/.config/uwsm/env` instead, which
 loads for every uwsm-managed session but not with the `AQ_*` scope Hyprland
 reads at startup).
 
-```
+```bash
 nvidia-smi
 ```
 
@@ -1259,7 +1431,7 @@ Should list the dGPU (model, driver version). Processes should be minimal —
 Hyprland/Xwayland may appear with a few MiB of memory, but no significant
 compute load.
 
-```
+```bash
 hyprctl monitors
 ```
 
@@ -1268,7 +1440,7 @@ NVIDIA) should appear. If only `eDP-1` shows up with no external connected,
 that's expected; plugging one in should surface it immediately via Hyprland's
 hotplug.
 
-```
+```bash
 glxinfo | grep "OpenGL renderer"
 ```
 
@@ -1277,18 +1449,16 @@ dGPU by accident. (If `glxinfo` is missing: `sudo pacman -S --needed mesa-utils`
 
 ## Per-app offload to the dGPU
 
-[#per-app-offload-to-the-dgpu](#per-app-offload-to-the-dgpu)
-
 For individual apps that should run on the NVIDIA GPU (games, Blender, GPU
 compute), prefix with `prime-run`:
 
-```
+```bash
 prime-run glxinfo | grep "OpenGL renderer"
 ```
 
 Should name the NVIDIA RTX 3060. Same pattern for Steam game launch options:
 
-```
+```bash
 prime-run %command%
 ```
 
@@ -1296,30 +1466,26 @@ Expected state at the end of this phase:
 
 - Hyprland session starts via SDDM → uwsm with no manual intervention.
 - `AQ_DRM_DEVICES` is set in the Hyprland process environment (not just in
-  the login shell).
+    the login shell).
 - Internal panel and external monitors both work.
 - `nvidia-smi` runs; the dGPU is listed but idle most of the time.
 - `prime-run <app>` routes a single app to the dGPU; everything else stays on
-  the iGPU.
+    the iGPU.
 
 ## Validation worth repeating
-
-[#validation-worth-repeating](#validation-worth-repeating)
 
 The underlying NVIDIA-on-hybrid bug is intermittent, so a single clean boot
 isn't proof. Before considering this phase closed:
 
 - Cold-reboot 2–3 times. `journalctl -b -1 | grep -i nvidia` should stay clean
-  across all of them.
+    across all of them.
 - Suspend (close lid) and resume — this is where
-  `NVreg_PreserveVideoMemoryAllocations` is actually exercised.
+    `NVreg_PreserveVideoMemoryAllocations` is actually exercised.
 - Run `prime-run` with a real workload once (e.g. `prime-run glmark2`) and
-  confirm `nvidia-smi` shows utilization during the run and drops back to idle
-  after.
+    confirm `nvidia-smi` shows utilization during the run and drops back to idle
+    after.
 
 ## Critical hardware caveat
-
-[#critical-hardware-caveat](#critical-hardware-caveat)
 
 On this specific model (Dell G15 Ryzen Edition, which shares its
 motherboard/platform with the Alienware line — hence `alienware_wmi` kernel
@@ -1335,9 +1501,7 @@ caveat worth keeping in the guide.
 
 ## Useful diagnostic commands
 
-[#useful-diagnostic-commands](#useful-diagnostic-commands)
-
-```
+```bash
 # confirm which GPU a process is actually using
 nvidia-smi
 
@@ -1366,9 +1530,778 @@ sudo pacman -S glmark2
 
 ---
 
-# Appendix — NVIDIA Hybrid GPU (historical note)
+# Phase 13 — Look & feel pass
 
-[#appendix--nvidia-hybrid-gpu-historical-note](#appendix--nvidia-hybrid-gpu-historical-note)
+A second visual pass, checked on screen this time (cropped screenshots of the bar, a Rofi capture,
+and A/B captures with a setting toggled) instead of only reading configs. Nothing new to install.
+
+## External monitor at its real refresh rate
+
+`hyprctl monitors all` showed the external AOC 27G2G4 running at **60 Hz** while listing
+`1920x1080@144.00Hz` among its modes. `preferred` means "the monitor's EDID preferred mode", which
+on many gaming monitors is 60 Hz. Fix: a dedicated rule, matched by description instead of port
+name so it follows the monitor to any connector (HDMI today, DisplayPort tomorrow):
+
+```text
+monitor = desc:AOC 27G2G4 GYGM6HA425243, 1920x1080@144, auto, 1
+monitor = ,preferred,auto,1
+```
+
+For another monitor, take the `description` and the modes from `hyprctl monitors all` and add
+its own line above the catch-all. VRR (`misc:vrr`) is left off for now — the external outputs are
+driven by the NVIDIA dGPU (Phase 12), so it belongs in the gaming phase where it can be tested.
+
+## Opacity: opaque apps, glass terminal
+
+Before: `active_opacity = 0.97` / `inactive_opacity = 0.90` on every window, and kitty's own
+`background_opacity 0.92` on top of that — calls, videos and games were slightly see-through, and
+kitty's text faded along with its background. Now Hyprland keeps every window at `1.0` and kitty
+alone is translucent through `background_opacity`, which only affects the background (text stays
+crisp); Hyprland's `decoration:blur` frosts what shows through.
+
+## Blur on Waybar and Rofi
+
+The `layerrule` dropped in Phase 10, now with the 0.53+ syntax:
+
+```text
+layerrule = blur on, match:namespace waybar
+layerrule = ignore_alpha 0.5, match:namespace waybar
+layerrule = blur on, match:namespace rofi
+layerrule = ignore_alpha 0.5, match:namespace rofi
+```
+
+`ignore_alpha` matters for Waybar: its surface spans the whole top strip but is transparent
+outside the pills, and without it the entire strip would be frosted. Verified with an A/B capture
+(`hyprctl keyword decoration:blur:enabled false`, capture, re-enable, compare): differences appear
+only inside the pills. Rofi's window background became `#1a1b26e0` so the blur has something to
+show through. The effect is subtle over this wallpaper (dark at the top, pills ~85% opaque) —
+lower the alpha in `style.css`/`config.rasi` for a more visible frosted look.
+
+## No default wallpaper flash at login
+
+Hyprland draws its own wallpaper/logo until awww loads. The `misc` block turns that off and paints
+the Tokyo Night background color instead:
+
+```text
+misc {
+    disable_hyprland_logo = true
+    disable_splash_rendering = true
+    force_default_wallpaper = 0
+    background_color = rgb(1a1b26)
+}
+```
+
+## Dark mode for GTK apps
+
+`gsettings` showed `color-scheme 'default'` and `gtk-theme 'Adwaita'` — Thunar, file pickers and
+GTK4 apps were light, and websites that follow the system theme too. Two `exec-once` lines in
+`hyprland.conf` set `prefer-dark` + `Adwaita-dark` at every login. They live there instead of only
+in dconf (`~/.config/dconf` isn't in the repo), so a restore needs no extra step. Apps that ask the
+desktop portal (Brave with its theme set to "Device") get the setting through
+`xdg-desktop-portal-gtk`.
+
+## Waybar
+
+- **Visible vs focused workspace.** Waybar's `.active` class only marks the *focused* workspace,
+  so the laptop panel's bar showed its own workspace as if it were empty. A `.visible` style
+  (lighter pill, grey text) marks the workspace on screen on each monitor; `.active` (blue, bold)
+  still marks the focused one.
+- **GTK button reset** on workspace buttons (`background`, `border`, `box-shadow`, `text-shadow`),
+  so the GTK theme's own hover effect doesn't leak into the pill.
+- **Bluetooth on/off colors.** Phase 11 described them, but `style.css` never styled the `on`/`off`
+  classes the module emits. Now blue when powered, muted when off.
+- **Themed tooltips** — GTK's default tooltip bubble replaced with the pill colors.
+- **Clock icons.** The format had three spaces between time and date: a glyph lost to the
+  Nerd Font bug from Phase 11. Clock and calendar icons were written back with `\uXXXX` escapes.
+- **Music widget only while playing.** Empty `format-paused`/`format-stopped`: a paused or idle
+  browser tab no longer leaves its title in the bar.
+
+## Rofi
+
+- Row text follows the row color (`element-text { text-color: inherit; }`), so the selected row is
+  blue like the active workspace instead of plain white; matched characters are bold purple.
+- Mode buttons named consistently: Apps / Run / Files / Windows.
+
+## kitty: `remember_window_size no`
+
+The floating btop window (`SUPER+Escape`) kept opening at full size. kitty restores its last window
+size by default and overrides the compositor's size rule — see the update in Phase 11's
+`windowrulev2` note. With it off, the bind gives a centered 800x500 window.
+
+Reload everything:
+
+```bash
+hyprctl reload
+systemctl --user restart waybar   # Phase 22+; don't use SIGUSR2 reloads (see Phase 22)
+```
+
+Expected state:
+
+- `hyprctl monitors` shows the AOC at `@144`.
+- Brave, VS Code and Steam are fully opaque; kitty's background is translucent and blurred.
+- Waybar pills and Rofi have a frosted background; each monitor's bar highlights its visible
+  workspace.
+- Thunar and GTK dialogs are dark.
+- `SUPER+Escape` opens btop floating, centered, 800x500.
+
+---
+
+# Phase 14 — Keybinds: 10 workspaces and SUPER for the launcher
+
+## Workspaces 6–10
+
+`SUPER+6` did nothing, as if workspaces stopped at 5. Hyprland has no such limit — workspaces are
+created on demand and numeric IDs go far beyond 10. The config simply had binds for 1–5 only.
+Added `SUPER+6…9` and `SUPER+0` (→ workspace 10), plus the matching `SUPER+SHIFT` binds to move the
+focused window. Waybar lists them on its own as soon as they exist.
+
+```text
+bind = $mainMod, 0, workspace, 10
+bind = $mainMod SHIFT, 0, movetoworkspace, 10
+```
+
+## Tap SUPER to open the launcher
+
+The same behavior as Caelestia (or Windows/GNOME): pressing and releasing SUPER on its own opens
+the app launcher; tapping it again closes it.
+
+```text
+bindr = $mainMod, Super_L, exec, pkill -x rofi || rofi -show drun
+```
+
+- `bindr` is a **release** bind: it fires when the key is released, not when it's pressed — that's
+  what lets SUPER still work as a modifier for every other bind.
+- SUPER+`<key>` combos should not open the launcher: the release only counts when SUPER was the
+  last key pressed. Check it by pressing `SUPER+T` — only kitty should open.
+- `pkill -x rofi ||` turns it into a toggle. `Escape` also closes Rofi.
+- `SUPER+R` keeps working as before.
+
+Expected state:
+
+- `SUPER+6` … `SUPER+0` switch to workspaces 6–10; `SUPER+SHIFT+<n>` moves the window there.
+- Tapping `SUPER` opens Rofi; tapping it again closes it.
+- `SUPER+T`, `SUPER+E`, etc. do their own action without also opening Rofi.
+
+---
+
+# Phase 15 — Arch Neutral theme (replaces Tokyo Night)
+
+After living with Tokyo Night, its blue + purple mix felt too saturated. The new direction is the
+Arch logo itself: neutral greys and black, with **one accent — the Arch blue `#1793D1`**. Purple is
+gone from the palette entirely.
+
+| Role | Hex | Used for |
+|------|-----|----------|
+| Background | `#141414` | Waybar pills, Rofi, dunst, kitty, btop, hyprlock field |
+| Surface | `#1f1f1f` | Rofi input bar and buttons, visible (unfocused) workspace |
+| Highlight | `#2b2b2b` | Selected row, focused workspace, hover |
+| Border | `#333333` | Inactive window border, kitty splits |
+| Foreground | `#e0e0e0` | Main text |
+| Dimmed | `#a8a8a8` | Secondary text (window title, lock-screen placeholder) |
+| Muted | `#6e6e6e` | Inactive workspaces, placeholders, low-urgency notifications |
+| Accent — Arch blue | `#1793d1` | Active window border, Arch logo, focused workspace, selection, frames |
+| Accent — light blue | `#5db3df` | Hover, border gradient end, music widget, search-match highlight |
+| Warning | `#e0a84e` | Low battery, idle inhibitor on |
+| Critical | `#e05f65` | Critical battery, network down, critical notifications |
+
+The greys are pure neutrals (no blue tint), close to VS Code's Dark Modern, so the editor and the
+desktop read as one theme.
+
+## Where the colors live
+
+There's no shared variable file — Hyprland, GTK CSS (Waybar), rasi (Rofi), INI (dunst), kitty and
+btop each have their own syntax, so every file holds its own copy of the hex values and **the table
+above is the source of truth**. Changing a color means replacing it everywhere:
+
+```bash
+grep -rn "#1793d1" ~/hyprland-from-scratch/dotfiles/
+```
+
+| File | What changed |
+|------|--------------|
+| `hypr/hyprland.conf` | Active border gradient `#1793d1 → #5db3df`, inactive border, `misc:background_color` |
+| `hypr/hyprlock.conf` | Input field ring/fill/text, clock color, background wallpaper |
+| `waybar/style.css` | Pills, workspaces, status colors, tooltips (the music widget moved from green to light blue) |
+| `rofi/config.rasi` | Window, input bar, selected row, match highlight, mode buttons |
+| `dunst/dunstrc` | Frame and backgrounds per urgency level |
+| `kitty/kitty.conf` | Full 16-color ANSI palette: `blue` is the Arch blue, magenta became a muted rose |
+| `btop/themes/arch.theme` | New theme (`color_theme = "arch"` in `btop.conf`); gradients go blue (calm) → amber/red (busy) |
+| `fastfetch/config.jsonc` | Logo forced to `blue` (= Arch blue through kitty's ANSI palette), title in `cyan` |
+
+`btop/themes/tokyonight.theme` is still in the repo and selectable from btop's options menu.
+
+## Wallpaper
+
+*(Since Phase 17 the wallpaper is picked with `SUPER+W` and remembered; `3.jpeg` is the fallback.)*
+The default wallpaper moved from `1.jpg` to **`3.jpeg`** (astronaut: black and grey with a blue
+glow — the same palette) in both `hyprland.conf` (`exec-once = awww img ...`) and `hyprlock.conf`.
+`1.jpg` and `2.png` stay in `assets/wallpapers/`; switching back is a one-line change in each file.
+
+Apply everything without logging out:
+
+```bash
+hyprctl reload                                    # borders, background color
+systemctl --user restart waybar                   # bar (Phase 22+)
+killall dunst && hyprctl dispatch exec dunst      # notifications
+awww img ~/hyprland-from-scratch/assets/wallpapers/3.jpeg --transition-type grow
+kill -SIGUSR1 $(pidof kitty)                      # reload already-open kitty windows
+```
+
+Rofi, btop, fastfetch and hyprlock read their config on every launch.
+
+Expected state:
+
+- No purple anywhere: borders, bar, launcher and notifications use greys + Arch blue.
+- The Arch logo in Waybar and in `fastfetch` is the same blue as the active window border.
+- The lock screen (`SUPER+L`) shows the astronaut wallpaper with a blue input ring.
+
+---
+
+# Phase 16 — Controls: Bluetooth pairing, network, audio, brightness
+
+The status icons in Waybar showed the right values, but most clicks did nothing useful:
+
+- **Bluetooth** — the menu only listed devices that were *already* paired, plus a power toggle.
+  There was no way to scan for and pair a new device, so a Bluetooth mouse couldn't be added at all.
+- **Brightness** — only reacted to scrolling (no click action), and only the laptop panel has a
+  backlight, so working on the external monitor it looked like it did nothing.
+- **Volume** — left-click silently toggled mute: easy to trigger without noticing.
+- **Network** — the Wi-Fi list repeated a network once per access point/band, and there was no
+  adapter status or Wi-Fi on/off.
+- All menus reused the launcher theme ("Search apps…" plus the Apps/Run/Files buttons), so they
+  looked like the app launcher.
+
+`brightnessctl` and `wpctl` themselves worked from the session (checked by writing the current
+value back): the controls were missing, not broken.
+
+## Click map
+
+| Module | Click | Right-click | Scroll |
+|--------|-------|-------------|--------|
+| Brightness | Presets menu (laptop panel) — *replaced by a hover slider in Phase 21* | — | ±5% |
+| Network | Network menu | — | — |
+| Volume | Audio menu | Mute | ±5% |
+| Bluetooth | Bluetooth menu | — | — |
+
+Every module's tooltip repeats its click map.
+
+## Pairing a Bluetooth device (mouse, headset, speaker)
+
+1. Put the device in pairing mode — usually by holding its pairing/connect button until the LED
+   blinks fast.
+2. Click the Bluetooth icon → **Scan for new devices**. A notification marks the start of a
+   10-second search.
+3. Pick the device from the list. The script pairs it, **trusts** it (so it reconnects on its own
+   after sleep, reboot or power cycling) and connects it.
+4. The icon turns blue while something is connected; its tooltip lists the device.
+
+How `scripts/rofi-bluetooth.sh` does it:
+
+- Discovery stays on while the result list is open. bluez forgets unpaired devices ~30 s after
+  discovery stops, so a device picked after that would already be gone. It's turned off right
+  before pairing, which is more reliable without discovery running.
+- Nameless advertisers (beacons, nearby phones) are hidden; two devices with the same name get
+  the end of their MAC address appended.
+- **Pairing needs a Bluetooth agent.** The first version ran `bluetoothctl --agent NoInputNoOutput
+  pair <MAC>` as a one-shot command and every attempt failed. `journalctl -u bluetooth` showed why:
+
+  ```text
+  src/device.c:new_auth() No agent available for request type 2
+  device_confirm_passkey: Operation not permitted
+  ```
+
+  bluez refuses to pair while no agent is registered — even for a mouse that asks nothing — and
+  bluetoothctl silently skips registering its agent in one-shot mode (`--agent` is ignored there).
+  The pairing now runs inside an *interactive* bluetoothctl fed through a bash `coproc`, which does
+  register the agent (the adapter also switches to `Pairable: yes`). With a `NoInputNoOutput`
+  agent the pairing is "Just Works" and bluez accepts it on its own because we started it.
+  Verified with a Logitech M196: paired, bonded, trusted, connected, and listed by
+  `hyprctl devices` as `logi-m196-mouse`.
+- That agent is right for mice, headsets, speakers and controllers. A keyboard that asks you to
+  type a PIN needs a manual session instead:
+
+  ```bash
+  bluetoothctl
+  # inside: scan on → pair <MAC> (type the PIN on the keyboard) → trust <MAC> → connect <MAC>
+  ```
+
+- Also in the menu: connect/disconnect paired devices, **Forget a device…**, Bluetooth on/off
+  (clears a soft `rfkill` block if needed).
+
+The icon's state comes from `scripts/waybar-bluetooth.sh` (polled every 5 s): CSS classes `off`
+(muted), `on` with nothing connected (dimmed) and `connected` (Arch blue).
+
+## Network menu
+
+`scripts/rofi-wifi.sh` became `scripts/rofi-network.sh`:
+
+- One status row per adapter, e.g. `Wired (enp3s0): connected - Wired connection 1`. Selecting an
+  adapter opens **nmtui** in a floating kitty — NetworkManager's own text UI for everything else
+  (static IPs, editing/forgetting saved networks, VPN, hotspot).
+- Wi-Fi networks: one row per name with its strongest signal, a lock icon when it needs a
+  password, sorted by signal. Selecting the connected one disconnects it.
+- A failed password attempt deletes the half-saved profile, so the next try asks again instead of
+  silently reusing the wrong password.
+- **Rescan Wi-Fi**, **Turn Wi-Fi on/off**, **Advanced settings (nmtui)**.
+
+## Audio menu
+
+Output devices (names shortened: `GA106 High Definition Audio Controller HDMI / DisplayPort 1
+Output [27G2G4] (Stereo)` → `GA106 HDMI / DisplayPort 1 Output [27G2G4]`), **Mute/Unmute
+output**, **Mute/Unmute microphone** (handy during calls), and a **Mixer** entry that appears once
+`pavucontrol` is installed (per-app volumes, input devices):
+
+```bash
+sudo pacman -S pavucontrol   # optional
+```
+
+## Brightness
+
+`scripts/rofi-brightness.sh` offered 100/75/50/25/10% for the laptop panel; scrolling keeps
+stepping by 5%. *(Phase 21 replaced this menu with a slider like the volume one, and removed the
+script.)* External monitors have no kernel backlight — their brightness goes over DDC/CI
+with `ddcutil`, which isn't set up yet (see Next Phases).
+
+## A theme for menus
+
+The menus use `dotfiles/rofi/menu.rasi`, which imports `config.rasi` (same look as the launcher)
+and changes only what a menu needs: the prompt is shown (Network, Bluetooth, Audio, …), no
+mode-switcher row, a generic "Filter..." placeholder, and the list shrinks to its entries.
+
+## Notes on the scripts
+
+- Icons are written as `$'\uf293'`-style escapes that bash expands at runtime, so the scripts are
+  plain ASCII and immune to the glyph-stripping problem from Phase 11. Check with
+  `grep -n "^I_" scripts/*.sh`.
+- To see what a menu would show without opening Rofi, put a fake `rofi` first in `PATH`:
+
+  ```bash
+  mkdir -p /tmp/rofi-stub && printf '#!/bin/sh\ncat\nexit 1\n' > /tmp/rofi-stub/rofi
+  chmod +x /tmp/rofi-stub/rofi
+  PATH=/tmp/rofi-stub:$PATH ~/hyprland-from-scratch/scripts/rofi-network.sh
+  ```
+
+  The entries print to the terminal and `exit 1` behaves like pressing Escape, so nothing runs.
+
+Restart the bar:
+
+```bash
+systemctl --user restart waybar   # Phase 22+; don't use SIGUSR2 reloads (see Phase 22)
+```
+
+Expected state:
+
+- Clicking the Bluetooth icon → **Scan for new devices** finds a device in pairing mode; after
+  picking it, the icon turns blue and the device works.
+- After a reboot, a paired mouse reconnects by itself once it's switched on.
+- If pairing fails, `journalctl -u bluetooth -n 20` shows bluez's reason.
+- Clicking network/volume opens their menus; right-click on volume mutes. (Brightness: Phase 21.)
+- The menus show their own prompt and no Apps/Run/Files buttons.
+
+---
+
+# Phase 17 — Popup animations, click-outside to close, wallpaper picker
+
+## Animations for popups
+
+Rofi menus and notifications are layer-shell surfaces, and the `layers*` animations were never
+configured: they appeared and vanished instantly. Now:
+
+```text
+bezier = smoothIn, 0.32, 0, 0.67, 0          # gentle start, fast end: things leaving
+animation = layersIn, 1, 3, smoothOut, fade  # 300 ms in
+animation = layersOut, 1, 2, smoothIn, fade  # 200 ms out
+animation = fadeLayersIn, 1, 3, smoothOut
+animation = fadeLayersOut, 1, 2, smoothIn
+layerrule = animation popin 90%, match:namespace rofi              # menus grow in / shrink out
+layerrule = animation slide right, match:namespace notifications   # dunst slides in from the edge
+```
+
+The default layer style is a plain fade on purpose: `popin` for every layer would also zoom the
+bar and the wallpaper at login. Opening is a bit slower than closing (300 vs 200 ms) with mirrored
+curves — popups arrive softly and get out of the way fast. `hyprctl animations -j` lists every
+animation with its current values.
+
+## Click outside a menu to close it
+
+Rofi has `click-to-exit` (on by default), but it can't work on Wayland: Rofi's layer surface only
+covers the menu itself (`hyprctl layers` shows it at e.g. 576x492), so clicks anywhere else never
+reach it. The compositor sees every click, though:
+
+```text
+bindn = , mouse:272, exec, $scripts/rofi-click-outside.sh
+```
+
+- `bindn` = **non-consuming**: the click still reaches the window under the cursor.
+- `scripts/rofi-click-outside.sh` exits immediately when no Rofi is running (the usual case).
+  Otherwise it compares `hyprctl cursorpos` with the Rofi layer's geometry from `hyprctl layers`
+  and closes the menu if the click landed outside it.
+- Clicks on Waybar are left alone: the bar icons handle menus themselves through
+  `scripts/rofi-common.sh` — clicking the icon of the open menu closes it, clicking another icon
+  switches menus (only one Rofi can run at a time, so the open one is closed first).
+
+## Changing the wallpaper
+
+It couldn't be changed: awww is command-line only, and Thunar's built-in "Set as wallpaper" needs
+xfdesktop (XFCE's desktop), which isn't installed. `scripts/wallpaper.sh` adds the missing pieces:
+
+| How | What |
+|-----|------|
+| `SUPER+W`, or right-click the Arch logo | Picker: a grid of thumbnails, the current one marked |
+| Thunar → right-click an image → **Set as wallpaper** | Applies that image (custom action in `dotfiles/Thunar/uca.xml`) |
+| `wallpaper.sh set FILE` | Same, from a terminal |
+| `exec-once = $scripts/wallpaper.sh restore` | Re-applies the last choice at login |
+
+- The picker lists `assets/wallpapers/` (versioned with the repo) and `~/Pictures/wallpapers/`
+  (personal images that stay out of git). Thumbnails are cached in
+  `~/.cache/hyprland-from-scratch/wallpaper-thumbs/` (needs `imagemagick`).
+- The choice is a symlink, `~/.local/state/hyprland-from-scratch/wallpaper`. `hyprlock.conf`
+  uses that same path as its background, so the lock screen always matches the desktop. On a fresh
+  install the symlink doesn't exist yet and `3.jpeg` is used.
+- Changes animate with awww's `grow` transition; the login restore uses a `fade`.
+
+Thunar's config folder became a dotfile for this (`dotfiles/Thunar/`, linked by
+`scripts/link-dotfiles.sh`; the previous folder was kept as `~/.config/Thunar.bak-<date>`). Its
+"Open Terminal Here" action now opens kitty directly instead of going through `exo-open`.
+
+Expected state:
+
+- Rofi menus grow in and shrink out; notifications slide in from the right.
+- With a menu open, clicking anywhere outside it closes it — and the click still works on whatever
+  was under the cursor.
+- Clicking the same Waybar icon again closes its menu; clicking another icon switches menus.
+- `SUPER+W` shows the wallpaper thumbnails; picking one changes the desktop with an animation,
+  it survives a reboot, and `SUPER+L` shows it on the lock screen.
+- In Thunar, right-clicking an image shows **Set as wallpaper**.
+
+---
+
+# Phase 18 — Hover to select in menus
+
+In every Rofi menu (launcher, network, Bluetooth, audio, brightness, wallpaper) the highlighted
+row stayed put while the mouse moved over the list: it only moved on click or scroll, and running
+an entry took a double-click. Those are Rofi's defaults:
+
+```text
+hover-select: false;                 # highlight ignores the pointer
+me-select-entry: "MousePrimary";     # click = select
+me-accept-entry: "MouseDPrimary";    # double-click = run
+```
+
+Changed in the `configuration` block of `dotfiles/rofi/config.rasi` — the combination Rofi's own
+help recommends for hover selection:
+
+```text
+hover-select: true;                  # the highlight follows the pointer
+me-select-entry: "";                 # selecting by click is no longer needed
+me-accept-entry: "MousePrimary";     # one click runs the highlighted row
+```
+
+Rofi reads `config.rasi` on every launch (the menus get it through `menu.rasi`'s `@import`), so it
+applies everywhere without reloading anything. Check the effective values with:
+
+```bash
+rofi -dump-config | grep -E "hover-select|me-select-entry|me-accept-entry"
+```
+
+The keyboard works as before: arrows/typing move the highlight, `Enter` runs it, `Escape` closes.
+
+Expected state:
+
+- Moving the mouse over any menu moves the highlight row by row.
+- A single click runs the entry under the cursor (launches the app, picks the network, sets the
+  brightness, applies the wallpaper).
+
+---
+
+# Phase 19 — Calendar, battery details, power profiles, screen recording
+
+## Calendar on the clock
+
+The clock had only a one-line date tooltip. Waybar's clock module can render a month calendar in
+the tooltip, styled with Pango markup in the same palette (today = Arch-blue block):
+
+```text
+"tooltip-format": "<b>{:%A, %d %B %Y}</b>\n\n<tt>{calendar}</tt>",
+"calendar": { "mode": "month", "mode-mon-col": 3, "format": { "today": "<span background='#1793d1' ...>{}</span>", ... } },
+"actions":  { "on-click": "shift_reset", "on-click-right": "mode",
+              "on-scroll-up": "shift_up", "on-scroll-down": "shift_down" }
+```
+
+Hover shows the current month; scroll moves between months; right-click switches to a full-year
+view (3 months per row); left-click jumps back to today.
+
+## Battery details and power profiles
+
+- The battery tooltip now shows time to full/empty, current power draw and **health** — `upower`
+  reports this battery holds ~57% of its design capacity, which explains shorter runtimes.
+- A **power profile** icon sits next to the battery: leaf = power-saver, scale = balanced,
+  bolt = performance (amber when active). Left-click goes to the next profile, right-click to the
+  previous one. It's Waybar's native `power-profiles-daemon` module, which talks to the daemon over
+  D-Bus. On this laptop the profiles drive `amd_pstate` and the firmware's `platform_profile`:
+  performance for games, power-saver on battery.
+
+> `powerprofilesctl` (the daemon's CLI) is broken here: it's a Python script that needs
+> `python-gobject`, which isn't installed. Nothing in this setup uses it. To read or switch the
+> profile from a terminal without it:
+>
+> ```bash
+> busctl --system get-property org.freedesktop.UPower.PowerProfiles /org/freedesktop/UPower/PowerProfiles org.freedesktop.UPower.PowerProfiles ActiveProfile
+> busctl --system set-property org.freedesktop.UPower.PowerProfiles /org/freedesktop/UPower/PowerProfiles org.freedesktop.UPower.PowerProfiles ActiveProfile s performance
+> ```
+
+## Screen recording
+
+```bash
+sudo pacman -S wf-recorder
+```
+
+`wf-recorder` records through the compositor's screencopy protocol, which Hyprland provides.
+`scripts/screen-record.sh` wraps it:
+
+- `SUPER+SHIFT+R` opens a menu: **Record screen** (the focused monitor), **Record region** (drag a
+  box with `slurp`), each with or without **desktop audio** (the "monitor" of the default output,
+  so it captures what you hear, not the microphone).
+- While recording, a red **REC mm:ss** pill appears at the right of the bar
+  (`scripts/waybar-recording.sh`, refreshed every second and instantly through Waybar signal 9).
+  Click it, or press `SUPER+SHIFT+R` again, to stop: wf-recorder gets `SIGINT` so it finishes
+  the MP4 properly, and a notification shows where it was saved.
+- Files go to `~/Videos/recordings/<date>_<time>.mp4`, encoded with x264 `preset=veryfast`,
+  `crf=23` on the CPU: plenty for 1080p on this Ryzen, and it avoids choosing between the AMD and
+  NVIDIA GPUs for hardware encoding.
+
+Expected state:
+
+- Hovering the clock shows a calendar with today highlighted; scrolling changes the month.
+- Hovering the battery shows time left, power draw and health; the icon next to it switches
+  power profiles.
+- `SUPER+SHIFT+R` → **Record screen** shows the red REC pill; stopping it leaves a playable MP4
+  in `~/Videos/recordings/`.
+
+---
+
+# Phase 20 — Volume control: slider in the bar, stepper in the audio menu
+
+The audio menu could switch the output device but not change the volume (only scrolling on the
+icon and the media keys could). Two additions:
+
+## Slider on hover
+
+Hovering the volume icon slides out a volume slider: Waybar's native `pulseaudio/slider` module
+(through `pipewire-pulse`) inside a **drawer** group, whose first module stays visible and whose
+other modules are revealed while the pointer is over it:
+
+```text
+"group/volume": {
+    "orientation": "horizontal",
+    "drawer": { "transition-duration": 300, "children-class": "volume-drawer", "transition-left-to-right": true },
+    "modules": ["wireplumber", "pulseaudio/slider"]
+},
+"pulseaudio/slider": { "min": 0, "max": 100, "orientation": "horizontal" }
+```
+
+`group/volume` takes the volume icon's place inside the status pill (groups nest). The slider is a
+GTK scale styled in `style.css`: `trough` = the track (`#2b2b2b`), `highlight` = the filled part
+(Arch blue), and the knob (`slider`) hidden — click or drag anywhere on the track.
+
+## Volume in the audio menu
+
+The audio menu now starts with **Volume: N%**, which opens `scripts/rofi-volume.sh`: **Louder
+(+5%)**, **Quieter (−5%)** and presets 100/75/50/25/10/0%. It runs in Rofi's **script mode**
+instead of dmenu mode, the difference that makes a stepper usable:
+
+- dmenu mode (all the other menus): Rofi prints the choice and exits; the script acts afterwards.
+- Script mode (`rofi -show volume -modi "volume:<script>"`): Rofi stays open and runs the script
+  again after every pick (`ROFI_RETV=1`, the row's hidden value in `ROFI_INFO`), redrawing with
+  whatever it prints. Louder/Quieter can be clicked repeatedly, the prompt shows the level live
+  (`\0prompt\x1f...`), and `\0keep-selection\x1ftrue` keeps the highlight on the same row. A preset
+  prints nothing, and an empty list makes Rofi close.
+
+`rofi_toggle` in `scripts/rofi-common.sh` now takes several patterns, so clicking the volume icon
+while either the audio menu or the volume control is open closes it.
+
+Expected state:
+
+- Hovering the volume icon reveals a slider; dragging it changes the volume, and the percentage
+  next to the icon follows.
+- Audio menu → **Volume: N%** → clicking **Louder** several times raises the volume 5% per click
+  without the menu closing; a preset sets it and closes the menu.
+
+---
+
+# Phase 21 — Brightness slider
+
+The volume slider from Phase 20 worked well enough to replace the brightness presets menu: hovering
+the brightness icon now slides out Waybar's native `backlight/slider`, in the same kind of drawer
+group (`group/brightness`, in place of `backlight` inside the status pill).
+
+```text
+"group/brightness": {
+    "orientation": "horizontal",
+    "drawer": { "transition-duration": 300, "children-class": "brightness-drawer", "transition-left-to-right": true },
+    "modules": ["backlight", "backlight/slider"]
+},
+"backlight/slider": { "min": 5, "max": 100, "orientation": "horizontal" }
+```
+
+- **Gold fill** (`#e0a84e`, the palette's amber) instead of the volume slider's blue, so the two
+  read differently at a glance. Track and hidden knob share the volume slider's CSS rules.
+- **`min: 5`, not 0**: on some laptop panels a backlight of 0 switches the screen off completely,
+  which is easy to do by accident with a slider.
+- Scrolling on the icon and the brightness keys still step by 5%. The click no longer opens a menu,
+  and `scripts/rofi-brightness.sh` was removed.
+- As before, this is the laptop panel only; the external monitor needs DDC/CI (Next Phases).
+
+Expected state:
+
+- Hovering the brightness icon reveals a gold slider; dragging it changes the laptop panel's
+  brightness and the percentage next to the icon follows.
+- It never goes below 5%.
+
+---
+
+# Phase 22 — Waybar as a service, recording button
+
+## The bar disappeared: a crash, and why
+
+Waybar vanished a few minutes after Phase 21. `coredumpctl list waybar` showed a segfault, and
+`coredumpctl info <PID>` the backtrace:
+
+```text
+#0  Glib::DispatchNotifier::send_notification   (libglibmm)
+...
+#6  ...                                         (libplayerctl.so.2)
+```
+
+Not the new brightness slider: the crash came from **libplayerctl**, behind the music (`mpris`)
+module, delivering a player event (a browser tab starting or stopping media) to a callback whose
+object no longer existed. The likely trigger: the many `killall -SIGUSR2 waybar` reloads during
+Phases 13–21. A SIGUSR2 reload rebuilds every module inside the *same* process, but the old mpris
+module's playerctl subscriptions survive it; the next player event calls into freed memory. The
+original Waybar process (from login) had been reloaded about seven times.
+
+Two changes:
+
+1. **Restart, never reload.** `systemctl --user restart waybar` starts a fresh process. Every
+   `SIGUSR2` instruction in this guide was replaced. (Waybar's own unit maps `systemctl reload`
+   to SIGUSR2, so don't use `reload` either.)
+2. **Run Waybar as a systemd user service** instead of `exec-once`, so a crash no longer means
+   losing the bar until the next login. Waybar ships the unit, and the uwsm session (Phase 9)
+   provides the `graphical-session.target` it hooks into:
+
+   ```bash
+   systemctl --user enable --now waybar.service
+   ```
+
+   `/usr/lib/systemd/user/waybar.service` has `Restart=on-failure` and is `PartOf` the graphical
+   session, so it starts and stops with Hyprland. `exec-once = waybar` was removed from
+   `hyprland.conf` — keeping both would start two bars. uwsm exports `WAYLAND_DISPLAY` and
+   `HYPRLAND_INSTANCE_SIGNATURE` into the systemd user environment
+   (`systemctl --user show-environment`), so the Hyprland modules and the `hyprctl` calls in the
+   scripts work from the service too. Verified by killing it on purpose
+   (`systemctl --user kill -s KILL waybar.service`): a new process was up within a second
+   (`systemctl --user show waybar.service -p NRestarts` → `NRestarts=1`).
+
+## Recording button
+
+The screen-recording module used to exist only while recording. It's now always visible: a camera
+button left of the status pill. Clicking it opens the recording menu; while recording, it turns
+into the red **REC mm:ss** pill, and clicking it stops and saves. (`scripts/screen-record.sh`
+already toggled: menu when idle, stop when recording — the button just calls it.)
+
+## Testing screen recording
+
+```bash
+sudo pacman -S wf-recorder
+```
+
+1. Click the camera button (or press `SUPER+SHIFT+R`) → **Record screen**. For **Record region**,
+   drag a box; `Escape` cancels.
+2. The button turns into the red REC pill and counts up.
+3. Click the pill (or `SUPER+SHIFT+R`): a notification shows where the file was saved.
+4. Check the file:
+
+   ```bash
+   ls -lh ~/Videos/recordings/
+   ffprobe -hide_banner ~/Videos/recordings/<file>.mp4   # ffprobe comes with ffmpeg, a wf-recorder dependency
+   brave ~/Videos/recordings/<file>.mp4                  # play it
+   ```
+
+Without `wf-recorder`, the button still opens the menu, and picking an option shows a notification
+with the install command.
+
+Expected state:
+
+- `systemctl --user status waybar` is active; after a crash the bar comes back by itself.
+- A camera button sits left of the status pill; a test recording plays back.
+
+---
+
+# Phase 23 — Screenshots to the clipboard, system info, calendar clicks
+
+## Screenshots: saved and copied
+
+Every screenshot is now saved **and** copied to the clipboard, ready to paste with `Ctrl+V`.
+`scripts/screenshot.sh` replaces the three inline `grim` binds:
+
+| Bind | Captures |
+|------|----------|
+| `SUPER+S` | The focused monitor (before: both monitors as one 3840-wide image) |
+| `SUPER+SHIFT+S` | A region dragged with `slurp` (`Escape` cancels) |
+| `SUPER+CTRL+S` | The focused window (before: region to clipboard only, now redundant) |
+
+- Files go to `~/Pictures/screenshots/<date>_<time>.png`.
+- `wl-copy --type image/png < file` puts the PNG on the Wayland clipboard. `wl-copy` forks into
+  the background and keeps serving it until something else is copied, so pasting works after
+  the script has exited.
+- The notification shows a thumbnail of the capture (`notify-send -i <file>`). `dunstrc` now caps
+  icons with `max_icon_size = 96` — without a cap, an image icon could show at full size.
+- The focused window's geometry comes from `hyprctl activewindow -j` (`at` + `size`), the focused
+  monitor from `hyprctl monitors -j`.
+
+## System info from the Arch logo
+
+Clicking the Arch logo opens **fastfetch** (Phase 11) in a floating kitty window
+(`scripts/sysinfo.sh`); clicking the logo again, or pressing any key in the window, closes it.
+Its size and position come from window rules — the 0.53+ syntax from Phase 13, which works for
+kitty since `remember_window_size no`:
+
+```text
+windowrule = float on, match:class sysinfo
+windowrule = size 820 460, match:class sysinfo
+windowrule = center on, match:class sysinfo
+```
+
+The launcher moved off the logo's click: tapping `SUPER` (Phase 14) or `SUPER+R` opens it. The
+logo's right-click still opens the wallpaper picker.
+
+## Calendar clicks
+
+The calendar from Phase 19 works (checked with a capture while hovering the clock), but it only
+shows on hover, and the left click — "back to today" — did nothing visible while already on the
+current month, so the clock looked dead when clicked. The click now switches between the month and
+year views; right-click goes back to today:
+
+```text
+"actions": { "on-click": "mode", "on-click-right": "shift_reset",
+             "on-scroll-up": "shift_up", "on-scroll-down": "shift_down" }
+```
+
+## Small fixes
+
+- `"height": 36` in Waybar's config: the sliders made the modules 36 px tall, and Waybar warned
+  at every start that the requested 34 was too small.
+
+Expected state:
+
+- After `SUPER+SHIFT+S` and a drag, `Ctrl+V` in a chat pastes the image; the file is also in
+  `~/Pictures/screenshots/` and the notification shows a small thumbnail.
+- Clicking the Arch logo shows fastfetch in a centered floating window; clicking it again closes it.
+- Hovering the clock shows the calendar; clicking switches to the year view.
+
+---
+
+# Appendix — NVIDIA Hybrid GPU (historical note)
 
 An earlier version of this guide documented a workaround built around
 `NVreg_PreserveVideoMemoryAllocations=1` + `NVreg_TemporaryFilePath=/var/tmp` +
@@ -1379,13 +2312,13 @@ stayed out of the way.
 That setup never held up under real use on this hardware. Two root causes:
 
 - `AQ_DRM_DEVICES` was being set in `~/.config/uwsm/env` (or in `hyprland.conf`
-  directly) instead of `~/.config/uwsm/env-hyprland`, so it never reached the
-  Hyprland process environment under uwsm — `printenv | grep AQ_DRM` came back
-  empty inside the session even though the file on disk looked right.
+    directly) instead of `~/.config/uwsm/env-hyprland`, so it never reached the
+    Hyprland process environment under uwsm — `printenv | grep AQ_DRM` came back
+    empty inside the session even though the file on disk looked right.
 - `NVreg_EnableGpuFirmware=0` is actively wrong for `nvidia-open-dkms` 615+,
-  which requires GSP firmware enabled to assign CRTCs to the dGPU. With it
-  disabled, the driver loaded but could not light up any NVIDIA-attached
-  output — exactly the HDMI/DisplayPort externals on this laptop.
+    which requires GSP firmware enabled to assign CRTCs to the dGPU. With it
+    disabled, the driver loaded but could not light up any NVIDIA-attached
+    output — exactly the HDMI/DisplayPort externals on this laptop.
 
 The replacement is Phase 12 above, which uses the current Hyprland + uwsm
 recommended path: stable `/dev/dri` symlinks via udev, `AQ_DRM_DEVICES` in
@@ -1397,15 +2330,84 @@ process environment, both monitors active, NVIDIA idle at the desktop,
 
 ---
 
-# Next Phases
+# Keybind Reference
 
-[#next-phases](#next-phases)
+Everything bound in `hyprland.conf` (`SUPER` = the Windows key) plus the Waybar clicks.
+
+| Keys | Action |
+|------|--------|
+| `SUPER` (tap) | App launcher (Rofi); tap again to close |
+| `SUPER+R` | App launcher |
+| `SUPER+W` | Wallpaper picker |
+| Click outside an open menu | Closes it |
+| Mouse over a menu row / click | Highlights it / runs it |
+| `SUPER+T` | Terminal (kitty) |
+| `SUPER+E` | File manager (Thunar) |
+| `SUPER+Q` | Close the focused window |
+| `SUPER+V` | Toggle floating |
+| `SUPER+←/→/↑/↓` | Move focus |
+| `SUPER+1…9`, `SUPER+0` | Go to workspace 1–10 |
+| `SUPER+SHIFT+1…9`, `SUPER+SHIFT+0` | Move the focused window to workspace 1–10 |
+| `SUPER+L` | Lock screen (hyprlock) |
+| `SUPER+Escape` | System monitor (btop, floating) |
+| `SUPER+S` | Screenshot of the focused monitor → saved + copied to the clipboard |
+| `SUPER+SHIFT+S` | Screenshot of a selected region → saved + copied |
+| `SUPER+CTRL+S` | Screenshot of the focused window → saved + copied |
+| `SUPER+SHIFT+R` | Screen recording: menu; again = stop and save (same as the camera button) |
+| `SUPER+M` | Exit Hyprland (back to SDDM) |
+| Brightness / volume / mute keys | Brightness ±5%, volume ±5%, mute |
+
+| Waybar | Click |
+|--------|-------|
+| Arch logo | Left: system info (again: close) · Right: wallpaper picker |
+| Network | Network menu: adapters, Wi-Fi, nmtui (`scripts/rofi-network.sh`) |
+| Bluetooth | Bluetooth menu: connect, scan & pair, forget, power (`scripts/rofi-bluetooth.sh`) |
+| Volume | Hover: volume slider · Left: audio menu (`scripts/rofi-audio.sh`) · Right: mute · Scroll: ±5% |
+| Brightness | Hover: gold slider · Scroll: ±5% (laptop panel only) |
+| Workspace number | Switch to it |
+| Clock | Hover: calendar · Click: month/year view · Scroll: month · Right: back to today |
+| Battery | Hover: time left, power draw, health |
+| Power profile (next to battery) | Left: next profile · Right: previous |
+| Camera button (left of the status pill) | Recording menu; while recording it's a red REC pill: stop and save |
+
+Clicking the icon of an open menu closes it; clicking another icon switches to that menu.
+
+---
+
+# Keeping the Repo Restorable
+
+Path B only works if the repo matches the machine. Whenever something changes:
+
+- **New package** → add it to the right list in `packages/` (`base.txt` if any dotfile or script
+  depends on it, `apps.txt` for personal apps, `aur.txt` for AUR, `nvidia-hybrid.txt` for Phase 12).
+- **New app config** → create `dotfiles/<app>/`, then run `scripts/link-dotfiles.sh` (it moves
+  the existing `~/.config/<app>` to a backup and links the repo copy).
+- **New file outside `~/.config`** (`/etc/...`) → keep a copy under `system/<topic>/` and document
+  the `sudo cp` step in its phase.
+- **New service** → add its `systemctl enable` to step 4 of the restore section.
+
+Quick drift check — explicitly installed packages that aren't in any list:
+
+```bash
+comm -23 <(pacman -Qqe | sort) <(grep -hv '^#' ~/hyprland-from-scratch/packages/*.txt | grep . | sort)
+```
+
+(Expect a few archinstall base packages in the output — `base`, `linux`, `linux-firmware`, `sudo`, ...)
+
+---
+
+# Next Phases
 
 The remaining phases will be developed incrementally.
 
+- Gaming — Steam is installed (`packages/apps.txt`); still to document: `prime-run %command%`
+  launch options per game (Phase 12), `gamemode`, and `mangohud` for an FPS/temperature overlay.
+- External monitor brightness — the AOC has no kernel backlight; it needs DDC/CI through
+  `ddcutil` (plus the `i2c-dev` module). Its HDMI port is driven by the NVIDIA dGPU (Phase 12), so
+  this needs testing before it goes in the guide.
 - Utility Scripts
 - Boot menu (Visor, github.com/IO-ZetZor/Visor-BootManager) — deliberately deferred, not part
-of the Phase 11 desktop pass. Unlike everything above, this replaces the bootloader itself
-(compiles from source, writes to the EFI System Partition) — real risk of an unbootable
-machine if misconfigured. Do this as its own phase, with a rescue USB on hand, only when
-explicitly asked.
+  of the Phase 11 desktop pass. Unlike everything above, this replaces the bootloader itself
+  (compiles from source, writes to the EFI System Partition) — real risk of an unbootable
+  machine if misconfigured. Do this as its own phase, with a rescue USB on hand, only when
+  explicitly asked.

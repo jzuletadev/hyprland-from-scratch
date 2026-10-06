@@ -1,16 +1,28 @@
 // ~/hyprland-from-scratch/dotfiles/rofi/config.rasi
 //
-// Minimal Rofi config — Phase 4 baseline, themed in Phase 10 (Tokyo Night),
-// mode-switcher row added in Phase 11. Apps/run/files/windows, all built
-// into Rofi — no extra modi packages needed.
+// Minimal Rofi config — Phase 4 baseline, themed in Phase 10, re-themed in Phase 15 (Arch Neutral),
+// mode-switcher row added in Phase 11, hover-select in Phase 18. Apps/run/files/windows, all built
+// into Rofi — no extra modi packages needed. Phase 13: translucent window
+// (frosted by Hyprland's "layerrule = blur on, match:namespace rofi").
 
 configuration {
     modi: "drun,run,filebrowser,window";
     show-icons: true;
     icon-theme: "hicolor";
     display-drun: "Apps";
+    display-run: "Run";
+    display-filebrowser: "Files";
+    display-window: "Windows";
     drun-display-format: "{name}";
     font: "JetBrainsMono Nerd Font 11";
+
+    /* Phase 18: the highlighted row follows the mouse, and a single click runs
+       it. Rofi's defaults were click = select, double-click = run, so the
+       highlight only moved on click or scroll. Applies to the launcher and to
+       every scripts/rofi-*.sh menu (they import this file). */
+    hover-select: true;
+    me-select-entry: "";
+    me-accept-entry: "MousePrimary";
 }
 
 @theme "/dev/null"
@@ -18,9 +30,10 @@ configuration {
 window {
     width: 30%;
     border: 2px;
-    border-color: #7aa2f7;
+    border-color: #1793d1;
     border-radius: 10px;
-    background-color: #1a1b26;
+    /* same 0.85-ish alpha as the Waybar pills; Hyprland blurs what's behind */
+    background-color: #141414e0;
 }
 
 mainbox {
@@ -30,8 +43,8 @@ mainbox {
 }
 
 inputbar {
-    background-color: #24283b;
-    text-color: #c0caf5;
+    background-color: #1f1f1f;
+    text-color: #e0e0e0;
     padding: 10px 12px;
     border-radius: 6px;
     children: [ "entry" ];
@@ -39,9 +52,9 @@ inputbar {
 
 entry {
     background-color: transparent;
-    text-color: #c0caf5;
+    text-color: #e0e0e0;
     placeholder: "Search apps...";
-    placeholder-color: #565f89;
+    placeholder-color: #6e6e6e;
 }
 
 listview {
@@ -57,7 +70,7 @@ element {
     padding: 8px;
     spacing: 10px;
     border-radius: 6px;
-    text-color: #c0caf5;
+    text-color: #e0e0e0;
 }
 
 element-icon {
@@ -67,12 +80,15 @@ element-icon {
 
 element-text {
     background-color: transparent;
+    /* follow element's color, so the selected row's color reaches the text */
+    text-color: inherit;
+    highlight: bold #5db3df;
     vertical-align: 0.5;
 }
 
 element selected {
-    background-color: #292e42;
-    text-color: #ffffff;
+    background-color: #2b2b2b;
+    text-color: #1793d1;
 }
 
 mode-switcher {
@@ -85,14 +101,14 @@ button {
     border: 0px;
     border-color: transparent;
     padding: 8px;
-    background-color: #24283b;
-    text-color: #c0caf5;
+    background-color: #1f1f1f;
+    text-color: #e0e0e0;
     border-radius: 6px;
 }
 
 button selected {
     border: 0px;
-    background-color: #292e42;
-    text-color: #7aa2f7;
+    background-color: #2b2b2b;
+    text-color: #1793d1;
 }
 

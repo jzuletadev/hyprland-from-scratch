@@ -1,0 +1,36 @@
+// ~/hyprland-from-scratch/dotfiles/rofi/menu.rasi
+//
+// Phase 16. Theme for the dmenu-style control menus (network, Bluetooth,
+// audio, brightness in scripts/). Same look as the launcher (imports
+// config.rasi), minus the launcher-only parts: no mode-switcher row, a visible
+// prompt saying which menu is open, a generic placeholder, and a list that
+// shrinks to its entries instead of always reserving 8 rows.
+
+@import "config.rasi"
+
+window {
+    width: 26%;
+}
+
+mainbox {
+    children: [ "inputbar", "listview" ];
+}
+
+inputbar {
+    spacing: 10px;
+    children: [ "prompt", "entry" ];
+}
+
+prompt {
+    background-color: transparent;
+    text-color: #1793d1;
+}
+
+entry {
+    placeholder: "Filter...";
+}
+
+listview {
+    lines: 12;
+    fixed-height: false;
+}

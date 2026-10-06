@@ -1,0 +1,10 @@
+# Phase 12 — ONLY for hybrid AMD/Intel iGPU + NVIDIA (Turing or newer) laptops.
+# Skip this file entirely on any other hardware.
+# Install with:  grep -v '^#' packages/nvidia-hybrid.txt | sudo pacman -S --needed -
+linux-headers
+nvidia-open-dkms
+nvidia-utils
+nvidia-settings
+nvidia-prime
+libva-nvidia-driver
+mesa-utils

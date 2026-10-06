@@ -1,0 +1,56 @@
+# Core desktop: everything the files in dotfiles/ and scripts/ depend on.
+# Install with:  grep -v '^#' packages/base.txt | sudo pacman -S --needed -
+
+# Phase 1 — compositor, terminal, portals, fonts
+hyprland
+kitty
+xdg-desktop-portal
+xdg-desktop-portal-hyprland
+ttf-jetbrains-mono-nerd
+noto-fonts
+
+# Phase 3–8 — bar, launcher, notifications, brightness, wallpaper, lock, idle
+waybar
+rofi
+dunst
+libnotify
+brightnessctl
+awww
+hyprlock
+hypridle
+
+# Phase 9 — login + session manager
+sddm
+uwsm
+
+# Phase 10–11 — Waybar module backends, control-center scripts, TUI tools
+networkmanager
+wireplumber
+pipewire
+pipewire-alsa
+pipewire-pulse
+pipewire-jack
+upower
+playerctl
+bluez
+bluez-utils
+python
+fastfetch
+btop
+
+# Optional — picked up automatically once installed (uncomment to include):
+# pavucontrol    # Phase 16: "Mixer" entry in the audio menu (per-app volume, inputs)
+
+# Phase 17 — wallpaper picker thumbnails
+imagemagick
+
+# Phase 19 — screen recording (SUPER+SHIFT+R)
+wf-recorder
+
+# Phase 11.5 — screenshots, file manager
+grim
+slurp
+wl-clipboard
+thunar
+gvfs
+tumbler

@@ -1,9 +1,10 @@
 /* ~/hyprland-from-scratch/dotfiles/waybar/style.css
  *
- * Tokyo Night styling — Phase 10, restyled into pill clusters in the
- * polish pass. Palette: bg #1a1b26, surface #24283b, fg #c0caf5,
- * muted #565f89, accent blue #7aa2f7 / purple #bb9af7, warning #e0af68,
- * critical #f7768e.
+ * Phase 10 styling, restyled into pill clusters in the polish pass,
+ * re-themed in Phase 15 (Arch Neutral). Palette: bg #141414, surface
+ * #1f1f1f, highlight #2b2b2b, fg #e0e0e0, dim #a8a8a8, muted #6e6e6e,
+ * accent Arch blue #1793d1 / light #5db3df, warning #e0a84e,
+ * critical #e05f65.
  */
 * {
     font-family: "JetBrainsMono Nerd Font";
@@ -13,7 +14,7 @@
 
 window#waybar {
     background: transparent;
-    color: #c0caf5;
+    color: #e0e0e0;
 }
 
 /* shared pill look for every top-level cluster (mpris deliberately excluded:
@@ -25,7 +26,7 @@ window#waybar {
 #status,
 #tray,
 #clock {
-    background: rgba(26, 27, 38, 0.85);
+    background: rgba(20, 20, 20, 0.85);
     border-radius: 10px;
     margin: 5px 3px;
 }
@@ -33,12 +34,12 @@ window#waybar {
 #custom-arch {
     padding: 0 14px;
     margin-left: 6px;
-    color: #7aa2f7;
+    color: #1793d1;
     font-size: 15px;
 }
 
 #custom-arch:hover {
-    color: #bb9af7;
+    color: #5db3df;
 }
 
 #workspaces {
@@ -49,26 +50,39 @@ window#waybar {
     padding: 0 8px;
     margin: 4px 2px;
     border-radius: 8px;
-    color: #565f89;
+    color: #6e6e6e;
+    /* reset GTK's own button look (gradient/shadow on hover) */
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    text-shadow: none;
+}
+
+/* shown on its monitor but not focused (e.g. the laptop panel while working
+   on the external one) — must come before .active, which also has .visible */
+#workspaces button.visible {
+    background: #1f1f1f;
+    color: #a8a8a8;
 }
 
 #workspaces button.active {
-    background: #292e42;
-    color: #7aa2f7;
+    background: #2b2b2b;
+    color: #1793d1;
     font-weight: bold;
 }
 
 #workspaces button:hover {
-    color: #bb9af7;
+    background: #2b2b2b;
+    color: #5db3df;
 }
 
 #mpris {
     padding: 0 6px;
-    color: #9ece6a;
+    color: #5db3df;
 }
 
 #window {
-    color: #a9b1d6;
+    color: #a8a8a8;
     padding: 0 12px;
 }
 
@@ -82,29 +96,43 @@ window#waybar {
 #network,
 #wireplumber,
 #custom-bluetooth,
-#battery {
+#battery,
+#power-profiles-daemon {
     padding: 0 10px;
-    color: #c0caf5;
+    color: #e0e0e0;
+}
+
+/* off = muted, on but nothing connected = dimmed, a device connected = accent */
+#custom-bluetooth.off {
+    color: #6e6e6e;
+}
+
+#custom-bluetooth.on {
+    color: #a8a8a8;
+}
+
+#custom-bluetooth.connected {
+    color: #1793d1;
 }
 
 #idle_inhibitor.activated {
-    color: #e0af68;
+    color: #e0a84e;
 }
 
 #battery.warning {
-    color: #e0af68;
+    color: #e0a84e;
 }
 
 #battery.critical {
-    color: #f7768e;
+    color: #e05f65;
 }
 
 #wireplumber.muted {
-    color: #565f89;
+    color: #6e6e6e;
 }
 
 #network.disconnected {
-    color: #f7768e;
+    color: #e05f65;
 }
 
 #tray {
@@ -117,12 +145,92 @@ window#waybar {
 
 #tray > .needs-attention {
     -gtk-icon-effect: highlight;
-    background: #f7768e;
+    background: #e05f65;
 }
 
 #clock {
     padding: 0 14px;
     margin-right: 6px;
-    color: #c0caf5;
+    color: #e0e0e0;
     font-weight: bold;
+}
+
+/* GTK's default tooltip is a light/grey bubble — match the pills instead */
+tooltip {
+    background: #141414;
+    border: 1px solid #2b2b2b;
+    border-radius: 10px;
+}
+
+tooltip label {
+    color: #e0e0e0;
+    padding: 2px 4px;
+}
+
+/* Phase 19: power profile colors (balanced keeps the default text color) */
+#power-profiles-daemon.performance {
+    color: #e0a84e;
+}
+
+#power-profiles-daemon.power-saver {
+    color: #5db3df;
+}
+
+/* Phase 19/22: idle = a camera button in a regular pill; recording = red pill */
+#custom-recording {
+    background: rgba(20, 20, 20, 0.85);
+    color: #a8a8a8;
+    border-radius: 10px;
+    margin: 5px 3px;
+    padding: 0 12px;
+}
+
+#custom-recording:hover {
+    color: #e05f65;
+}
+
+#custom-recording.recording {
+    background: #e05f65;
+    color: #141414;
+    font-weight: bold;
+}
+
+/* Phase 20: volume slider revealed by hovering the volume icon. GTK draws it
+   as a scale: trough = the track, highlight = the filled part, slider = the
+   knob (hidden: the fill shows the level, click or drag anywhere on it). */
+#pulseaudio-slider,
+#backlight-slider {
+    padding: 0 10px 0 2px;
+}
+
+#pulseaudio-slider slider,
+#backlight-slider slider {
+    min-height: 0;
+    min-width: 0;
+    opacity: 0;
+    background-image: none;
+    border: none;
+    box-shadow: none;
+}
+
+#pulseaudio-slider trough,
+#backlight-slider trough {
+    min-height: 6px;
+    min-width: 90px;
+    border-radius: 3px;
+    background-color: #2b2b2b;
+}
+
+#pulseaudio-slider highlight {
+    min-width: 6px;
+    border-radius: 3px;
+    background-color: #1793d1;
+}
+
+/* Phase 21: brightness slider — same shape, gold fill (the palette's amber)
+   so it reads differently from the blue volume slider */
+#backlight-slider highlight {
+    min-width: 6px;
+    border-radius: 3px;
+    background-color: #e0a84e;
 }

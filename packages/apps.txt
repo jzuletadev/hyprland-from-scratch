@@ -1,0 +1,15 @@
+# Personal apps (work + gaming). Not needed by the desktop itself — install what you want.
+# steam requires [multilib] enabled in /etc/pacman.conf.
+# Install with:  grep -v '^#' packages/apps.txt | sudo pacman -S --needed -
+docker
+docker-buildx
+docker-compose
+nodejs
+npm
+python-pip
+tmux
+mariadb-clients
+postgresql-libs
+power-profiles-daemon
+zram-generator
+steam

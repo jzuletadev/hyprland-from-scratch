@@ -1,6 +1,6 @@
 # ~/hyprland-from-scratch/dotfiles/dunst/dunstrc
 #
-# Minimal dunst config — Phase 5 baseline, themed in Phase 10 (Tokyo Night).
+# Minimal dunst config — Phase 5 baseline, themed in Phase 10, re-themed in Phase 15 (Arch Neutral).
 # INI-style sections. Kept small on purpose: per-app rules, scripting,
 # and history navigation get added later once this base is understood.
 
@@ -15,22 +15,27 @@
     format = "<b>%s</b>\n%b"
     timeout = 5
     frame_width = 2
-    frame_color = "#7aa2f7"
+    frame_color = "#1793d1"
     separator_color = frame
     corner_radius = 10
+    # Phase 23: icons (and screenshot thumbnails, scripts/screenshot.sh) are
+    # scaled to fit; without a cap a screenshot would show at full size
+    icon_position = left
+    min_icon_size = 32
+    max_icon_size = 96
 
 [urgency_low]
-    background = "#1a1b26"
-    foreground = "#565f89"
+    background = "#141414"
+    foreground = "#6e6e6e"
     timeout = 4
 
 [urgency_normal]
-    background = "#1a1b26"
-    foreground = "#c0caf5"
+    background = "#141414"
+    foreground = "#e0e0e0"
     timeout = 5
 
 [urgency_critical]
-    background = "#1a1b26"
-    foreground = "#f7768e"
-    frame_color = "#f7768e"
+    background = "#141414"
+    foreground = "#e05f65"
+    frame_color = "#e05f65"
     timeout = 0

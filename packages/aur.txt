@@ -1,0 +1,4 @@
+# AUR packages. Requires an AUR helper (paru) — see "Restore on a new machine" in README.
+# Install with:  grep -v '^#' packages/aur.txt | paru -S --needed -
+brave-bin
+visual-studio-code-bin
