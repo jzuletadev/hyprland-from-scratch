@@ -1,5 +1,6 @@
 # Core desktop: everything the files in dotfiles/ and scripts/ depend on.
-# Install with:  grep -v '^#' packages/base.txt | sudo pacman -S --needed -
+# ./install.sh installs this list (comments are stripped first: some lines
+# have one at the end, which a plain `pacman -S -` would read as package names).
 
 # Phase 1 — compositor, terminal, portals, fonts
 hyprland
@@ -8,6 +9,10 @@ xdg-desktop-portal
 xdg-desktop-portal-hyprland
 ttf-jetbrains-mono-nerd
 noto-fonts
+adwaita-fonts      # Phase 25: Adwaita Sans = default sans-serif (also a GTK dependency)
+papirus-icon-theme # Phase 29: icons for Thunar, GTK apps and Rofi (Papirus-Dark)
+noto-fonts-emoji   # Phase 25: color emoji (web pages, chats)
+noto-fonts-cjk     # Phase 25: Chinese / Japanese / Korean text
 
 # Phase 3–8 — bar, launcher, notifications, brightness, wallpaper, lock, idle
 waybar
@@ -31,6 +36,7 @@ pipewire-alsa
 pipewire-pulse
 pipewire-jack
 upower
+power-profiles-daemon   # Waybar's power profile icon (Phase 19)
 playerctl
 bluez
 bluez-utils
@@ -46,6 +52,11 @@ imagemagick
 
 # Phase 19 — screen recording (SUPER+SHIFT+R)
 wf-recorder
+
+# Phase 33 — media: image viewer, screenshot annotation, video/music player
+loupe
+satty
+celluloid
 
 # Phase 11.5 — screenshots, file manager
 grim

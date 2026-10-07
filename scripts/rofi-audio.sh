@@ -8,14 +8,14 @@
 # volumes, input devices) when it's installed.
 #
 # Icons are $'\uXXXX' escapes: literal Nerd Font glyphs get silently
-# stripped when written into files here (see README Phase 11).
+# stripped when written into files here (see docs/build-log.md Phase 11).
 
 set -uo pipefail
 
 source "$HOME/hyprland-from-scratch/scripts/rofi-common.sh"
 rofi_toggle "-p Audio " "-show volume"   # same icon clicked again = close; another menu open = switch
 
-THEME="$HOME/hyprland-from-scratch/dotfiles/rofi/menu.rasi"
+THEME="$HOME/.config/rofi/menu.rasi"
 
 I_ACTIVE=$'\uf00c'
 I_OUTPUT=$'\uf028'

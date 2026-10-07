@@ -1,0 +1,38 @@
+# ~/hyprland-from-scratch/dotfiles/satty/config.toml
+#
+# Phase 33. Satty (screenshot annotation), opened by clicking a screenshot's
+# notification ("Annotate") or with SUPER+ALT+S (region straight into Satty).
+# Keys checked against /usr/share/doc/satty/README.md (Satty 0.22).
+#
+# Enter = copy to the clipboard AND save next to the other screenshots;
+# Esc = close without saving. Number keys 1-6 pick the palette colors below.
+
+[general]
+fullscreen = false
+floating-hack = true                 # ask Hyprland for a floating window
+early-exit = ["all"]                 # close right after copying / saving
+initial-tool = "arrow"
+copy-command = "wl-copy"
+save-after-copy = true
+output-filename = "~/Pictures/screenshots/%Y-%m-%d_%H-%M-%S-annotated.png"
+actions-on-enter = ["save-to-clipboard"]
+actions-on-escape = ["exit"]
+annotation-size-factor = 1.5
+corner-roundness = 10
+primary-highlighter = "block"
+no-window-decoration = true
+
+[font]
+family = "Adwaita Sans"              # same UI font as the desktop (Phase 26)
+style = "Regular"
+
+# Arch Neutral palette: critical red, amber, Arch blue, green, light, dark
+[color-palette]
+palette = [
+    "#e05f65ff",
+    "#e0a84eff",
+    "#1793d1ff",
+    "#8cc265ff",
+    "#e0e0e0ff",
+    "#141414ff",
+]

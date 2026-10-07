@@ -10,6 +10,5 @@ python-pip
 tmux
 mariadb-clients
 postgresql-libs
-power-profiles-daemon
 zram-generator
 steam

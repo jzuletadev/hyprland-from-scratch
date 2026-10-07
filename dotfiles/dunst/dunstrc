@@ -11,7 +11,7 @@
     offset = 10x10
     width = 320
     height = 100
-    font = JetBrainsMono Nerd Font 11
+    font = Adwaita Sans 11
     format = "<b>%s</b>\n%b"
     timeout = 5
     frame_width = 2
@@ -23,6 +23,12 @@
     icon_position = left
     min_icon_size = 32
     max_icon_size = 96
+    # Phase 33: left click runs the notification's action (e.g. "Annotate" on
+    # screenshots, opening a chat from a browser notification) and closes it;
+    # right click just closes it
+    mouse_left_click = do_action, close_current
+    mouse_middle_click = close_all
+    mouse_right_click = close_current
 
 [urgency_low]
     background = "#141414"
@@ -32,6 +38,7 @@
 [urgency_normal]
     background = "#141414"
     foreground = "#e0e0e0"
+    highlight = "#1793d1"   # progress bars (volume indicator, Phase 34)
     timeout = 5
 
 [urgency_critical]

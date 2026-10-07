@@ -13,7 +13,7 @@
 # and closes (no output = Rofi exits).
 #
 # Icons are $'\uXXXX' escapes: literal Nerd Font glyphs get silently
-# stripped when written into files here (see README Phase 11).
+# stripped when written into files here (see docs/build-log.md Phase 11).
 
 I_UP=$'\uf028'
 I_DOWN=$'\uf027'

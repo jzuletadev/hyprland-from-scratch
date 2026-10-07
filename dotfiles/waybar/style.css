@@ -7,8 +7,17 @@
  * critical #e05f65.
  */
 * {
-    font-family: "JetBrainsMono Nerd Font";
+    /* Phase 26: Adwaita Sans (Inter-derived), the same font as the apps.
+       Nerd Font icons come from the "Propo" variant of JetBrains Mono Nerd
+       Font: the regular one draws icons wider than their advance (it counts on
+       a monospace space after them), which glued them to the text in a
+       proportional font. "tnum" = tabular figures:
+       every digit has the same width, so the clock and percentages don't
+       change the pills' width as they tick. */
+    font-family: "Adwaita Sans", "JetBrainsMono Nerd Font Propo";
     font-size: 13px;
+    font-weight: 500;
+    font-feature-settings: "tnum";
     min-height: 0;
 }
 

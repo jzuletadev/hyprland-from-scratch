@@ -1,0 +1,38 @@
+// ~/hyprland-from-scratch/dotfiles/rofi/search.rasi
+//
+// Phase 27/28. The quick app search opened by tapping SUPER: type, Enter, done.
+// Same look as the full launcher (config.rasi) minus the mode-switcher row
+// (Apps / Run / Files / Windows), which stays on SUPER+R.
+//
+// Phase 28: only the search box shows at first; results appear once you type
+// (require-input) and the list is only as tall as the matches (fixed-height
+// false). The window hangs from a fixed point (60% down) instead of being
+// centered, so the box stays put while the list grows below it.
+
+@import "config.rasi"
+
+// Phase 28: match the app's name (and its keywords), not its categories or
+// command — otherwise "ste" also matched "System" and put Thunar and kitty
+// above Steam. fzf-style sorting ranks the best match first.
+configuration {
+    drun-match-fields: "name,generic,keywords";
+    sort: true;
+    sorting-method: "fzf";
+}
+
+window {
+    width: 26%;
+    location: north;
+    anchor: north;
+    y-offset: 60%;   /* Phase 31: between the middle and the bottom; 6 results still fit */
+}
+
+mainbox {
+    children: [ "inputbar", "listview" ];
+}
+
+listview {
+    lines: 6;
+    require-input: true;
+    fixed-height: false;
+}

@@ -7,7 +7,7 @@
 # "REC mm:ss" pill while wf-recorder runs (click = stop and save).
 #
 # Icons are $'\uXXXX' escapes: literal Nerd Font glyphs get silently
-# stripped when written into files here (see README Phase 11).
+# stripped when written into files here (see docs/build-log.md Phase 11).
 
 I_REC=$'\uf111'
 I_CAMERA=$'\uf03d'

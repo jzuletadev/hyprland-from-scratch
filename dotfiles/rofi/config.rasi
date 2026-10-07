@@ -8,13 +8,13 @@
 configuration {
     modi: "drun,run,filebrowser,window";
     show-icons: true;
-    icon-theme: "hicolor";
+    icon-theme: "Papirus-Dark";   /* Phase 29; falls back to hicolor if Papirus isn't installed */
     display-drun: "Apps";
     display-run: "Run";
     display-filebrowser: "Files";
     display-window: "Windows";
     drun-display-format: "{name}";
-    font: "JetBrainsMono Nerd Font 11";
+    font: "Adwaita Sans, JetBrainsMono Nerd Font Propo 11";   /* Phase 26: icons from the Propo variant */
 
     /* Phase 18: the highlighted row follows the mouse, and a single click runs
        it. Rofi's defaults were click = select, double-click = run, so the

@@ -2,7 +2,7 @@
 #
 # Phase 17. Sourced (not run) by the rofi-*.sh menus and wallpaper.sh.
 
-MENU_THEME="$HOME/hyprland-from-scratch/dotfiles/rofi/menu.rasi"
+MENU_THEME="$HOME/.config/rofi/menu.rasi"
 
 # Only one Rofi can run at a time. Before a menu opens, close whatever menu is
 # already open. If it was one of this menu's own (its command line contains

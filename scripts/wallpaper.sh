@@ -17,7 +17,7 @@ set -uo pipefail
 
 REPO="$HOME/hyprland-from-scratch"
 DIRS=("$REPO/assets/wallpapers" "$HOME/Pictures/wallpapers")
-DEFAULT="$REPO/assets/wallpapers/3.jpeg"
+DEFAULT_DIR="$REPO/assets/wallpapers"   # restore falls back to its first image
 CURRENT="$HOME/.local/state/hyprland-from-scratch/wallpaper"
 THUMBS="$HOME/.cache/hyprland-from-scratch/wallpaper-thumbs"
 
@@ -93,7 +93,13 @@ set_file() {
 
 restore() {
     local file
-    file=$(readlink -e "$CURRENT" 2>/dev/null) || file=$DEFAULT
+    if ! file=$(readlink -e "$CURRENT" 2>/dev/null); then
+        # nothing picked yet (fresh install) or the picked file is gone:
+        # first image in assets/wallpapers (Phase 37; it used to be a fixed 3.jpeg)
+        file=$(find "$DEFAULT_DIR" -maxdepth 1 -type f -print0 | sort -z |
+               while IFS= read -r -d '' f; do is_image "$f" && { printf '%s' "$f"; break; }; done)
+    fi
+    [ -n "$file" ] || { notify "No wallpaper found in assets/wallpapers"; return 1; }
     apply "$file" fade
 }
 

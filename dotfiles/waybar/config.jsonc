@@ -29,11 +29,13 @@
 
     "custom/arch": {
         "format": "",
-        "tooltip-format": "Click: system info \u00b7 Right-click: wallpaper\nApps: tap SUPER",
+        "tooltip-format": "Click: system info \u00b7 Right-click: settings\nApps: tap SUPER \u00b7 Help: SUPER + /",
         "on-click": "~/hyprland-from-scratch/scripts/sysinfo.sh",
-        "on-click-right": "~/hyprland-from-scratch/scripts/wallpaper.sh"
+        "on-click-right": "~/hyprland-from-scratch/scripts/rofi-settings.sh"
     },
 
+    // each bar lists the workspaces of its own monitor (Phase 36: back to the
+    // default after the always-show-1-5 experiment of Phases 27/35)
     "hyprland/workspaces": {
         "format": "{id}",
         "on-click": "activate"
@@ -181,8 +183,11 @@
 
     "clock": {
         "format": "  {:%H:%M     %d %b %Y}",
-        // Phase 19/23: hover = calendar (today highlighted). Click = month/year
-        // view, scroll = previous/next month, right-click = back to today.
+        // Phase 19/23/24: hover = calendar (today highlighted). Click = interactive
+        // calendar (scripts/rofi-calendar.py) to browse months and years. In the
+        // hover calendar: scroll = previous/next month, right-click = month/year
+        // view, middle-click = back to today.
+        "on-click": "~/hyprland-from-scratch/scripts/rofi-calendar.py",
         "tooltip-format": "<b>{:%A, %d %B %Y}</b>\n\n<tt>{calendar}</tt>",
         "calendar": {
             "mode": "month",
@@ -195,8 +200,8 @@
             }
         },
         "actions": {
-            "on-click": "mode",
-            "on-click-right": "shift_reset",
+            "on-click-right": "mode",
+            "on-click-middle": "shift_reset",
             "on-scroll-up": "shift_up",
             "on-scroll-down": "shift_down"
         }
