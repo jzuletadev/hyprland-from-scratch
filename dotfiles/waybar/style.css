@@ -5,7 +5,13 @@
  * #1f1f1f, highlight #2b2b2b, fg #e0e0e0, dim #a8a8a8, muted #6e6e6e,
  * accent Arch blue #1793d1 / light #5db3df, warning #e0a84e,
  * critical #e05f65.
+ *
+ * Phase 45: the accent (@accent, @accent_light) comes from accent.css, written
+ * by scripts/accent.sh when it's changed in the settings menu. The power-saver
+ * blue below stays fixed: it's a status color, like amber and red.
  */
+
+@import url("accent.css");
 * {
     /* Phase 26: Adwaita Sans (Inter-derived), the same font as the apps.
        Nerd Font icons come from the "Propo" variant of JetBrains Mono Nerd
@@ -43,12 +49,12 @@ window#waybar {
 #custom-arch {
     padding: 0 14px;
     margin-left: 6px;
-    color: #1793d1;
+    color: @accent;
     font-size: 15px;
 }
 
 #custom-arch:hover {
-    color: #5db3df;
+    color: @accent_light;
 }
 
 #workspaces {
@@ -76,18 +82,18 @@ window#waybar {
 
 #workspaces button.active {
     background: #2b2b2b;
-    color: #1793d1;
+    color: @accent;
     font-weight: bold;
 }
 
 #workspaces button:hover {
     background: #2b2b2b;
-    color: #5db3df;
+    color: @accent_light;
 }
 
 #mpris {
     padding: 0 6px;
-    color: #5db3df;
+    color: @accent_light;
 }
 
 #window {
@@ -121,7 +127,7 @@ window#waybar {
 }
 
 #custom-bluetooth.connected {
-    color: #1793d1;
+    color: @accent;
 }
 
 #idle_inhibitor.activated {
@@ -233,7 +239,7 @@ tooltip label {
 #pulseaudio-slider highlight {
     min-width: 6px;
     border-radius: 3px;
-    background-color: #1793d1;
+    background-color: @accent;
 }
 
 /* Phase 21: brightness slider — same shape, gold fill (the palette's amber)

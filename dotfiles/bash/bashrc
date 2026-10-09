@@ -1,0 +1,57 @@
+# ~/hyprland-from-scratch/dotfiles/bash/bashrc
+#
+# Phase 46. Interactive bash, sourced at the end of ~/.bashrc (install.sh adds
+# that line). ~/.bashrc keeps what's personal to one machine (tokens, work
+# paths, credentials) out of the repo.
+#
+#   typing     suggestions from your history in grey; Right arrow or End takes
+#              them; commands in color (red = not found): ble.sh, AUR blesh-git
+#   Ctrl+R     fuzzy search through history (fzf); Ctrl+T pick a file, Alt+C cd
+#   Up/Down    with something typed: only commands that start with it;
+#              Enter runs the one shown (with or without ble.sh)
+#   history    50,000 commands, no repeats, saved as soon as each one runs
+#              (a terminal that's closed or crashes doesn't lose them)
+#
+# Each part is skipped if its package is missing, so this works on a fresh
+# install too.
+
+[[ $- == *i* ]] || return
+
+# ble.sh replaces bash's line editor: load it first, attach it last (its docs)
+[[ -f /usr/share/blesh/ble.sh ]] && source /usr/share/blesh/ble.sh --noattach
+
+HISTSIZE=50000
+HISTFILESIZE=50000
+HISTCONTROL=ignoreboth:erasedups   # no repeats, nothing typed with a leading space
+HISTTIMEFORMAT='%F %T  '           # `history` shows when each command ran
+shopt -s histappend
+PROMPT_COMMAND="history -a${PROMPT_COMMAND:+; $PROMPT_COMMAND}"
+
+if [[ ${BLE_VERSION-} ]]; then
+    ble-face auto_complete='fg=242'   # suggestion text: muted grey, no background
+    # Up/Down: ble.sh ignores readline's `bind` lines below, so the same prefix
+    # search with its own widgets. Up/Down keep searching for what was typed,
+    # Enter runs the match (immediate-accept), any other key edits it; on an
+    # empty line they walk the history as usual (empty=emulate-readline).
+    function bashrc/history-prefix-keys {
+        ble-bind -m emacs -f up   'history-search-backward hide-status:point=end:immediate-accept:empty=emulate-readline'
+        ble-bind -m emacs -f down 'history-search-forward hide-status:point=end:immediate-accept:empty=emulate-readline'
+    }
+    blehook/eval-after-load keymap_emacs bashrc/history-prefix-keys
+else
+    bind '"\e[A": history-search-backward'
+    bind '"\e[B": history-search-forward'
+    bind '"\eOA": history-search-backward'   # same keys in "application" cursor mode
+    bind '"\eOB": history-search-forward'
+fi
+
+if command -v fzf >/dev/null; then
+    if [[ ${BLE_VERSION-} && -f /usr/share/blesh/contrib/integration/fzf-key-bindings.bash ]]; then
+        _ble_contrib_fzf_base=/usr/share/fzf   # where Arch's fzf keeps its bash scripts
+        ble-import -d integration/fzf-key-bindings
+    elif [[ ! ${BLE_VERSION-} ]]; then
+        eval "$(fzf --bash)"
+    fi
+fi
+
+[[ ${BLE_VERSION-} ]] && ble-attach

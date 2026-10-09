@@ -2,3 +2,5 @@
 # Install with:  grep -v '^#' packages/aur.txt | paru -S --needed -
 brave-bin
 visual-studio-code-bin
+# Phase 46: suggestions while typing in bash (blesh 0.3 predates bash 5.3)
+blesh-git

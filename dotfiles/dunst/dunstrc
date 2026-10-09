@@ -15,7 +15,8 @@
     format = "<b>%s</b>\n%b"
     timeout = 5
     frame_width = 2
-    frame_color = "#1793d1"
+    # frame_color (and the progress bars' highlight): dunstrc.d/50-accent.conf,
+    # written by scripts/accent.sh (Phase 45); critical keeps its red frame below
     separator_color = frame
     corner_radius = 10
     # Phase 23: icons (and screenshot thumbnails, scripts/screenshot.sh) are
@@ -38,7 +39,6 @@
 [urgency_normal]
     background = "#141414"
     foreground = "#e0e0e0"
-    highlight = "#1793d1"   # progress bars (volume indicator, Phase 34)
     timeout = 5
 
 [urgency_critical]

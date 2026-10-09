@@ -11,6 +11,7 @@
 import html
 import json
 import os
+import re
 import subprocess
 import time
 
@@ -38,6 +39,19 @@ EXTRA = [
 ]
 
 
+def menu_accent():
+    """The menus' accent color, from ~/.config/rofi/appearance.rasi (Phase 43)."""
+    try:
+        with open(os.path.expanduser("~/.config/rofi/appearance.rasi")) as rasi:
+            match = re.search(r"^\s*accent:\s*(#[0-9a-fA-F]{6})", rasi.read(), re.M)
+    except OSError:
+        match = None
+    return match.group(1) if match else "#1793d1"
+
+
+ACCENT = menu_accent()
+
+
 def toggle_running():
     running = subprocess.run(["pgrep", "-ax", "rofi"], capture_output=True, text=True).stdout
     if not running:
@@ -58,7 +72,7 @@ def keys(bind):
 
 
 def row(combo, description, dim=False):
-    color = "#6e6e6e" if dim else "#1793d1"
+    color = "#6e6e6e" if dim else ACCENT
     return (f"<span font_family='JetBrainsMono Nerd Font' foreground='{color}'>"
             f"{html.escape(combo.ljust(26))}</span> {html.escape(description)}")
 

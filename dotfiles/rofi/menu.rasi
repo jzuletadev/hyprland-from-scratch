@@ -23,7 +23,7 @@ inputbar {
 
 prompt {
     background-color: transparent;
-    text-color: #1793d1;
+    text-color: @accent;
 }
 
 entry {

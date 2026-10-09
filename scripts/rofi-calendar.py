@@ -6,7 +6,7 @@
 # tooltips aren't interactive), so browsing other months happens here:
 #
 #   «  ‹  Today  ›  »    previous/next year and month, back to the current month
-#   a 7-column grid of days, today in an Arch-blue block
+#   a 7-column grid of days, today in a block of the menu accent color
 #
 # Rofi stays open between clicks (script mode, like rofi-volume.sh): after each
 # pick it runs this script again with ROFI_RETV=1 and the row's hidden value
@@ -19,6 +19,7 @@
 import calendar
 import datetime
 import os
+import re
 import subprocess
 import time
 
@@ -33,6 +34,19 @@ element      { padding: 8px 0; spacing: 0; }
 element-text { horizontal-align: 0.5; }
 """
 WEEK_STARTS = calendar.SUNDAY   # same as the Waybar tooltip
+
+
+def menu_accent():
+    """The menus' accent color, from ~/.config/rofi/appearance.rasi (Phase 43)."""
+    try:
+        with open(os.path.expanduser("~/.config/rofi/appearance.rasi")) as rasi:
+            match = re.search(r"^\s*accent:\s*(#[0-9a-fA-F]{6})", rasi.read(), re.M)
+    except OSError:
+        match = None
+    return match.group(1) if match else "#1793d1"
+
+
+ACCENT = menu_accent()
 
 
 def launch():
@@ -97,7 +111,7 @@ def show():
 
     weekdays = calendar.Calendar(WEEK_STARTS).iterweekdays()
     for day in weekdays:
-        cell(f"<span color='#1793d1'><b>{calendar.day_abbr[day][:2]}</b></span>")
+        cell(f"<span color='{ACCENT}'><b>{calendar.day_abbr[day][:2]}</b></span>")
 
     weeks = calendar.Calendar(WEEK_STARTS).monthdayscalendar(year, month)
     weeks += [[0] * 7] * (6 - len(weeks))   # always 6 rows: the window keeps its size
@@ -106,7 +120,7 @@ def show():
             if day == 0:
                 cell(" ")
             elif datetime.date(year, month, day) == today:
-                cell(f"<span background='#1793d1' color='#141414'><b> {day} </b></span>", "day")
+                cell(f"<span background='{ACCENT}' color='#141414'><b> {day} </b></span>", "day")
             else:
                 cell(str(day), "day")
 

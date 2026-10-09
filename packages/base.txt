@@ -65,3 +65,6 @@ wl-clipboard
 thunar
 gvfs
 tumbler
+
+# Phase 46 — shell: Ctrl+R fuzzy history search (dotfiles/bash/bashrc)
+fzf

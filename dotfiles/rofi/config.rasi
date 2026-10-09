@@ -26,11 +26,13 @@ configuration {
 }
 
 @theme "/dev/null"
+// Phase 43: accent color and border width (after @theme, which discards what came before)
+@import "appearance.rasi"
 
 window {
     width: 30%;
-    border: 2px;
-    border-color: #1793d1;
+    border: @menu-border;
+    border-color: @menu-border-color;
     border-radius: 10px;
     /* same 0.85-ish alpha as the Waybar pills; Hyprland blurs what's behind */
     background-color: #141414e0;
@@ -82,13 +84,13 @@ element-text {
     background-color: transparent;
     /* follow element's color, so the selected row's color reaches the text */
     text-color: inherit;
-    highlight: bold #5db3df;
+    highlight: @accent-highlight;
     vertical-align: 0.5;
 }
 
 element selected {
     background-color: #2b2b2b;
-    text-color: #1793d1;
+    text-color: @accent;
 }
 
 mode-switcher {
@@ -109,6 +111,6 @@ button {
 button selected {
     border: 0px;
     background-color: #2b2b2b;
-    text-color: #1793d1;
+    text-color: @accent;
 }
 

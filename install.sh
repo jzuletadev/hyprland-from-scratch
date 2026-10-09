@@ -58,6 +58,15 @@ else
     run "$REPO/scripts/link-dotfiles.sh"
 fi
 
+step "Shell: history and suggestions (~/.bashrc)"
+# ~/.bashrc stays the user's own (personal tokens, paths); it only sources ours
+if grep -qF '.config/bash/bashrc' "$HOME/.bashrc" 2>/dev/null; then
+    echo "already sourced from ~/.bashrc"
+else
+    echo "+ append to ~/.bashrc: . ~/.config/bash/bashrc"
+    (( DRY )) || printf '\n# hyprland-from-scratch (Phase 46): history, suggestions, fzf\n[ -f ~/.config/bash/bashrc ] && . ~/.config/bash/bashrc\n' >> "$HOME/.bashrc"
+fi
+
 step "Services"
 run sudo systemctl enable sddm.service bluetooth.service power-profiles-daemon.service
 run systemctl --user enable waybar.service   # the bar; restarted by systemd if it crashes
@@ -71,6 +80,7 @@ run sudo "$REPO/scripts/install-sddm-theme.sh"
 step "Done"
 echo "Reboot, then pick \"Hyprland (uwsm)\" on the login screen."
 echo "Keys: tap SUPER for apps, SUPER + / for every shortcut."
+echo "Suggestions while typing in the terminal: install blesh-git from the AUR (README, packages/aur.txt)."
 if lspci 2>/dev/null | grep -E 'VGA|3D' | grep -qi nvidia && [ "$(lspci | grep -cE 'VGA|3D')" -gt 1 ]; then
     echo
     echo "Hybrid graphics detected (iGPU + NVIDIA): follow README annex A before rebooting."

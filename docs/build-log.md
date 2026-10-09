@@ -3184,3 +3184,378 @@ Fixes found on the way:
   installer strips everything after `#` (all 45 names checked with `pacman -Si`).
 - `power-profiles-daemon` moved from `apps.txt` to `base.txt`: the bar's power profile icon needs it.
 - `.gitignore` for the `__pycache__/` that running the Python helpers creates.
+
+---
+
+# Phase 39 — Resize windows by dragging their edges
+
+The keyboard resize (`SUPER+CTRL+arrows`) and `SUPER` + right drag both need keys held down. Now a
+window can be resized like on any other desktop: move the cursor onto its edge or corner, the cursor
+turns into a resize arrow, then drag. Works on tiled windows (the neighbor shrinks or grows to match)
+and floating ones.
+
+In `dotfiles/hypr/hyprland.conf`, `general { }`:
+
+```ini
+resize_on_border = true          # the switch, off by default
+extend_border_grab_area = 15     # grab zone reaches 15 px past the border
+hover_icon_on_border = true      # resize cursor over that zone
+```
+
+- The border is 1 px (`appearance.conf`), far too thin to aim at; the grab zone is what makes it
+  usable. 15 px reaches into the gaps (`gaps_in = 4`, `gaps_out = 8`) and is Hyprland's default,
+  set explicitly so the size of the zone is visible here.
+- The `bindn = , mouse:272` click handler (`rofi-click-outside.sh`, Phase 17) doesn't get in the
+  way: `bindn` doesn't consume the click, and the script exits at once when no Rofi menu is open.
+
+Expected state:
+
+- `hyprctl getoption general:resize_on_border` → `int: 1`.
+- Hovering a window's edge shows the resize cursor; dragging it resizes the window.
+
+---
+
+# Phase 40 — The Menu key as a second SUPER
+
+**Applies to:** any keyboard with a Menu key; written for a 60% external keyboard (no arrow keys:
+arrows are Fn + W/A/S/D).
+
+On that keyboard Fn + Windows key disables the Windows key (a firmware "Win lock"), so
+`SUPER + arrows` (focus, `SHIFT` to move, `CTRL` to resize) can't be typed at all. The Menu key —
+bottom row, left of right Ctrl, the one that opens the right-click menu — becomes a second SUPER:
+
+```ini
+input {
+    kb_options = altwin:menu_win     # Menu -> Super_R, on the Mod4 (SUPER) modifier
+}
+bindr = $mainMod, Super_R, exec, ...  # tap it alone: app search, like tapping the Windows key
+```
+
+- `altwin:menu_win` is a stock XKB option (`grep altwin /usr/share/X11/xkb/rules/evdev.lst`). It's
+  global, so the laptop keyboard gets it too; no per-device block, which would tie the config to
+  one keyboard's name.
+- The Menu key's own job (open an app's context menu) is lost; `SHIFT + F10` still does it in most
+  apps.
+- The tap-for-search bind is a plain `bindr`, not `bindd`: it's a duplicate of the `Super_L` one,
+  and the help menu (`SUPER + /`) would list it twice.
+- Considered and left for later: `SUPER + WASD` as a second set of arrows (no Fn needed). It would
+  move the wallpaper (`W`), screenshot (`S`) and show-desktop (`D`) shortcuts.
+
+Expected state:
+
+- `hyprctl devices -j` → every keyboard has `"options": "altwin:menu_win"`.
+- `hyprctl binds -j` has release binds for both `Super_L` and `Super_R`.
+- Menu + T opens a terminal; tapping Menu alone opens the app search.
+
+---
+
+# Phase 41 — System info closes on a click outside
+
+The system info window (Arch logo → `scripts/sysinfo.sh`, Phase 23) only closed with a key press
+inside it, the logo again, or `SUPER + Q`. The Rofi menus close when you click anywhere else
+(Phase 17); this one didn't, because it's a plain floating kitty window, not a Rofi layer.
+
+`scripts/rofi-click-outside.sh` — already run on every left click by the non-consuming
+`bindn = , mouse:272` — now handles it too:
+
+- Reads `hyprctl clients` once; if a window with class `sysinfo` exists, takes its `at:` / `size:`
+  and closes it (`closewindow class:sysinfo`) when the click lands outside that rectangle.
+- With no Rofi and no info window open it still exits right away, so ordinary clicks cost one
+  `pgrep` and one `hyprctl clients`.
+- Clicks on Waybar are still ignored, on purpose: the Arch logo's own handler toggles the window,
+  and if this script closed it first, `sysinfo.sh` would find it gone and open it again. So
+  clicking another bar icon leaves the info window open.
+- Detected through Hyprland, not `pgrep -f -- '--class sysinfo'`: same check `sysinfo.sh` uses for
+  its toggle, and it doesn't depend on how kitty shows its arguments.
+
+Tested with a stub `hyprctl` first in `PATH` (fake clients, layers and cursor; dispatches logged):
+inside the window, on its last pixel, on the bar → nothing; one pixel right of it, on another
+window → `closewindow class:sysinfo`; no info window → nothing.
+
+Expected state:
+
+- Click the Arch logo, then click anywhere outside the window (not on the bar): it closes.
+- Clicking inside the window doesn't close it; clicking the logo still toggles it.
+
+---
+
+# Phase 42 — An image as the system info logo
+
+The system info window showed fastfetch's small ASCII Arch logo (`arch_small`). It now shows an
+image, drawn by kitty's graphics protocol:
+
+- **Your own**, if `~/.config/fastfetch/logo.png` exists (`.jpg`, `.jpeg`, `.webp` work too). In
+  the repo that's `dotfiles/fastfetch/logo.png`; in copy mode put it in `~/.config/fastfetch/`
+  directly — `link-dotfiles.sh --copy` copies with `cp -rT`, which never deletes extra files.
+- Otherwise **the official Arch logo**, `/usr/share/pixmaps/archlinux-logo.png` — 256×256, already
+  the theme's `#1793d1`, and part of the `filesystem` package, so it's on every Arch install.
+
+All of it lives in `scripts/sysinfo.sh` as command-line flags
+(`--logo-type kitty-direct --logo <png> --logo-width 24 --logo-height 11 --logo-padding-right 3`),
+not in `dotfiles/fastfetch/config.jsonc`: fastfetch typed in a terminal keeps the text logo, which
+works in any terminal (TTY, SSH), while the popup is always kitty.
+
+Gotchas:
+
+- **kitty stretches an image to the box it's given**, and fastfetch's `preserveAspectRatio` only
+  works with the iTerm protocol. So a custom image is first fitted into a 512×512 square with
+  transparent margins (`magick … -resize 512x512 -background none -gravity center -extent 512x512`,
+  `imagemagick` is already in `base.txt`). That also turns JPG/WebP into PNG, the only format
+  `kitty-direct` reads.
+- Fitting takes 0.1–0.3 s for a big photo, so the result is cached in
+  `~/.cache/hyprland-from-scratch/sysinfo-logo-<inode>-<mtime>-<size>.png`. The name changes when the
+  image does (size is in it because a `cp` over the old file can keep the same inode and second), and
+  the old one is deleted. Cached: 7 ms.
+- 24 columns × 11 rows is square at kitty's font size 11 (cells measured at 9×20 px). The window
+  rule went from 820 to 920 px wide so the longest line (GPU 2) still fits next to the bigger logo.
+
+Tested without opening windows: fastfetch's output carries
+`ESC_G a=T,f=100,t=f,c=24,r=11;<base64 path>` and moves the text to column 27; `sysinfo.sh` run with
+a temporary `HOME` and stub `kitty`/`hyprctl` picks the official logo, then a custom JPG (fitted to a
+512×512 PNG), reuses the cache, and refits when the image is replaced.
+
+Expected state:
+
+- Click the Arch logo: the window shows the blue Arch logo as a sharp image, text to its right.
+- Drop an image at `dotfiles/fastfetch/logo.png`, reopen: your image, not stretched.
+- `fastfetch` in a terminal still shows the text logo.
+
+---
+
+# Phase 43 — Pick the menus' accent color; border width for menus too
+
+Every Rofi menu (launcher, quick search, control menus, settings, keybindings, calendar) draws its
+border, selected row and prompt in Arch blue, hardcoded. The settings menu (right-click the Arch
+logo) could already change the *window* border color and width (Phase 27), but the menus kept a
+fixed 2 px blue border whatever width was picked. Now:
+
+| Settings entry | Writes |
+|----------------|--------|
+| **Menu accent color** (new) | `accent` + `accent-highlight` in `~/.config/rofi/appearance.rasi` |
+| Window border color | `$border_active` in `~/.config/hypr/appearance.conf` (unchanged) |
+| **Border width** (windows and menus) | `$border_size` in `appearance.conf` **and** `menu-border` in `appearance.rasi` |
+
+**`dotfiles/rofi/appearance.rasi`** (new) is the Rofi counterpart of `hypr/appearance.conf`:
+
+```css
+* {
+    accent:           #1793d1;          /* border, selected row, prompt */
+    accent-highlight: bold #5db3df;     /* letters matching what you type */
+    menu-border:      1px;
+}
+```
+
+`config.rasi` imports it and uses `@accent` / `@accent-highlight` / `@menu-border` where the hex
+values and `2px` were; `menu.rasi`'s prompt too. Since every menu theme imports `config.rasi`, one file
+covers them all, from the next time a menu opens (Rofi reads its theme at start). The menu border went
+from 2 px to the window border's current 1 px.
+
+Presets: kitty.conf's normal / bright pairs — Arch blue, Cyan, Green, Amber, Red, Soft white (no
+magenta: purple was dropped from the theme). The picker draws each row's dot in its own color
+(`-markup-rows`, and `-format i` so the answer is the row's index, not its markup).
+
+Gotchas:
+
+- **The `@import` must come after `@theme "/dev/null"`** in `config.rasi`: `@theme` throws away
+  everything loaded before it.
+- **Rofi can't put a variable inside a `highlight` value**: `highlight: bold @accent-light;` and
+  `bold var(accent-light)` are both "Failed to parse theme". A variable can only stand for a whole
+  value, hence `accent-highlight: bold #5db3df;` and `highlight: @accent-highlight;`.
+  `border: @menu-border;` and `border-color: @accent;` work as they look. Checked with
+  `rofi -theme <file> -dump-theme`, which prints the parse error without opening anything.
+- `scripts/rofi-keybinds.py` (key column) and `scripts/rofi-calendar.py` (weekday names, today's
+  block) color Pango markup in Python, out of Rofi's theme's reach: both read `accent:` from
+  `appearance.rasi`, falling back to `#1793d1` if the file is missing or has no valid value.
+- Waybar, dunst and hyprlock keep their own `#1793d1`; this is the menus only.
+
+Tested with stub `rofi` / `notify-send` first in `PATH` and a temporary `HOME` holding copies of both
+appearance files: picking Amber writes `#e0a84e` and `bold #f0c278`; picking 2 px writes
+`$border_size = 2` and `menu-border: 2px`; Escape changes nothing; the current preset gets the check
+mark; the resulting theme parses (`-dump-theme`); the keybindings and calendar menus come out in
+`#e0a84e`, and in `#1793d1` with an empty file.
+
+Expected state:
+
+- `rofi -dump-theme | grep -E '^\s*(accent|menu-border)'` shows the chosen values.
+- Settings → Menu accent color → Amber: the next menu opened has an amber border, row and prompt.
+- Settings → Border width → 3 px: windows and menus both get a 3 px border.
+
+---
+
+# Phase 44 — One palette for both color pickers, more colors, Invisible menus
+
+Feedback on Phase 43: the accent picker's dots showed their colors, the window border picker's didn't
+(plain white dots); the accent picker had no Invisible; and a few more colors were wanted (pink,
+violet), in the same soft style.
+
+**One palette** in `scripts/rofi-settings.sh`, used by both pickers (`pick_from_palette <prompt>
+<current index>` builds the swatch list and returns the chosen row's index):
+
+| Name | Accent (menus) | Lighter (matched letters) | Window border |
+|------|----------------|---------------------------|---------------|
+| Arch blue | `#1793d1` | `#5db3df` | `rgba(1793d1cc)` |
+| Cyan | `#45b8d9` | `#74cde6` | `rgba(45b8d9cc)` |
+| Green | `#8cc265` | `#a6d986` | `rgba(8cc265cc)` |
+| Amber | `#e0a84e` | `#f0c278` | `rgba(e0a84ecc)` |
+| Orange (new) | `#e28a50` | `#eea472` | `rgba(e28a50cc)` |
+| Red | `#e05f65` | `#f07a80` | `rgba(e05f65cc)` |
+| Pink (new) | `#e273a2` | `#ee96ba` | `rgba(e273a2cc)` |
+| Violet (new) | `#a57be0` | `#be9cec` | `rgba(a57be0cc)` |
+| Soft white | `#e0e0e0` | `#ffffff` | `rgba(e0e0e080)` |
+| Grey | `#a8a8a8` | `#e0e0e0` | `rgba(6e6e6ecc)` |
+| Invisible | `#e0e0e0` | `#ffffff` | `rgba(00000000)` |
+
+- The first ones are kitty.conf's normal / bright pairs. Their saturation is 43–80 % and lightness
+  45–63 %, so Orange (hue 24°), Pink (335°) and Violet (265°) were made in HSL at about 62–72 %
+  saturation and 60–68 % lightness, with the lighter variant +6 % saturation and +9 % lightness.
+  Violet and Pink are options only; the theme itself stays neutral + Arch blue (Phase 15).
+- The window border list lost "Light blue" (`rgba(5db3dfcc)`), which is close to Cyan. If it's still
+  set, the menu shows the raw value until another color is picked.
+- Each row's dot is drawn in its own color through `-markup-rows`. Invisible gets a hollow grey dot
+  (`U+F10C`), and the current choice gets a check mark in its color.
+
+**Invisible for menus** means no border and neutral text. It can't just set `accent` to transparent,
+since the selected row and prompt would disappear too, so the border color is now its own variable
+in `appearance.rasi`:
+
+```css
+menu-border-color: #a57be0;   /* the accent, or transparent (Invisible) */
+```
+
+`config.rasi`: `border-color: @menu-border-color;`. Soft white and Invisible share the text color,
+so `accent_index` also compares the border (`transparent` or not) to tell them apart. The comments in
+`appearance.rasi` moved onto their own lines: `rasi_set` rewrites values in place, and
+`transparent` is longer than a hex color, so end-of-line comments drifted out of line.
+
+Tested with stub `rofi` / `notify-send` and a temporary `HOME`: the border picker shows 11 colored
+dots with the check mark on the current Amber, and picking Pink writes `rgba(e273a2cc)`. The accent
+Invisible writes `#e0e0e0` / `bold #ffffff` / `transparent` and is marked as current on the next open
+(and named in the Settings row). Soft white writes a `#e0e0e0` border and is marked as Soft white, not
+Invisible. The theme parses. The live menu was also used: Invisible, then Violet, written correctly.
+
+Expected state:
+
+- Settings → Window border color: colored dots, check mark on the current one.
+- Settings → Menu accent color → Invisible: the next menu has no border, white selected row.
+
+---
+
+# Phase 45 — One accent color for the whole desktop
+
+The accent picked in the settings menu (Phase 43/44) only reached the Rofi menus. The bar's active
+workspace and the notification frames stayed Arch blue. Now the accent is general, applied by
+**`scripts/accent.sh`**:
+
+```bash
+accent.sh <accent> <lighter> <frame> [name]    # frame: a color, or "transparent" (Invisible)
+```
+
+| Where | What follows the accent | How |
+|-------|-------------------------|-----|
+| Rofi menus | border, selected row, prompt, matched letters | `rofi/appearance.rasi` (Phase 43) |
+| Waybar | Arch logo, active workspace, connected Bluetooth, volume slider fill; lighter: hovers, song title | `waybar/accent.css` (`@define-color accent` / `accent_light`), `@import`ed at the top of `style.css` |
+| Waybar clock tooltip | weekday names, today | Pango markup in `config.jsonc`: no CSS reaches it, so `sed` on the `"weekdays"` / `"today"` lines |
+| dunst | notification frame, progress bars | drop-in `dunst/dunstrc.d/50-accent.conf`, then `dunstctl reload` |
+| hyprlock | password ring | `sed` on `outer_color` (`rgba(r, g, b, 0.8)`, the format the file already used) |
+
+The settings menu's entry is now **Accent color**. `pick_accent` ends with
+`exec accent.sh ... "$name"`, which reloads dunst, then sends the confirmation (so it shows with the
+new frame), then restarts Waybar.
+
+Gotchas:
+
+- **Restarting Waybar ends the script that asked for it.** The settings menu runs from a Waybar click,
+  so it's inside `waybar.service`'s cgroup, and a restart kills the whole cgroup. So the restart is
+  the last step, with `--no-block` (systemd runs the job even after the caller dies). As always, a
+  restart, not SIGUSR2 (Phase 22).
+- **dunst drop-ins:** dunst 1.13 reads `~/.config/dunst/dunstrc.d/*.conf` after `dunstrc` (confirmed
+  by running a throwaway `dunst -verbosity debug` with a temporary `XDG_CONFIG_HOME`: "Found drop-in").
+  `frame_color` left `dunstrc` for the drop-in, and critical notifications keep their red frame from
+  `[urgency_critical]`. With Invisible the frame is `#00000000`.
+- **GTK reports an undefined `@color` only when it draws a widget.** A throwaway Waybar on a
+  nonexistent output proved the `@import` works (deleting `accent.css` gave "Failed to import"), but
+  couldn't prove the colors resolve. That needed the real restart: no CSS warnings in
+  `journalctl --user -u waybar`, and a capture of the bar strip showed the logo and active workspace
+  in the new color.
+- Not included: kitty (its `color4` is the terminal's ANSI blue, which fastfetch and btop use too),
+  btop, satty, and the SDDM theme (copied into `/usr/share` with sudo, Phase 37). Waybar's
+  power-saver icon also stays blue: it's a status color, like amber for performance.
+
+Tested: `accent.sh` against copies in a temporary `HOME` with stub `dunstctl` / `notify-send` /
+`systemctl` writes all five files correctly, for Violet and for Invisible (`transparent`,
+`#00000000`, `rgba(0, 0, 0, 0.0)`), and changes nothing else in them. Bad arguments print usage and
+exit 2. Then it was applied live with the user's current Green: Waybar restarted clean, dunst
+running, `hyprctl configerrors` empty, logo and active workspace green.
+
+Expected state:
+
+- Settings → Accent color → any: the bar restarts in that color, and a confirmation notification
+  appears with that frame.
+- `cat ~/.config/waybar/accent.css` and `grep frame_color ~/.config/dunst/dunstrc.d/50-accent.conf`
+  show the chosen color.
+
+---
+
+# Phase 46 — A better shell: history, suggestions, more transparent kitty
+
+The terminal ran Arch's default `~/.bashrc`: 500 commands of history, overwritten by whichever
+terminal closed last, no search beyond `Ctrl+R`'s one-match-at-a-time.
+
+**`dotfiles/bash/bashrc`** (deployed to `~/.config/bash/`, sourced by the last line of `~/.bashrc`):
+
+| Feature | How | Needs |
+|---------|-----|-------|
+| Suggestions while typing, from history (grey; `→` / `End` takes it), command colors | ble.sh, loaded `--noattach` first and `ble-attach`ed last | AUR `blesh-git` |
+| `Ctrl+R` fuzzy history search, `Ctrl+T` file, `Alt+C` cd | fzf's bash bindings (`eval "$(fzf --bash)"`; with ble.sh, its `integration/fzf-key-bindings`) | `fzf` (base.txt) |
+| `↑` / `↓` with text typed: only commands starting with it | readline `history-search-backward/forward`, on both `\e[A` and `\eOA` | — |
+| 50,000 commands, no repeats, saved right after each one runs | `HISTSIZE`, `HISTCONTROL=ignoreboth:erasedups`, `histappend`, `history -a` in `PROMPT_COMMAND` | — |
+
+- **Why bash + ble.sh, not fish or zsh.** It's the same shell, so commands pasted from guides and the
+  `bash` scripts here behave the same. ble.sh adds fish's suggestions on top.
+- **`blesh-git`, not `blesh`.** The AUR `blesh` is 0.3.4 (2022), older than bash 5.3; `blesh-git`
+  builds 0.4 from source. Its PKGBUILD installs to `/usr/share/blesh/` (`PREFIX=/usr`), the path the
+  bashrc checks. The suggestion color is set to grey 242 because ble.sh's default puts a light
+  background behind it.
+- **Every part is skipped when its package is missing**, so the file works on a fresh install
+  before `fzf` / `blesh-git` are there. Tested in a pty (`script -qec "bash -i -c ..."`) with neither
+  installed: no errors, `HISTSIZE=50000`, `histappend on`, `↑`/`↓` bound to history search. The
+  ble.sh and fzf paths run only once those are installed.
+- **`~/.bashrc` stays the user's.** It holds a personal credentials path, so it's never copied into
+  the repo. `install.sh` (step "Shell") appends the `source` line if it's missing.
+- **ble.sh ignores readline's `bind` lines.** Once `blesh-git` was installed, `↑`/`↓` went back to
+  plain history: the bashrc only bound `history-search-backward/forward` in the no-ble.sh branch.
+  ble.sh has the same widgets, bound in its own keymap once it loads:
+  `blehook/eval-after-load keymap_emacs <function>` running
+  `ble-bind -m emacs -f up 'history-search-backward hide-status:point=end:immediate-accept:empty=emulate-readline'`
+  (and `down` / `-forward`). The widget takes the text before the cursor as the search and enters a
+  mode where `↑`/`↓` keep searching for it. `immediate-accept` makes Enter run the match, as in plain
+  bash, and `empty=emulate-readline` keeps `↑` on an empty line walking history normally.
+- **Testing ble.sh without a terminal window:** Python's `pty.fork()` runs `bash -i` with a throwaway
+  `HISTFILE`, sends keystrokes (`echo f`, `ESC [ A` twice, `CR`) and reads the output. Results:
+  `echo f` + ↑↑ ran `echo first-x` (skipping `echo other`); ↑ on an empty line ran the last command;
+  ↑↑↓ came back. `ble-bind -m emacs -P` lists `up`/`down` on the search widgets and `C-r` on fzf's
+  `fzf-history-widget` (the `ble-import -d integration/fzf-key-bindings` path), plus `C-t` and `M-c`.
+- Terminals opened *before* the change still run with the old 500-command limit and without
+  `histappend`: when they close they overwrite `~/.bash_history` with their own 500 lines. Close
+  them once after the change.
+
+**kitty:** `background_opacity` 0.92 → 0.85 (Hyprland's blur, `size 6`, `passes 2`, keeps text
+readable over the wallpaper), plus `dynamic_background_opacity yes`: `CTRL+SHIFT+A`, then `M`/`L`
+changes the current window's opacity live (`D` resets).
+
+- **kitty has no end-of-line comments.** The first version had `background_opacity 0.85  # Phase 46:
+  was 0.92`, and every new kitty window opened on "Errors parsing configuration … could not convert
+  string to float: '0.85   # Phase 46: was 0.92'". The comment now sits on its own line. kitty's own
+  parser checks a config without opening a window: `python3 -I -c 'import sys;
+  sys.path.insert(0, "/usr/lib/kitty"); from kitty.config import load_config;
+  load_config("$HOME/.config/kitty/kitty.conf")'` raises on that line and passes on the fixed file.
+  `kitty --debug-config` doesn't exist in 0.49 ("Unknown flag").
+- Same trap in `packages/aur.txt`: its header suggests `grep -v '^#' … | paru -S -`, which keeps
+  inline comments, so the `blesh-git` note also went on its own line.
+
+Expected state:
+
+- New terminal: `echo $HISTSIZE` → `50000`; type `git` + `↑`: only past `git …` commands.
+- After `sudo pacman -S fzf`: `Ctrl+R` opens a fuzzy list of past commands.
+- After `paru -S blesh-git`: grey suggestions appear while typing.
+

@@ -1,0 +1,19 @@
+// ~/hyprland-from-scratch/dotfiles/rofi/appearance.rasi
+//
+// Phase 43. Menu accent color and border width, in one place. Imported by
+// config.rasi, so every menu (launcher, search, control menus, settings,
+// keybindings, calendar) uses it from the next time it opens. Edit the values
+// by hand, or use the settings menu (right-click the Arch logo -> Menu accent
+// color / Border width), which rewrites the values below with
+// scripts/rofi-settings.sh. Border width is shared with Hyprland's window
+// border ($border_size in ~/.config/hypr/appearance.conf).
+
+* {
+    /* selected row and prompt (and the key column / today in the keybindings and calendar menus) */
+    accent: #e273a2;
+    /* letters matching what you type: a lighter accent */
+    accent-highlight: bold #ee96ba;
+    /* the accent, or transparent (Invisible) */
+    menu-border-color: #e273a2;
+    menu-border: 1px;
+}
