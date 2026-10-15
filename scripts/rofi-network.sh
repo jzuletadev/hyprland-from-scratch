@@ -32,7 +32,7 @@ declare -A CMD ARG SIGNAL SECURE INUSE
 ENTRIES=()
 add() { ENTRIES+=("$1"); CMD["$1"]=$2; ARG["$1"]=${3:-}; }   # add <label> <command> [ssid]
 
-settings() {   # nmtui in a floating kitty, same inline-rule style as the btop bind
+settings() {   # nmtui in a floating kitty, sized by an inline exec rule ([float;size;center])
     hyprctl dispatch exec "[float;size 900 600;center] kitty --class nmtui-floating -e nmtui" >/dev/null
 }
 

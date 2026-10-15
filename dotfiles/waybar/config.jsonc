@@ -17,35 +17,35 @@
 // typing them raw in an editor/tool call silently strips them in this
 // environment (verified: a first pass at this file had zero PUA
 // characters anywhere despite every format string "having" an icon).
+
+// ~/hyprland-from-scratch/dotfiles/waybar/config.jsonc
 {
     "layer": "top",
     "position": "top",
-    "height": 36,
+    "height": 35,
     "spacing": 0,
 
     "modules-left": ["custom/arch", "hyprland/workspaces", "mpris"],
     "modules-center": ["hyprland/window"],
-    "modules-right": ["custom/recording", "group/status", "tray", "clock"],
+    "modules-right": ["custom/recording", "group/status", "clock"],
 
     "custom/arch": {
-        "format": "",
+        "format": "\uf303",
         "tooltip-format": "Click: system info \u00b7 Right-click: settings\nApps: tap SUPER \u00b7 Help: SUPER + /",
         "on-click": "~/hyprland-from-scratch/scripts/sysinfo.sh",
         "on-click-right": "~/hyprland-from-scratch/scripts/rofi-settings.sh"
     },
 
-    // each bar lists the workspaces of its own monitor (Phase 36: back to the
-    // default after the always-show-1-5 experiment of Phases 27/35)
     "hyprland/workspaces": {
         "format": "{id}",
         "on-click": "activate"
     },
 
     "mpris": {
-        "format": " {title}",
+        "format": " \uf001  {title}",
         "format-paused": "",
         "format-stopped": "",
-        "max-length": 30,
+        "max-length": 40,
         "tooltip-format": "{player}: {artist} - {title}"
     },
 
@@ -57,30 +57,30 @@
 
     "group/status": {
         "orientation": "horizontal",
-        "modules": ["idle_inhibitor", "group/brightness", "network", "group/volume", "custom/bluetooth", "battery", "power-profiles-daemon"]
+        "modules": ["group/brightness", "network", "group/volume", "custom/bluetooth", "battery", "power-profiles-daemon"]
     },
 
     "idle_inhibitor": {
         "format": "{icon}",
         "format-icons": {
-            "activated": "",
-            "deactivated": ""
+            "activated": "\uf06e",
+            "deactivated": "\uf070"
         },
         "tooltip-format-activated": "Idle management paused (hypridle won't dim/lock/suspend)",
         "tooltip-format-deactivated": "Idle management active"
     },
 
     "backlight": {
-        "format": " {percent}%",
+        "format": "\uf185 {percent}%",
         "tooltip-format": "Laptop screen: {percent}%\nHover: slider \u00b7 Scroll: \u00b15%",
         "on-scroll-up": "brightnessctl set 5%+",
         "on-scroll-down": "brightnessctl set 5%-"
     },
 
     "network": {
-        "format-wifi": "  {essid}",
-        "format-ethernet": "  {ifname}",
-        "format-disconnected": "  disconnected",
+        "format-wifi": "\uf1eb  {essid}",
+        "format-ethernet": "\uf108  {ifname}",
+        "format-disconnected": "\uf071  disconnected",
         "tooltip-format-wifi": "Wi-Fi: {essid} ({signalStrength}%)\n{ipaddr} via {gwaddr}\nClick: network menu",
         "tooltip-format-ethernet": "Wired: {ifname}\n{ipaddr} via {gwaddr}\nClick: network menu",
         "tooltip-format-disconnected": "Disconnected\nClick: network menu",
@@ -89,16 +89,14 @@
 
     "wireplumber": {
         "format": "{icon}  {volume}%",
-        "format-muted": "  muted",
-        "format-icons": ["", "", ""],
+        "format-muted": "\uf026  muted",
+        "format-icons": ["\uf026", "\uf027", "\uf028"],
         "scroll-step": 5,
         "tooltip-format": "{node_name}: {volume}%\nClick: audio menu \u00b7 Right-click: mute \u00b7 Scroll: \u00b15%",
         "on-click": "~/hyprland-from-scratch/scripts/rofi-audio.sh",
         "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
     },
 
-    // Phase 21: same drawer as the volume one, for the laptop panel's
-    // brightness (gold in style.css so the two sliders don't look alike).
     "group/brightness": {
         "orientation": "horizontal",
         "drawer": {
@@ -109,15 +107,12 @@
         "modules": ["backlight", "backlight/slider"]
     },
 
-    // min 5, not 0: at 0 some laptop panels switch the backlight off entirely
     "backlight/slider": {
         "min": 5,
         "max": 100,
         "orientation": "horizontal"
     },
 
-    // Phase 20: hovering the volume icon slides out a volume slider (a
-    // "drawer" group: the first module stays visible, the rest reveal on hover).
     "group/volume": {
         "orientation": "horizontal",
         "drawer": {
@@ -143,8 +138,8 @@
 
     "battery": {
         "format": "{icon}  {capacity}%",
-        "format-icons": ["", "", "", "", ""],
-        "format-charging": "  {capacity}%",
+        "format-icons": ["\uf244", "\uf243", "\uf242", "\uf241", "\uf240"],
+        "format-charging": "\uf0e7  {capacity}%",
         "states": {
             "warning": 25,
             "critical": 10
@@ -153,8 +148,6 @@
         "tooltip-format": "{capacity}% \u00b7 {timeTo}\nPower draw: {power:.1f} W\nHealth: {health}% of design capacity"
     },
 
-    // Phase 19: power profile (power-profiles-daemon over D-Bus, no CLI needed).
-    // Click = next profile, right-click = previous.
     "power-profiles-daemon": {
         "format": "{icon}",
         "tooltip-format": "Power profile: {profile}\nClick: next \u00b7 Right-click: previous",
@@ -167,8 +160,6 @@
         }
     },
 
-    // Phase 19/22: camera button (click = recording menu); while recording it
-    // turns into a red "REC mm:ss" pill (click = stop and save).
     "custom/recording": {
         "exec": "~/hyprland-from-scratch/scripts/waybar-recording.sh",
         "return-type": "json",
@@ -182,28 +173,8 @@
     },
 
     "clock": {
-        "format": "  {:%H:%M     %d %b %Y}",
-        // Phase 19/23/24: hover = calendar (today highlighted). Click = interactive
-        // calendar (scripts/rofi-calendar.py) to browse months and years. In the
-        // hover calendar: scroll = previous/next month, right-click = month/year
-        // view, middle-click = back to today.
+        "format": "\uf017 {:%H:%M   \uf133  %d %b %Y}",
         "on-click": "~/hyprland-from-scratch/scripts/rofi-calendar.py",
-        "tooltip-format": "<b>{:%A, %d %B %Y}</b>\n\n<tt>{calendar}</tt>",
-        "calendar": {
-            "mode": "month",
-            "mode-mon-col": 3,
-            "format": {
-                "months": "<span color='#e0e0e0'><b>{}</b></span>",
-                "days": "<span color='#a8a8a8'>{}</span>",
-                "weekdays": "<span color='#e273a2'><b>{}</b></span>",
-                "today": "<span color='#141414' background='#e273a2'><b>{}</b></span>"
-            }
-        },
-        "actions": {
-            "on-click-right": "mode",
-            "on-click-middle": "shift_reset",
-            "on-scroll-up": "shift_up",
-            "on-scroll-down": "shift_down"
-        }
+        "tooltip-format": "{:%A, %d %B %Y}\nClick: calendar"
     }
 }

@@ -47,15 +47,25 @@ sed -i -e "/\"weekdays\":/s/color='#[0-9a-fA-F]\{6\}'/color='$accent'/" \
 
 dunst_frame=$frame
 [ "$frame" = transparent ] && dunst_frame="#00000000"
-mkdir -p "$C/dunst/dunstrc.d"
-cat > "$C/dunst/dunstrc.d/50-accent.conf" <<EOF
-# ~/hyprland-from-scratch/dotfiles/dunst/dunstrc.d/50-accent.conf
-# Phase 45. Written by scripts/accent.sh (settings menu -> Accent color); dunst
-# reads it after dunstrc. Critical notifications keep dunstrc's red frame.
+
+# Reemplaza la lógica de lectura de bw por esta:
+bw=1
+if [ -f "$HOME/.config/dunst/dunstrc.d/50-accent.conf" ]; then
+    prev=$(grep -oP 'frame_width\s*=\s*\K[0-9]+' "$HOME/.config/dunst/dunstrc.d/50-accent.conf" 2>/dev/null || true)
+    [ -n "$prev" ] && bw="$prev"
+elif [ -f "$HOME/.config/rofi/appearance.rasi" ]; then
+    prev=$(grep -oP 'menu-border:\s*\K[0-9]+' "$HOME/.config/rofi/appearance.rasi" 2>/dev/null || true)
+    [ -n "$prev" ] && bw="$prev"
+fi
+
+mkdir -p "$HOME/.config/dunst/dunstrc.d"
+cat > "$HOME/.config/dunst/dunstrc.d/50-accent.conf" <<EOF
+# Phase 45. Written by scripts/accent.sh (settings menu -> Accent color)
 [global]
     frame_color = "$dunst_frame"
+    frame_width = $bw
 [urgency_normal]
-    highlight = "$accent"   # progress bars (volume indicator, Phase 34)
+    highlight = "$accent"
 EOF
 
 if [ "$frame" = transparent ]; then

@@ -93,12 +93,26 @@ window#waybar {
 
 #mpris {
     padding: 0 6px;
+    background: rgba(20, 20, 20, 0.85);
+    border-radius: 10px;
+    margin: 5px 3px;
+    color: #a8a8a8;
+}
+
+#mpris:hover {
     color: @accent_light;
 }
 
 #window {
     color: #a8a8a8;
     padding: 0 12px;
+    background: rgba(20, 20, 20, 0.85);
+    border-radius: 10px;
+    margin: 5px 3px;
+}
+
+#window:hover {
+    color: @accent_light;
 }
 
 /* the status pill: children sit flush, no per-child background */
@@ -117,6 +131,16 @@ window#waybar {
     color: #e0e0e0;
 }
 
+#idel_inhibitor:hover,
+#network:hover,
+#battery:hover,
+#power-profiles-daemon:hover,
+#custom-bluetooth.connected:hover,
+#custom-bluetooth.on:hover,
+#custom-bluetooth.off:hover {
+    color: @accent_light;
+}
+
 /* off = muted, on but nothing connected = dimmed, a device connected = accent */
 #custom-bluetooth.off {
     color: #6e6e6e;
@@ -127,7 +151,7 @@ window#waybar {
 }
 
 #custom-bluetooth.connected {
-    color: @accent;
+    color: #e0e0e0;
 }
 
 #idle_inhibitor.activated {
@@ -170,6 +194,10 @@ window#waybar {
     font-weight: bold;
 }
 
+#clock:hover {
+    color: @accent_light;
+}
+
 /* GTK's default tooltip is a light/grey bubble — match the pills instead */
 tooltip {
     background: #141414;
@@ -188,7 +216,7 @@ tooltip label {
 }
 
 #power-profiles-daemon.power-saver {
-    color: #5db3df;
+    color: #5aef7d;
 }
 
 /* Phase 19/22: idle = a camera button in a regular pill; recording = red pill */
@@ -247,5 +275,5 @@ tooltip label {
 #backlight-slider highlight {
     min-width: 6px;
     border-radius: 3px;
-    background-color: #e0a84e;
+    background-color: @accent;
 }

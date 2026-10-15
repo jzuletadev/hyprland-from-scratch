@@ -3559,3 +3559,67 @@ Expected state:
 - After `sudo pacman -S fzf`: `Ctrl+R` opens a fuzzy list of past commands.
 - After `paru -S blesh-git`: grey suggestions appear while typing.
 
+---
+
+# Phase 47 — A task manager: Mission Center on CTRL+SHIFT+Esc
+
+btop (`SUPER + Esc`, Phase 11) covers the terminal view. What was missing was a graphical "what is
+running and what is it using" window, Windows Task Manager style: apps separated from background
+processes, per-process CPU / memory, totals and history graphs for CPU, RAM, disks, network and both
+GPUs (AMD iGPU and RTX 3060 on this laptop), and a way to end a process.
+
+**Mission Center** (`mission-center`, official `extra` repo; GTK4/libadwaita, so it follows the
+light/dark choice of `scripts/theme.sh` through `color-scheme`). Compared with the other candidates
+in the repos: `resources` (similar, GNOME style) and `gnome-system-monitor` (no GPU view). Mission
+Center is the closest to what a Windows user expects, down to the shortcut.
+
+- `bindd = CTRL SHIFT, Escape, …, exec, missioncenter`, the Windows shortcut. `SUPER + Esc` stays
+  btop.
+- Window rules on `match:class io.missioncenter.MissionCenter` (the app ID from its `.desktop` file
+  in the Arch package): floating, 1100×700, centered. `SUPER + V` tiles it.
+- `mission-center` went into `base.txt`: `hyprland.conf` binds it.
+
+Gotchas:
+
+- **A comma inside a `bindd` description breaks the bind.** The first version read "Task manager:
+  apps, processes, …": Hyprland took "processes" as the dispatcher (`Invalid dispatcher, requested
+  "processes" does not exist`), and for a second the error banner showed on screen until the
+  description was reworded without commas.
+- **btop's window was too small to show anything.** btop needs at least 80×24 characters, and the
+  `SUPER + Esc` window (`[float;size 800 500;center]`) fit 86×23 — kitty's cells are about 9×20.5 px
+  (font size 11) plus 10 px of padding per side — so all it showed was "Terminal size too small".
+  It's now 1100×680, about 120×31: room above the minimum and more process rows.
+- (Hybrid laptop, Phase 12) While it's open, Mission Center reads the NVIDIA GPU's load, which can
+  keep the dGPU awake. Close it on battery when not needed.
+
+Expected state:
+
+- `hyprctl binds -j` has `Escape` with modmask 5 (CTRL+SHIFT) → `missioncenter`.
+- `SUPER + Esc`: btop draws its full layout (no "Terminal size too small").
+- After `sudo pacman -S mission-center`: `CTRL + SHIFT + Esc` opens a centered floating window;
+  `hyprctl clients -j` shows class `io.missioncenter.MissionCenter`, floating.
+
+---
+
+# Phase 48 — Mission Center on SUPER+Esc, btop removed
+
+After trying both, Mission Center (Phase 47) became the one task manager: it moved to `SUPER + Esc`,
+and btop (Phase 11) was removed rather than kept around unused.
+
+- `bindd = $mainMod, Escape, …, exec, missioncenter`. `CTRL + SHIFT + Esc` still opens it, as a
+  plain `bind`, so the help menu (`SUPER + /`, which lists `bindd` only) shows it once.
+- Removed: the btop bind (and its Phase 47 window-size fix with it), `dotfiles/btop/` (`btop.conf`,
+  `themes/arch.theme`, `themes/tokyonight.theme`; still in git history), `btop` from
+  `packages/base.txt`, and the `~/.config/btop` symlink, which pointed at the deleted folder
+  (`link-dotfiles.sh` only creates links, it doesn't clean up ones for removed folders). The package
+  itself is uninstalled by the user: `sudo pacman -Rns btop`.
+- Comments that cited the btop window as their example (`kitty.conf`'s `remember_window_size`,
+  `rofi-network.sh`'s nmtui window) now describe what they do today; older phases of this log still
+  mention btop as history.
+
+Expected state:
+
+- `hyprctl binds -j`: `Escape` with modmask 64 (SUPER) → `missioncenter` with a description, and
+  modmask 5 (CTRL+SHIFT) → `missioncenter` without one.
+- `ls ~/.config/btop` → no such file; `grep -rn btop dotfiles/ scripts/ packages/` → only comments.
+

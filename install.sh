@@ -77,6 +77,25 @@ run "$REPO/scripts/default-apps.sh"
 step "Login screen theme"
 run sudo "$REPO/scripts/install-sddm-theme.sh"
 
+step "Wallpapers & SDDM sync"
+# 1. Crear carpeta del usuario y copiar wallpapers por defecto sin sobreescribir los existentes
+run mkdir -p "$HOME/Pictures/wallpapers"
+if [ -d "$REPO/assets/wallpapers" ]; then
+    run cp -n "$REPO/assets/wallpapers/"* "$HOME/Pictures/wallpapers/" 2>/dev/null || true
+fi
+
+# 2. Preparar el archivo compartido para SDDM
+run sudo mkdir -p /usr/share/backgrounds
+run sudo touch /usr/share/backgrounds/current_wallpaper.jpg
+run sudo chown "$USER:$USER" /usr/share/backgrounds/current_wallpaper.jpg
+run sudo chmod 644 /usr/share/backgrounds/current_wallpaper.jpg
+
+# 3. Enlace simbólico en el tema de SDDM y configuración de fondo
+if [ -d /usr/share/sddm/themes/arch-neutral ]; then
+    run sudo ln -sf /usr/share/backgrounds/current_wallpaper.jpg /usr/share/sddm/themes/arch-neutral/background.jpg
+    run sudo sed -i 's|^background=.*|background=background.jpg|' /usr/share/sddm/themes/arch-neutral/theme.conf
+fi
+
 step "Done"
 echo "Reboot, then pick \"Hyprland (uwsm)\" on the login screen."
 echo "Keys: tap SUPER for apps, SUPER + / for every shortcut."

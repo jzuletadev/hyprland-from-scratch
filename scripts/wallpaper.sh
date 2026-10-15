@@ -16,9 +16,10 @@
 set -uo pipefail
 
 REPO="$HOME/hyprland-from-scratch"
-DIRS=("$REPO/assets/wallpapers" "$HOME/Pictures/wallpapers")
-DEFAULT_DIR="$REPO/assets/wallpapers"   # restore falls back to its first image
+DIRS=("$HOME/Pictures/wallpapers")
+DEFAULT_DIR="$HOME/Pictures/wallpapers"
 CURRENT="$HOME/.local/state/hyprland-from-scratch/wallpaper"
+SDDM_WALLPAPER="/usr/share/backgrounds/current_wallpaper.jpg"
 THUMBS="$HOME/.cache/hyprland-from-scratch/wallpaper-thumbs"
 
 source "$REPO/scripts/rofi-common.sh"
@@ -26,7 +27,7 @@ source "$REPO/scripts/rofi-common.sh"
 notify()   { notify-send -a Wallpaper "Wallpaper" "$1"; }
 is_image() { [ -f "$1" ] && [[ "${1,,}" =~ \.(jpe?g|png|webp|gif|bmp)$ ]]; }
 
-wait_daemon() {   # at login awww-daemon starts in parallel with this script
+wait_daemon() {
     local i
     for ((i = 0; i < 50; i++)); do
         awww query >/dev/null 2>&1 && return 0
@@ -40,6 +41,11 @@ apply() {   # apply <file> <transition-type>
     awww img "$1" --transition-type "$2" --transition-duration 1.2 --transition-fps 60 || return 1
     mkdir -p "$(dirname "$CURRENT")"
     ln -sfn "$1" "$CURRENT"
+    
+    # Sincronizar con la pantalla de inicio de sesión SDDM
+    if [ -w "$SDDM_WALLPAPER" ]; then
+        cp -f "$1" "$SDDM_WALLPAPER" 2>/dev/null || true
+    fi
 }
 
 thumb() {   # thumb <image>: print the path of a cached 320x180 thumbnail
@@ -65,19 +71,17 @@ pick() {
         done < <(find "$dir" -maxdepth 1 -type f -print0 | sort -z)
     done
     if [ ${#images[@]} -eq 0 ]; then
-        notify "No images in assets/wallpapers or ~/Pictures/wallpapers"
+        notify "No images in ~/Pictures/wallpapers"
         return
     fi
-    # rofi dmenu: "label\0icon\x1f<path>" shows <path> as the entry's icon;
-    # -format i returns the chosen index instead of its label
     choice=$(for img in "${images[@]}"; do
                  name=$(basename "$img")
                  [ "$img" = "$current" ] && name+="  (current)"
                  printf '%s\0icon\x1f%s\n' "$name" "$(thumb "$img")"
              done | rofi -dmenu -i -no-custom -show-icons -format i -p "Wallpaper" \
                          -theme "$MENU_THEME" -theme-str '
-                 window       { width: 640px; }
-                 listview     { columns: 3; lines: 2; fixed-height: true; spacing: 10px; }
+                 window       { width: 840px; }
+                 listview     { columns: 5; lines: 2; fixed-height: true; spacing: 10px; }
                  element      { orientation: vertical; padding: 10px; spacing: 6px; }
                  element-icon { size: 170px; }
                  element-text { horizontal-align: 0.5; }') || return 0
@@ -94,12 +98,10 @@ set_file() {
 restore() {
     local file
     if ! file=$(readlink -e "$CURRENT" 2>/dev/null); then
-        # nothing picked yet (fresh install) or the picked file is gone:
-        # first image in assets/wallpapers (Phase 37; it used to be a fixed 3.jpeg)
-        file=$(find "$DEFAULT_DIR" -maxdepth 1 -type f -print0 | sort -z |
+        file=$(find "$DEFAULT_DIR" -maxdepth 1 -type f -print0 2>/dev/null | sort -z |
                while IFS= read -r -d '' f; do is_image "$f" && { printf '%s' "$f"; break; }; done)
     fi
-    [ -n "$file" ] || { notify "No wallpaper found in assets/wallpapers"; return 1; }
+    [ -n "$file" ] || { notify "No wallpaper found in ~/Pictures/wallpapers"; return 1; }
     apply "$file" fade
 }
 

@@ -97,7 +97,7 @@ so it's always current), and picking a row runs it.
 | `SUPER + T` | Terminal (kitty) |
 | `SUPER + E` | File manager (Thunar) |
 | `SUPER + W` | Wallpaper picker |
-| `SUPER + Esc` | System monitor (btop) |
+| `SUPER + Esc` (or `CTRL + SHIFT + Esc`) | Task manager (Mission Center): apps, processes, CPU / RAM / disk / network / GPU |
 | `SUPER + Q` | Close window |
 | `SUPER + F` | Fullscreen on/off |
 | `SUPER + V` | Floating on/off |

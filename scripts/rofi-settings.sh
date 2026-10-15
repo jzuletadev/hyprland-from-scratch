@@ -49,16 +49,17 @@ rasi_set() { sed -i "s|^\(    $1: *\)[^;]*;|\1$2;|" "$RASI"; }      # rasi_set m
 # saturation and lightness). Invisible: no border on menus (their text goes
 # neutral white) or on windows.
 PALETTE=(
-    "Arch blue|#1793d1|#5db3df|rgba(1793d1cc)"
-    "Cyan|#45b8d9|#74cde6|rgba(45b8d9cc)"
-    "Green|#8cc265|#a6d986|rgba(8cc265cc)"
-    "Amber|#e0a84e|#f0c278|rgba(e0a84ecc)"
+    "Arch Blue|#1793d1|#5db3df|rgba(1793d1cc)"
+    "Cyan|#59d5e0|#74cde6|rgba(59d5e0cc)"
+    "Mint|#98e8de|#b8f0e8|rgba(98e8decc)"
+    "Gold|#ffcf00|#ffdf55|rgba(ffcf00cc)"
+    "Peach|#f4a261|#f8c9a0|rgba(f4a261cc)"
     "Orange|#e28a50|#eea472|rgba(e28a50cc)"
     "Red|#e05f65|#f07a80|rgba(e05f65cc)"
     "Pink|#e273a2|#ee96ba|rgba(e273a2cc)"
+    "Baby Pink|#ffced8|#ffe1e7|rgba(ffced8cc)"
+    "Purple|#9fa1ff|#b8b8ff|rgba(9fa1ff80)"
     "Violet|#a57be0|#be9cec|rgba(a57be0cc)"
-    "Soft white|#e0e0e0|#ffffff|rgba(e0e0e080)"
-    "Grey|#a8a8a8|#e0e0e0|rgba(6e6e6ecc)"
     "Invisible|#e0e0e0|#ffffff|rgba(00000000)"
 )
 
@@ -130,8 +131,25 @@ pick_width() {
     done
     choice=$(printf '%s\n' "${entries[@]}" | menu "Border width") || return
     px=${choice#*  }
-    set_value border_size "${px% px}"
-    rasi_set menu-border "${px% px}px"
+    local num="${px% px}"
+
+    # 1. Aplicar a Hyprland y Rofi
+    set_value border_size "$num"
+    rasi_set menu-border "${num}px"
+
+    # 2. Inyectar frame_width en 50-accent.conf bajo la sección [global]
+    local conf="$HOME/.config/dunst/dunstrc.d/50-accent.conf"
+    if [ -f "$conf" ]; then
+        if grep -q "frame_width" "$conf"; then
+            sed -i "s/^[[:space:]]*frame_width[[:space:]]*=.*/    frame_width = $num/" "$conf"
+        else
+            sed -i "/\[global\]/a \    frame_width = $num" "$conf"
+        fi
+    fi
+
+    # 3. Recargar Dunst limpiamente
+    dunstctl reload >/dev/null 2>&1 || true
+
     notify "Border width: ${px}"
 }
 

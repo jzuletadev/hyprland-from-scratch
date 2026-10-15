@@ -28,10 +28,26 @@ on_battery() {   # true if there is a battery and no mains adapter is online
 
 case "${1:-}" in
     dim)
-        # The upstream example uses `brightnessctl -s set 10`: a raw value, which
-        # on this panel (max 65535) is ~0% — practically black, not dimmed.
-        current=$(brightnessctl get)
-        run brightnessctl -q -s set $(( current * 40 / 100 ))
+        if on_battery; then
+            current=$(brightnessctl get)
+            run brightnessctl -q -s set $(( current * 40 / 100 ))
+        else
+            $dry && echo "plugged in: not dimming"
+        fi
+        ;;
+    lock)
+        if on_battery; then
+            run loginctl lock-session
+        else
+            $dry && echo "plugged in: not locking"
+        fi
+        ;;
+    dpms-off)
+        if on_battery; then
+            run hyprctl dispatch dpms off
+        else
+            $dry && echo "plugged in: not turning screen off"
+        fi
         ;;
     suspend)
         if on_battery; then
@@ -41,7 +57,7 @@ case "${1:-}" in
         fi
         ;;
     *)
-        echo "usage: idle.sh dim|suspend [--dry-run]" >&2
+        echo "usage: idle.sh dim|lock|dpms-off|suspend [--dry-run]" >&2
         exit 2
         ;;
 esac

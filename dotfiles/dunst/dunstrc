@@ -14,7 +14,7 @@
     font = Adwaita Sans 11
     format = "<b>%s</b>\n%b"
     timeout = 5
-    frame_width = 2
+    frame_width = 1
     # frame_color (and the progress bars' highlight): dunstrc.d/50-accent.conf,
     # written by scripts/accent.sh (Phase 45); critical keeps its red frame below
     separator_color = frame
