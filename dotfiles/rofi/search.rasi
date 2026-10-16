@@ -21,7 +21,7 @@ configuration {
 }
 
 window {
-    width: 26%;
+    width: 20%;
     location: north;
     anchor: north;
     y-offset: 60%;   /* Phase 31: between the middle and the bottom; 6 results still fit */

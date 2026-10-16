@@ -53,20 +53,37 @@ imagemagick
 wf-recorder
 
 # Phase 33 — media: image viewer, screenshot annotation, video/music player
-loupe
 satty
-celluloid
 
 # Phase 11.5 — screenshots, file manager
 grim
 slurp
 wl-clipboard
-thunar
 gvfs
 tumbler
 
 # Phase 46 — shell: Ctrl+R fuzzy history search (dotfiles/bash/bashrc)
 fzf
 
-# Phase 47 — task manager (CTRL+SHIFT+Esc): apps, processes, CPU/RAM/disk/network/GPU
-mission-center
+yazi
+ffmpegthumbnailer
+p7zip
+jq
+poppler
+imagemagick
+
+btop
+
+imv
+
+mpv
+
+xdg-utils
+
+neovim
+
+iwd
+impala
+bluetui
+dialog
+gumpython-gobject

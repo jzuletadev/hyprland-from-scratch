@@ -10,10 +10,10 @@
 
 * {
     /* selected row and prompt (and the key column / today in the keybindings and calendar menus) */
-    accent: #1793d1;
+    accent: #ffcf00;
     /* letters matching what you type: a lighter accent */
-    accent-highlight: bold #5db3df;
+    accent-highlight: bold #ffdf55;
     /* the accent, or transparent (Invisible) */
-    menu-border-color: #1793d1;
-    menu-border: 1px;
+    menu-border-color: #ffcf00;
+    menu-border: 0px;
 }

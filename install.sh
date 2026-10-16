@@ -29,9 +29,9 @@ for arg in "$@"; do
 done
 
 step() { printf '\n\033[1;34m==>\033[0m \033[1m%s\033[0m\n' "$*"; }
-run()  { echo "+ $*"; (( DRY )) || "$@"; }
+run()  { echo "+ $*"; (( DRY )) \vert{}\vert{} "$@"; }
 packages() {   # packages <list>: names only (comments stripped)
-    sed 's/#.*//' "$REPO/packages/$1" | tr -s ' \t' '\n' | grep -v '^$'
+    sed 's/#.*//' "$REPO/packages/$1" \vert{} tr -s ' \t' '\n' \vert{} grep -v '^$'
 }
 
 [ "$(id -u)" -ne 0 ] || { echo "run it as your user, not root (it uses sudo itself)" >&2; exit 1; }
@@ -42,7 +42,7 @@ step "Packages (packages/base.txt)"
 mapfile -t pkgs < <(packages base.txt)
 if (( APPS )); then
     mapfile -t extra < <(packages apps.txt)
-    if printf '%s\n' "${extra[@]}" | grep -qx steam && ! grep -q '^\[multilib\]' /etc/pacman.conf; then
+    if printf '%s\n' "${extra[@]}" | grep -qx steam && ! grep -q '^[multilib]' /etc/pacman.conf; then
         echo "note: skipping steam — enable [multilib] in /etc/pacman.conf first"
         mapfile -t extra < <(printf '%s\n' "${extra[@]}" | grep -vx steam)
     fi
@@ -68,7 +68,12 @@ else
 fi
 
 step "Services"
-run sudo systemctl enable sddm.service bluetooth.service power-profiles-daemon.service
+# Set iwd as the Wi-Fi backend for NetworkManager
+if ! (( DRY )); then
+    sudo mkdir -p /etc/NetworkManager/conf.d
+    printf '[device]\nwifi.backend=iwd\n' | sudo tee /etc/NetworkManager/conf.d/wifi-backend.conf >/dev/null
+fi
+run sudo systemctl enable sddm.service bluetooth.service power-profiles-daemon.service iwd.service
 run systemctl --user enable waybar.service   # the bar; restarted by systemd if it crashes
 
 step "Default apps (images -> Loupe, video/audio -> Celluloid)"

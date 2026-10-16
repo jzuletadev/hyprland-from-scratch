@@ -23,5 +23,5 @@ assign() {   # assign <desktop-id> <mime-family...>
     echo "$desktop: $(wc -l <<<"$types") types ($*)"
 }
 
-assign org.gnome.Loupe.desktop image
-assign io.github.celluloid_player.Celluloid.desktop video audio
+xdg-mime default imv.desktop image/png image/jpeg image/jpg image/webp image/gif
+xdg-mime default mpv.desktop video/mp4 video/mkv video/webm video/x-matroska video/quicktime video/x-msvideo

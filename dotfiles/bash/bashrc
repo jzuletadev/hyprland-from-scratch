@@ -54,4 +54,8 @@ if command -v fzf >/dev/null; then
     fi
 fi
 
+# Default terminal editor for Yazi and system tools
+export EDITOR="nvim"
+export VISUAL="nvim"
+
 [[ ${BLE_VERSION-} ]] && ble-attach

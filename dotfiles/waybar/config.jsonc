@@ -45,7 +45,7 @@
         "format": " \uf001  {title}",
         "format-paused": "",
         "format-stopped": "",
-        "max-length": 40,
+        "max-length": 25,
         "tooltip-format": "{player}: {artist} - {title}"
     },
 
@@ -57,7 +57,7 @@
 
     "group/status": {
         "orientation": "horizontal",
-        "modules": ["group/brightness", "network", "group/volume", "custom/bluetooth", "battery", "power-profiles-daemon"]
+        "modules": ["group/brightness", "network", "group/volume", "custom/bluetooth", "battery"]
     },
 
     "idle_inhibitor": {
@@ -70,13 +70,6 @@
         "tooltip-format-deactivated": "Idle management active"
     },
 
-    "backlight": {
-        "format": "\uf185 {percent}%",
-        "tooltip-format": "Laptop screen: {percent}%\nHover: slider \u00b7 Scroll: \u00b15%",
-        "on-scroll-up": "brightnessctl set 5%+",
-        "on-scroll-down": "brightnessctl set 5%-"
-    },
-
     "network": {
         "format-wifi": "\uf1eb  {essid}",
         "format-ethernet": "\uf108  {ifname}",
@@ -84,7 +77,17 @@
         "tooltip-format-wifi": "Wi-Fi: {essid} ({signalStrength}%)\n{ipaddr} via {gwaddr}\nClick: network menu",
         "tooltip-format-ethernet": "Wired: {ifname}\n{ipaddr} via {gwaddr}\nClick: network menu",
         "tooltip-format-disconnected": "Disconnected\nClick: network menu",
-        "on-click": "~/hyprland-from-scratch/scripts/rofi-network.sh"
+        // "on-click": "~/hyprland-from-scratch/scripts/rofi-network.sh",
+        "on-click": "kitty --class impala-floating -e impala"
+    },
+
+    "backlight": {
+        "format": "\uf185 {percent}%",
+        "format-icons": ["\uf185", "\uf186", "\uf187"],
+        "tooltip-format": "Laptop screen: {percent}%\nHover: slider \u00b7 Scroll: \u00b15%",
+        "on-scroll-up": "brightnessctl set 5%+",
+        "on-scroll-down": "brightnessctl set 5%-",
+        "on-click": "kitty --class brightness-floating -e ~/hyprland-from-scratch/scripts/brightness-tui.sh"
     },
 
     "wireplumber": {
@@ -93,7 +96,8 @@
         "format-icons": ["\uf026", "\uf027", "\uf028"],
         "scroll-step": 5,
         "tooltip-format": "{node_name}: {volume}%\nClick: audio menu \u00b7 Right-click: mute \u00b7 Scroll: \u00b15%",
-        "on-click": "~/hyprland-from-scratch/scripts/rofi-audio.sh",
+        // "on-click": "~/hyprland-from-scratch/scripts/rofi-audio.sh",
+        "on-click": "kitty --class volume-floating -e ~/hyprland-from-scratch/scripts/volume-tui.sh",
         "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
     },
 
@@ -104,7 +108,7 @@
             "children-class": "brightness-drawer",
             "transition-left-to-right": true
         },
-        "modules": ["backlight", "backlight/slider"]
+        "modules": ["backlight"]
     },
 
     "backlight/slider": {
@@ -120,7 +124,8 @@
             "children-class": "volume-drawer",
             "transition-left-to-right": true
         },
-        "modules": ["wireplumber", "pulseaudio/slider"]
+        "modules": ["wireplumber"],
+        "on-click": "kitty --class volume-floating -e ~/hyprland-from-scratch/scripts/volume-tui.sh"
     },
 
     "pulseaudio/slider": {
@@ -133,7 +138,8 @@
         "exec": "~/hyprland-from-scratch/scripts/waybar-bluetooth.sh",
         "return-type": "json",
         "interval": 5,
-        "on-click": "~/hyprland-from-scratch/scripts/rofi-bluetooth.sh"
+        // "on-click": "~/hyprland-from-scratch/scripts/rofi-bluetooth.sh",
+        "on-click": "kitty --class bluetui-floating -e bluetui"
     },
 
     "battery": {
@@ -145,7 +151,8 @@
             "critical": 10
         },
         "format-time": "{H}h {M}min",
-        "tooltip-format": "{capacity}% \u00b7 {timeTo}\nPower draw: {power:.1f} W\nHealth: {health}% of design capacity"
+        "tooltip-format": "{capacity}% \u00b7 {timeTo}\nPower draw: {power:.1f} W\nHealth: {health}% of design capacity",
+        "on-click": "kitty --class power-floating -e ~/hyprland-from-scratch/scripts/power-profile-tui.sh"
     },
 
     "power-profiles-daemon": {
@@ -174,7 +181,8 @@
 
     "clock": {
         "format": "\uf017 {:%H:%M   \uf133  %d %b %Y}",
-        "on-click": "~/hyprland-from-scratch/scripts/rofi-calendar.py",
+        // "on-click": "~/hyprland-from-scratch/scripts/rofi-calendar.py",
+        "on-click": "kitty --class calendar-floating -e calcure",
         "tooltip-format": "{:%A, %d %B %Y}\nClick: calendar"
     }
 }

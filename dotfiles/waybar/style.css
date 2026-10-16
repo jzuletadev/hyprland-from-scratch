@@ -21,7 +21,7 @@
        every digit has the same width, so the clock and percentages don't
        change the pills' width as they tick. */
     font-family: "Adwaita Sans", "JetBrainsMono Nerd Font Propo";
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 500;
     font-feature-settings: "tnum";
     min-height: 0;
@@ -91,9 +91,18 @@ window#waybar {
     color: @accent_light;
 }
 
+/* Ocultar mpris cuando esté vacío, sin reproductor o detenido */
 #mpris {
-    padding: 0 6px;
-    background: rgba(20, 20, 20, 0.85);
+    background: transparent;
+    padding: 0;
+    margin: 0;
+}
+
+/* Mostrar la píldora únicamente cuando esté reproduciendo o pausado */
+#mpris.playing,
+#mpris.paused {
+    padding: 0 10px;
+    background: rgba(20, 20, 20, 0.55);
     border-radius: 10px;
     margin: 5px 3px;
     color: #a8a8a8;
@@ -103,15 +112,24 @@ window#waybar {
     color: @accent_light;
 }
 
-#window {
-    color: #a8a8a8;
-    padding: 0 12px;
-    background: rgba(20, 20, 20, 0.85);
-    border-radius: 10px;
-    margin: 5px 3px;
+/* Estado por defecto / sin ventanas: completamente invisible */
+#window,
+window#waybar.empty #window {
+    background: transparent;
+    padding: 0;
+    margin: 0;
 }
 
-#window:hover {
+/* Solo se dibuja cuando contiene el título de una ventana activa */
+window#waybar:not(.empty) #window {
+    padding: 0 10px;
+    background: rgba(20, 20, 20, 0.55);
+    border-radius: 10px;
+    margin: 5px 3px;
+    color: #a8a8a8;
+}
+
+window#waybar:not(.empty) #window:hover {
     color: @accent_light;
 }
 

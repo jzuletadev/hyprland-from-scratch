@@ -40,6 +40,7 @@ Rectangle {
 
     property bool failed: false
     property bool revealed: false
+    property bool loggingIn: false
 
     function reveal() {
         root.revealed = true
@@ -49,11 +50,16 @@ Rectangle {
     function conceal() {
         root.revealed = false
         root.failed = false
+        root.loggingIn = false
         password.text = ""
         root.forceActiveFocus()
     }
     function login() {
+        if (root.loggingIn || password.text.length === 0)
+            return
         root.failed = false
+        root.loggingIn = true
+        idle.stop()
         sddm.login(user.text, password.text, session.currentIndex)
     }
 
@@ -61,6 +67,7 @@ Rectangle {
         target: sddm
         function onLoginFailed() {
             root.failed = true
+            root.loggingIn = false
             password.text = ""
             password.forceActiveFocus()
             idle.restart()
@@ -70,6 +77,10 @@ Rectangle {
     // any key while the form is hidden reveals it; a printable key is kept as
     // the first character of the password
     Keys.onPressed: (event) => {
+        if (root.loggingIn) {
+            event.accepted = true
+            return
+        }
         if (root.revealed)
             return
         root.reveal()
@@ -171,6 +182,7 @@ Rectangle {
             horizontalAlignment: TextInput.AlignHCenter
             background: Item {}
             KeyNavigation.tab: password
+            enabled: !root.loggingIn
             onTextEdited: idle.restart()
             onAccepted: password.forceActiveFocus()
         }
@@ -187,13 +199,17 @@ Rectangle {
             font.family: root.fontFamily
             font.pixelSize: 14
             horizontalAlignment: TextInput.AlignHCenter
+            enabled: !root.loggingIn
             background: Rectangle {
                 radius: height / 2
                 color: "#b3141414"
                 border.width: 1
-                // red after a failed login, amber with Caps Lock, Arch blue otherwise
+                // red after failed login, amber during login or caps lock, accent otherwise
                 border.color: root.failed ? root.critical
+                            : root.loggingIn ? root.warning
                             : keyboard.capsLock ? root.warning : root.accent
+
+                Behavior on border.color { ColorAnimation { duration: 150 } }
             }
             Keys.onEscapePressed: root.conceal()
             onTextEdited: { root.failed = false; idle.restart() }
@@ -202,10 +218,12 @@ Rectangle {
 
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
-            color: root.failed ? root.critical : root.warning
+            color: root.failed ? root.critical : (root.loggingIn || keyboard.capsLock ? root.warning : root.muted)
             font.family: root.fontFamily
             font.pixelSize: 12
-            text: root.failed ? "Wrong password" : keyboard.capsLock ? "Caps Lock is on" : " "
+            text: root.failed ? "Wrong password"
+                : root.loggingIn ? "Verificando..."
+                : keyboard.capsLock ? "Caps Lock is on" : " "
         }
     }
 
@@ -227,6 +245,7 @@ Rectangle {
             currentIndex: sessionModel.lastIndex
             font.family: root.fontFamily
             font.pixelSize: 12
+            enabled: !root.loggingIn
 
             contentItem: Text {
                 leftPadding: 12

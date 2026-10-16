@@ -9,7 +9,7 @@
 @import "config.rasi"
 
 window {
-    width: 26%;
+    width: 20%;
 }
 
 mainbox {
@@ -17,7 +17,7 @@ mainbox {
 }
 
 inputbar {
-    spacing: 10px;
+    spacing: 5px;
     children: [ "prompt", "entry" ];
 }
 

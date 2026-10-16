@@ -1,5 +1,5 @@
 /* ~/hyprland-from-scratch/dotfiles/waybar/accent.css
  * Phase 45. Written by scripts/accent.sh (settings menu -> Accent color);
  * imported by style.css. */
-@define-color accent #1793d1;
-@define-color accent_light #5db3df;
+@define-color accent #ffcf00;
+@define-color accent_light #ffdf55;

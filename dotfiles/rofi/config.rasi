@@ -14,7 +14,7 @@ configuration {
     display-filebrowser: "Files";
     display-window: "Windows";
     drun-display-format: "{name}";
-    font: "Adwaita Sans, JetBrainsMono Nerd Font Propo 11";   /* Phase 26: icons from the Propo variant */
+    font: "Adwaita Sans, JetBrainsMono Nerd Font Propo 10";   /* Phase 26: icons from the Propo variant */
 
     /* Phase 18: the highlighted row follows the mouse, and a single click runs
        it. Rofi's defaults were click = select, double-click = run, so the
