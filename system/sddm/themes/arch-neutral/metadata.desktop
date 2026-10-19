@@ -1,6 +1,6 @@
 [SddmGreeterTheme]
 Name=Arch Neutral
-Description=Login screen matching the hyprland-from-scratch lock screen (Phase 24)
+Description=Login screen matching the hyprland-from-scratch lock screen
 Author=hyprland-from-scratch
 Type=sddm-theme
 Version=1.0

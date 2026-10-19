@@ -1,19 +1,4 @@
 # ~/hyprland-from-scratch/dotfiles/bash/bashrc
-#
-# Phase 46. Interactive bash, sourced at the end of ~/.bashrc (install.sh adds
-# that line). ~/.bashrc keeps what's personal to one machine (tokens, work
-# paths, credentials) out of the repo.
-#
-#   typing     suggestions from your history in grey; Right arrow or End takes
-#              them; commands in color (red = not found): ble.sh, AUR blesh-git
-#   Ctrl+R     fuzzy search through history (fzf); Ctrl+T pick a file, Alt+C cd
-#   Up/Down    with something typed: only commands that start with it;
-#              Enter runs the one shown (with or without ble.sh)
-#   history    50,000 commands, no repeats, saved as soon as each one runs
-#              (a terminal that's closed or crashes doesn't lose them)
-#
-# Each part is skipped if its package is missing, so this works on a fresh
-# install too.
 
 [[ $- == *i* ]] || return
 

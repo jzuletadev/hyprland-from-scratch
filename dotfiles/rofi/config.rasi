@@ -1,32 +1,22 @@
 // ~/hyprland-from-scratch/dotfiles/rofi/config.rasi
-//
-// Minimal Rofi config — Phase 4 baseline, themed in Phase 10, re-themed in Phase 15 (Arch Neutral),
-// mode-switcher row added in Phase 11, hover-select in Phase 18. Apps/run/files/windows, all built
-// into Rofi — no extra modi packages needed. Phase 13: translucent window
-// (frosted by Hyprland's "layerrule = blur on, match:namespace rofi").
 
 configuration {
     modi: "drun,run,filebrowser,window";
     show-icons: true;
-    icon-theme: "Papirus-Dark";   /* Phase 29; falls back to hicolor if Papirus isn't installed */
+    icon-theme: "Papirus-Dark";
     display-drun: "Apps";
     display-run: "Run";
     display-filebrowser: "Files";
     display-window: "Windows";
     drun-display-format: "{name}";
-    font: "Adwaita Sans, JetBrainsMono Nerd Font Propo 10";   /* Phase 26: icons from the Propo variant */
+    font: "Adwaita Sans, JetBrainsMono Nerd Font Propo 10";
 
-    /* Phase 18: the highlighted row follows the mouse, and a single click runs
-       it. Rofi's defaults were click = select, double-click = run, so the
-       highlight only moved on click or scroll. Applies to the launcher and to
-       every scripts/rofi-*.sh menu (they import this file). */
     hover-select: true;
     me-select-entry: "";
     me-accept-entry: "MousePrimary";
 }
 
 @theme "/dev/null"
-// Phase 43: accent color and border width (after @theme, which discards what came before)
 @import "appearance.rasi"
 
 window {
@@ -34,7 +24,6 @@ window {
     border: @menu-border;
     border-color: @menu-border-color;
     border-radius: 10px;
-    /* same 0.85-ish alpha as the Waybar pills; Hyprland blurs what's behind */
     background-color: #141414e0;
 }
 
@@ -82,7 +71,6 @@ element-icon {
 
 element-text {
     background-color: transparent;
-    /* follow element's color, so the selected row's color reaches the text */
     text-color: inherit;
     highlight: @accent-highlight;
     vertical-align: 0.5;

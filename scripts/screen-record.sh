@@ -1,19 +1,5 @@
 #!/usr/bin/env bash
 # ~/hyprland-from-scratch/scripts/screen-record.sh
-#
-# Phase 19. Screen recording with wf-recorder (captures through the
-# compositor's screencopy protocol, which Hyprland provides).
-#
-#   screen-record.sh         not recording: menu (screen or region, with or
-#                            without desktop audio); recording: stop and save
-#   screen-record.sh stop    stop and save (Waybar's red REC button)
-#
-# SUPER+SHIFT+R runs it. Files go to ~/Videos/recordings/<date>_<time>.mp4.
-# Encoding is CPU x264 "veryfast": fine for 1080p on this Ryzen, and it avoids
-# picking between the AMD and NVIDIA GPUs for hardware encoding.
-#
-# Icons are $'\uXXXX' escapes: literal Nerd Font glyphs get silently
-# stripped when written into files here (see docs/build-log.md Phase 11).
 
 set -uo pipefail
 

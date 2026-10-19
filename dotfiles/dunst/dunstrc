@@ -1,8 +1,4 @@
 # ~/hyprland-from-scratch/dotfiles/dunst/dunstrc
-#
-# Minimal dunst config — Phase 5 baseline, themed in Phase 10, re-themed in Phase 15 (Arch Neutral).
-# INI-style sections. Kept small on purpose: per-app rules, scripting,
-# and history navigation get added later once this base is understood.
 
 [global]
     monitor = 0
@@ -15,18 +11,11 @@
     format = "<b>%s</b>\n%b"
     timeout = 5
     frame_width = 1
-    # frame_color (and the progress bars' highlight): dunstrc.d/50-accent.conf,
-    # written by scripts/accent.sh (Phase 45); critical keeps its red frame below
     separator_color = frame
     corner_radius = 10
-    # Phase 23: icons (and screenshot thumbnails, scripts/screenshot.sh) are
-    # scaled to fit; without a cap a screenshot would show at full size
     icon_position = left
     min_icon_size = 32
     max_icon_size = 96
-    # Phase 33: left click runs the notification's action (e.g. "Annotate" on
-    # screenshots, opening a chat from a browser notification) and closes it;
-    # right click just closes it
     mouse_left_click = do_action, close_current
     mouse_middle_click = close_all
     mouse_right_click = close_current

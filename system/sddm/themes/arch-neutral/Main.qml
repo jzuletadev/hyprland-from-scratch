@@ -1,12 +1,5 @@
 // ~/hyprland-from-scratch/system/sddm/themes/arch-neutral/Main.qml
 //
-// Phase 24, made minimal in Phase 31. SDDM login theme matching the lock screen
-// (dotfiles/hypr/hyprlock.conf): wallpaper blurred and dimmed, a modest clock
-// and date. The sign-in form (user, password, session, reboot / power off)
-// stays hidden until a click or a key press, which also counts as the first
-// character of the password; Esc or 30 s without input hide it again.
-// Qt 6 (QtVersion=6 in metadata.desktop), so SDDM runs it with sddm-greeter-qt6.
-//
 // SDDM hands every theme these objects: `sddm` (login(), reboot(), powerOff(),
 // signal loginFailed), `userModel` (lastUser), `sessionModel` (lastIndex),
 // `config` (theme.conf) and `keyboard` (capsLock).

@@ -1,25 +1,8 @@
-/* ~/hyprland-from-scratch/dotfiles/waybar/style.css
- *
- * Phase 10 styling, restyled into pill clusters in the polish pass,
- * re-themed in Phase 15 (Arch Neutral). Palette: bg #141414, surface
- * #1f1f1f, highlight #2b2b2b, fg #e0e0e0, dim #a8a8a8, muted #6e6e6e,
- * accent Arch blue #1793d1 / light #5db3df, warning #e0a84e,
- * critical #e05f65.
- *
- * Phase 45: the accent (@accent, @accent_light) comes from accent.css, written
- * by scripts/accent.sh when it's changed in the settings menu. The power-saver
- * blue below stays fixed: it's a status color, like amber and red.
- */
+/* ~/hyprland-from-scratch/dotfiles/waybar/style.css */
+
 
 @import url("accent.css");
 * {
-    /* Phase 26: Adwaita Sans (Inter-derived), the same font as the apps.
-       Nerd Font icons come from the "Propo" variant of JetBrains Mono Nerd
-       Font: the regular one draws icons wider than their advance (it counts on
-       a monospace space after them), which glued them to the text in a
-       proportional font. "tnum" = tabular figures:
-       every digit has the same width, so the clock and percentages don't
-       change the pills' width as they tick. */
     font-family: "Adwaita Sans", "JetBrainsMono Nerd Font Propo";
     font-size: 12px;
     font-weight: 500;
@@ -32,10 +15,6 @@ window#waybar {
     color: #e0e0e0;
 }
 
-/* shared pill look for every top-level cluster (mpris deliberately excluded:
-   Brave registers an MPRIS interface even with nothing playing, so the
-   module never disappears — GTK's CSS has no :empty, so giving it a
-   background would leave a visible empty pill; text-only avoids that) */
 #custom-arch,
 #workspaces,
 #status,
@@ -66,7 +45,6 @@ window#waybar {
     margin: 4px 2px;
     border-radius: 8px;
     color: #6e6e6e;
-    /* reset GTK's own button look (gradient/shadow on hover) */
     background: transparent;
     border: none;
     box-shadow: none;
@@ -256,44 +234,4 @@ tooltip label {
     background: #e05f65;
     color: #141414;
     font-weight: bold;
-}
-
-/* Phase 20: volume slider revealed by hovering the volume icon. GTK draws it
-   as a scale: trough = the track, highlight = the filled part, slider = the
-   knob (hidden: the fill shows the level, click or drag anywhere on it). */
-#pulseaudio-slider,
-#backlight-slider {
-    padding: 0 10px 0 2px;
-}
-
-#pulseaudio-slider slider,
-#backlight-slider slider {
-    min-height: 0;
-    min-width: 0;
-    opacity: 0;
-    background-image: none;
-    border: none;
-    box-shadow: none;
-}
-
-#pulseaudio-slider trough,
-#backlight-slider trough {
-    min-height: 6px;
-    min-width: 90px;
-    border-radius: 3px;
-    background-color: #2b2b2b;
-}
-
-#pulseaudio-slider highlight {
-    min-width: 6px;
-    border-radius: 3px;
-    background-color: @accent;
-}
-
-/* Phase 21: brightness slider — same shape, gold fill (the palette's amber)
-   so it reads differently from the blue volume slider */
-#backlight-slider highlight {
-    min-width: 6px;
-    border-radius: 3px;
-    background-color: @accent;
 }

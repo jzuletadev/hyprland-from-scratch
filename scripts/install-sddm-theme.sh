@@ -1,19 +1,5 @@
 #!/usr/bin/env bash
 # ~/hyprland-from-scratch/scripts/install-sddm-theme.sh
-#
-# Phase 37. Installs (or updates) the Arch Neutral login theme. SDDM runs as
-# its own user before anyone logs in, so it can't read the repo in your home:
-# the theme and its config are *copied* into the system (Phase 24). Run it
-# again after every change to system/sddm/, or to give the login screen the
-# wallpaper you picked since.
-#
-#   sudo ~/hyprland-from-scratch/scripts/install-sddm-theme.sh [image]
-#
-# Background: the image given, else your current desktop wallpaper (the
-# symlink kept by scripts/wallpaper.sh), else the first image in
-# assets/wallpapers/.
-#
-# Takes effect at the next login screen (log out, or reboot).
 
 set -euo pipefail
 

@@ -1,13 +1,5 @@
 #!/usr/bin/env bash
 # ~/hyprland-from-scratch/scripts/idle.sh
-#
-# Phase 24. Actions behind hypridle's listeners (dotfiles/hypr/hypridle.conf):
-#
-#   idle.sh dim       laptop panel to 40% of its current brightness (saved
-#                     first, so `brightnessctl -r` restores it on activity)
-#   idle.sh suspend   suspend, but only when running on battery
-#
-# --dry-run (as the last argument) prints the decision instead of acting.
 
 set -uo pipefail
 

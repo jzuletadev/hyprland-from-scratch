@@ -1,16 +1,9 @@
 #!/usr/bin/env bash
 # ~/hyprland-from-scratch/scripts/volume.sh
-#
-# Phase 34. Volume change with an on-screen indicator: a notification with a
-# progress bar that replaces itself (dunst stack tag), so every step shows at
-# once instead of piling up.
-#
+
 #   volume.sh up [step]     louder by step % (default 5), capped at 100%
 #   volume.sh down [step]   quieter by step %
 #   volume.sh mute          toggle mute
-#
-# The 4-finger touchpad gestures use a 10% step: a gesture fires once per
-# swipe, so 5% made it take several swipes to hear a difference.
 
 step=${2:-5}
 sink=@DEFAULT_AUDIO_SINK@

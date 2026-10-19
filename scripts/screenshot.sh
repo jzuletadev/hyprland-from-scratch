@@ -1,17 +1,5 @@
 #!/usr/bin/env bash
 # ~/hyprland-from-scratch/scripts/screenshot.sh
-#
-# Phase 23. Screenshots that are saved AND copied to the clipboard, so they can
-# be pasted right away (Ctrl+V in a chat, an issue, a document).
-#
-#   screenshot.sh screen   the focused monitor        SUPER+S
-#   screenshot.sh region   drag a box (Escape cancels) SUPER+SHIFT+S
-#   screenshot.sh window   the focused window         SUPER+CTRL+S
-#   screenshot.sh annotate drag a box, open it in Satty SUPER+ALT+S (Phase 33)
-#
-# Files: ~/Pictures/screenshots/<date>_<time>.png. The notification shows a
-# thumbnail of the capture (dunst's max_icon_size keeps it small); clicking it
-# opens the capture in Satty to annotate (Phase 33, dotfiles/satty/config.toml).
 
 set -uo pipefail
 

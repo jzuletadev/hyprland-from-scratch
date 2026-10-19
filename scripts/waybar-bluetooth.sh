@@ -1,12 +1,5 @@
 #!/usr/bin/env bash
 # ~/hyprland-from-scratch/scripts/waybar-bluetooth.sh
-#
-# Phase 16. Status for Waybar's custom/bluetooth module (polled every 5s).
-# Prints one JSON line: class "off" / "on" (nothing connected) / "connected",
-# with the connected device names in the tooltip.
-#
-# Icons are $'\uXXXX' escapes: literal Nerd Font glyphs get silently
-# stripped when written into files here (see docs/build-log.md Phase 11).
 
 I_ON=$'\uf293'
 I_OFF=$'\uf127'

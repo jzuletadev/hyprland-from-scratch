@@ -1,18 +1,5 @@
 #!/usr/bin/env bash
 # ~/hyprland-from-scratch/scripts/sysinfo.sh
-#
-# Phase 23. System information (fastfetch, Phase 11) in a floating kitty window,
-# opened by clicking the Arch logo in Waybar. Clicking the logo again, clicking
-# anywhere outside the window (rofi-click-outside.sh, Phase 41), or pressing any
-# key in it closes it. Size and position come from the "sysinfo" window rules
-# in hyprland.conf.
-#
-# Phase 42: the logo is an image, drawn by kitty's graphics protocol — your own
-# if ~/.config/fastfetch/logo.<png|jpg|jpeg|webp> exists (in the repo:
-# dotfiles/fastfetch/logo.png), else the official Arch logo shipped by the
-# filesystem package. kitty stretches an image to the box it's given, so a
-# custom one is first fitted into a square with transparent margins, cached
-# until the file changes. fastfetch in a terminal keeps config.jsonc's text logo.
 
 if hyprctl clients -j | grep -q '"class": "sysinfo"'; then
     hyprctl dispatch closewindow class:sysinfo >/dev/null

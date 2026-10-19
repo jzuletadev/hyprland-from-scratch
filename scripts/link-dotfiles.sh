@@ -1,18 +1,5 @@
 #!/usr/bin/env bash
 # ~/hyprland-from-scratch/scripts/link-dotfiles.sh
-#
-# Puts every folder in dotfiles/ into ~/.config/, in one of two ways:
-#
-#   link-dotfiles.sh           link: ~/.config/<app> -> repo. Editing the repo
-#                              edits the running desktop (to keep customizing).
-#   link-dotfiles.sh --copy    copy: ~/.config/<app> is a plain copy. The repo
-#                              can change without touching the desktop; run it
-#                              again to update (to just use it).
-#   ... --dry-run              print what would happen
-#
-# Safe to re-run and to switch modes. Anything that isn't ours is moved to
-# <name>.bak-<timestamp>, never deleted; copies carry a marker file so an
-# update overwrites them in place instead of piling up backups.
 
 set -euo pipefail
 

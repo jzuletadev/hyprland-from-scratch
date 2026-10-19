@@ -1,13 +1,5 @@
 #!/usr/bin/env bash
 # ~/hyprland-from-scratch/scripts/default-apps.sh
-#
-# Phase 33. Default applications, written to ~/.config/mimeapps.list with
-# xdg-mime (used by Thunar, the browser's "open file", xdg-open...):
-#   images          -> Loupe
-#   video and audio -> Celluloid
-# Each app gets every MIME type its .desktop file declares under those
-# families, so no format is missed. Safe to re-run; apps not installed are skipped.
-# Before this, images and MP4 videos opened in Brave.
 
 set -uo pipefail
 

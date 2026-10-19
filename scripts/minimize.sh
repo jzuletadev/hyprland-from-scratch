@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 # ~/hyprland-from-scratch/scripts/minimize.sh
-#
-# Phase 31. "Minimize" for Hyprland, which has no such concept: windows are
-# parked on a hidden special workspace, special:minimized, and brought back to
-# whatever workspace is active when restoring.
-#
+
 #   minimize.sh window    the focused window             SUPER+N
 #   minimize.sh all       every window on this workspace  3 fingers down
 #   minimize.sh restore   all minimized windows, here     3 fingers up, SUPER+SHIFT+N

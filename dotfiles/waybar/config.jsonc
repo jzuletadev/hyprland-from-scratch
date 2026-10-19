@@ -1,23 +1,5 @@
 // ~/hyprland-from-scratch/dotfiles/waybar/config.jsonc
-//
-// Waybar config — Phase 3 baseline, expanded in Phase 10 (Tokyo Night),
-// restyled into grouped "pill" clusters and given a bluetooth control in
-// Phase 11. Arch icon + workspaces + music on the left, window title
-// centered, a single status pill (idle/brightness/network/audio/
-// bluetooth/battery) + tray + clock on the right. All modules use
-// libraries already on the system (NetworkManager, wireplumber,
-// playerctl, upower, amdgpu backlight, bluez, libdbusmenu-gtk3 for tray)
-// — nothing extra to install.
-//
-// mpris only renders while playing (paused/stopped formats are empty), so
-// browser tabs with idle media don't leave a stale title in the bar.
-//
-// Icon glyphs below are Nerd Font Private Use Area codepoints written as
-// \uXXXX escapes in the generating script rather than typed directly —
-// typing them raw in an editor/tool call silently strips them in this
-// environment (verified: a first pass at this file had zero PUA
-// characters anywhere despite every format string "having" an icon).
-// ~/hyprland-from-scratch/dotfiles/waybar/config.jsonc
+
 {
     "layer": "top",
     "position": "top",
@@ -40,11 +22,8 @@
         "format": "\uf303",
         "tooltip-format": "Click: system info \u00b7 Right-click: settings\nApps: tap SUPER \u00b7 Help: SUPER + /",
         "on-click": "~/hyprland-from-scratch/scripts/sysinfo.sh",
-        // "on-click-right": "~/hyprland-from-scratch/scripts/rofi-settings.sh"
-        // "on-click": "pkill -x rofi || ~/.config/rofi/scripts/launcher-compact.sh",
         "on-click-right": "kitty --class theme-floating -e ~/hyprland-from-scratch/scripts/theme-tui.py"
     },
-
     "hyprland/workspaces": {
         "format": "{id}",
         "on-click": "activate"
@@ -61,57 +40,22 @@
         "max-length": 50,
         "separate-outputs": true
     },
+    "custom/recording": {
+        "exec": "~/hyprland-from-scratch/scripts/waybar-recording.sh",
+        "return-type": "json",
+        "interval": 1,
+        "signal": 9,
+        "on-click": "~/hyprland-from-scratch/scripts/screen-record.sh"
+    },
     "group/status": {
         "orientation": "horizontal",
         "modules": [
             "group/brightness",
-            "network",
+            "group/network",
             "group/volume",
-            "custom/bluetooth",
-            "battery"
+            "group/bluetooth",
+            "group/battery"
         ]
-    },
-    "idle_inhibitor": {
-        "format": "{icon}",
-        "format-icons": {
-            "activated": "\uf06e",
-            "deactivated": "\uf070"
-        },
-        "tooltip-format-activated": "Idle management paused (hypridle won't dim/lock/suspend)",
-        "tooltip-format-deactivated": "Idle management active"
-    },
-    "network": {
-        "format-wifi": "\uf1eb  {essid}",
-        "format-ethernet": "\uf108  {ifname}",
-        "format-disconnected": "\uf071  disconnected",
-        "tooltip-format-wifi": "Wi-Fi: {essid} ({signalStrength}%)\n{ipaddr} via {gwaddr}\nClick: network menu",
-        "tooltip-format-ethernet": "Wired: {ifname}\n{ipaddr} via {gwaddr}\nClick: network menu",
-        "tooltip-format-disconnected": "Disconnected\nClick: network menu",
-        // "on-click": "~/hyprland-from-scratch/scripts/rofi-network.sh",
-        // "on-click": "kitty --class impala-floating -e impala"
-        "on-click": "kitty --class wifi-floating -e python3 /home/why/hyprland-from-scratch/scripts/wifi-tui.py"
-    },
-    "backlight": {
-        "device": "amdgpu_bl1",
-        "format": "\uf185 {percent}%",
-        "tooltip-format": "Laptop screen: {percent}%\nHover: slider · Scroll: ±5%",
-        "on-scroll-up": "brightnessctl -d amdgpu_bl1 set 5%+",
-        "on-scroll-down": "brightnessctl -d amdgpu_bl1 set 5%-",
-        "on-click": "kitty --class brightness-floating -e ~/hyprland-from-scratch/scripts/brightness-tui.py"
-    },
-    "wireplumber": {
-        "format": "{icon}  {volume}%",
-        "format-muted": "\uf026  muted",
-        "format-icons": [
-            "\uf026",
-            "\uf027",
-            "\uf028"
-        ],
-        "scroll-step": 5,
-        "tooltip-format": "{node_name}: {volume}%\nClick: audio menu \u00b7 Right-click: mute \u00b7 Scroll: \u00b15%",
-        // "on-click": "~/hyprland-from-scratch/scripts/rofi-audio.sh",
-        "on-click": "kitty --class volume-floating -e ~/hyprland-from-scratch/scripts/volume-tui.py",
-        "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
     },
     "group/brightness": {
         "orientation": "horizontal",
@@ -124,10 +68,22 @@
             "backlight"
         ]
     },
-    "backlight/slider": {
-        "min": 5,
-        "max": 100,
-        "orientation": "horizontal"
+    "backlight": {
+        "device": "amdgpu_bl1",
+        "format": "\uf185 {percent}%",
+        "tooltip-format": "Laptop screen: {percent}%\nHover: slider · Scroll: ±5%",
+        "on-scroll-up": "brightnessctl -d amdgpu_bl1 set 5%+",
+        "on-scroll-down": "brightnessctl -d amdgpu_bl1 set 5%-",
+        "on-click": "kitty --class brightness-floating -e ~/hyprland-from-scratch/scripts/brightness-tui.py"
+    },
+    "group/network": {
+        "format-wifi": "\uf1eb  {essid}",
+        "format-ethernet": "\uf108  {ifname}",
+        "format-disconnected": "\uf071  disconnected",
+        "tooltip-format-wifi": "Wi-Fi: {essid} ({signalStrength}%)\n{ipaddr} via {gwaddr}\nClick: network menu",
+        "tooltip-format-ethernet": "Wired: {ifname}\n{ipaddr} via {gwaddr}\nClick: network menu",
+        "tooltip-format-disconnected": "Disconnected\nClick: network menu",
+        "on-click": "kitty --class wifi-floating -e python3 /home/why/hyprland-from-scratch/scripts/wifi-tui.py"
     },
     "group/volume": {
         "orientation": "horizontal",
@@ -141,20 +97,26 @@
         ],
         "on-click": "kitty --class volume-floating -e ~/hyprland-from-scratch/scripts/volume-tui.py"
     },
-    "pulseaudio/slider": {
-        "min": 0,
-        "max": 100,
-        "orientation": "horizontal"
+    "wireplumber": {
+        "format": "{icon}  {volume}%",
+        "format-muted": "\uf026  muted",
+        "format-icons": [
+            "\uf026",
+            "\uf027",
+            "\uf028"
+        ],
+        "scroll-step": 5,
+        "tooltip-format": "{node_name}: {volume}%\nClick: audio menu \u00b7 Right-click: mute \u00b7 Scroll: \u00b15%",
+        "on-click": "kitty --class volume-floating -e ~/hyprland-from-scratch/scripts/volume-tui.py",
+        "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
     },
-    "custom/bluetooth": {
+    "group/bluetooth": {
         "exec": "~/hyprland-from-scratch/scripts/waybar-bluetooth.sh",
         "return-type": "json",
         "interval": 5,
-        // "on-click": "~/hyprland-from-scratch/scripts/rofi-bluetooth.sh",
-        // "on-click": "kitty --class bluetui-floating -e bluetui"
         "on-click": "kitty --class bluetooth-floating -e python3 /home/why/hyprland-from-scratch/scripts/bluetooth-tui.py"
     },
-    "battery": {
+    "group/battery": {
         "format": "{icon}  {capacity}%",
         "format-icons": [
             "\uf244",
@@ -172,6 +134,20 @@
         "tooltip-format": "{capacity}% \u00b7 {timeTo}\nPower draw: {power:.1f} W\nHealth: {health}% of design capacity",
         "on-click": "kitty --class power-floating -e ~/hyprland-from-scratch/scripts/power-profile-tui.py"
     },
+    "clock": {
+        "format": "\uf017 {:%H:%M   \uf133  %d %b %Y}",
+        "on-click": "kitty --class calendar-floating -e python3 /home/why/hyprland-from-scratch/scripts/calendar-tui.py",
+        "tooltip-format": "{:%A, %d %B %Y}\nClick: calendar"
+    },
+    "idle_inhibitor": {
+        "format": "{icon}",
+        "format-icons": {
+            "activated": "\uf06e",
+            "deactivated": "\uf070"
+        },
+        "tooltip-format-activated": "Idle management paused (hypridle won't dim/lock/suspend)",
+        "tooltip-format-deactivated": "Idle management active"
+    },
     "power-profiles-daemon": {
         "format": "{icon}",
         "tooltip-format": "Power profile: {profile}\nClick: next \u00b7 Right-click: previous",
@@ -183,21 +159,7 @@
             "power-saver": "\uf06c"
         }
     },
-    "custom/recording": {
-        "exec": "~/hyprland-from-scratch/scripts/waybar-recording.sh",
-        "return-type": "json",
-        "interval": 1,
-        "signal": 9,
-        "on-click": "~/hyprland-from-scratch/scripts/screen-record.sh"
-    },
     "tray": {
         "spacing": 8
-    },
-    "clock": {
-        "format": "\uf017 {:%H:%M   \uf133  %d %b %Y}",
-        // "on-click": "~/hyprland-from-scratch/scripts/rofi-calendar.py",
-        // "on-click": "kitty --class calendar-floating -e calcure",
-        "on-click": "kitty --class calendar-floating -e python3 /home/why/hyprland-from-scratch/scripts/calendar-tui.py",
-        "tooltip-format": "{:%A, %d %B %Y}\nClick: calendar"
     }
 }

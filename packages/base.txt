@@ -1,20 +1,15 @@
 # Core desktop: everything the files in dotfiles/ and scripts/ depend on.
-# ./install.sh installs this list (comments are stripped first: some lines
-# have one at the end, which a plain `pacman -S -` would read as package names).
 
-# Phase 1 — compositor, terminal, portals, fonts
 hyprland
 kitty
 xdg-desktop-portal
 xdg-desktop-portal-hyprland
 ttf-jetbrains-mono-nerd
 noto-fonts
-adwaita-fonts      # Phase 25: Adwaita Sans = default sans-serif (also a GTK dependency)
-papirus-icon-theme # Phase 29: icons for Thunar, GTK apps and Rofi (Papirus-Dark)
-noto-fonts-emoji   # Phase 25: color emoji (web pages, chats)
-noto-fonts-cjk     # Phase 25: Chinese / Japanese / Korean text
-
-# Phase 3–8 — bar, launcher, notifications, brightness, wallpaper, lock, idle
+adwaita-fonts
+papirus-icon-theme
+noto-fonts-emoji
+noto-fonts-cjk
 waybar
 rofi
 dunst
@@ -23,12 +18,8 @@ brightnessctl
 awww
 hyprlock
 hypridle
-
-# Phase 9 — login + session manager
 sddm
 uwsm
-
-# Phase 10–11 — Waybar module backends, control-center scripts, TUI tools
 networkmanager
 wireplumber
 pipewire
@@ -36,52 +27,32 @@ pipewire-alsa
 pipewire-pulse
 pipewire-jack
 upower
-power-profiles-daemon   # Waybar's power profile icon (Phase 19)
+power-profiles-daemon
 playerctl
 bluez
 bluez-utils
 python
 fastfetch
-
-# Optional — picked up automatically once installed (uncomment to include):
-# pavucontrol    # Phase 16: "Mixer" entry in the audio menu (per-app volume, inputs)
-
-# Phase 17 — wallpaper picker thumbnails
 imagemagick
-
-# Phase 19 — screen recording (SUPER+SHIFT+R)
 wf-recorder
-
-# Phase 33 — media: image viewer, screenshot annotation, video/music player
 satty
-
-# Phase 11.5 — screenshots, file manager
 grim
 slurp
 wl-clipboard
 gvfs
 tumbler
-
-# Phase 46 — shell: Ctrl+R fuzzy history search (dotfiles/bash/bashrc)
 fzf
-
 yazi
 ffmpegthumbnailer
 p7zip
 jq
 poppler
 imagemagick
-
 btop
-
 imv
-
 mpv
-
 xdg-utils
-
 neovim
-
 iwd
 impala
 bluetui

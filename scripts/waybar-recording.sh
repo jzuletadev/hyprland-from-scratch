@@ -1,13 +1,5 @@
 #!/usr/bin/env bash
 # ~/hyprland-from-scratch/scripts/waybar-recording.sh
-#
-# Phase 19 (button since Phase 22). Status for Waybar's custom/recording module
-# (polled every second, and refreshed at once by screen-record.sh through
-# signal 9): a camera button while idle (click = recording menu), a red
-# "REC mm:ss" pill while wf-recorder runs (click = stop and save).
-#
-# Icons are $'\uXXXX' escapes: literal Nerd Font glyphs get silently
-# stripped when written into files here (see docs/build-log.md Phase 11).
 
 I_REC=$'\uf111'
 I_CAMERA=$'\uf03d'
