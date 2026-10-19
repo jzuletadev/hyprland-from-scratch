@@ -1,0 +1,61 @@
+[mgr]
+cwd = { fg = "#d79921", bold = true }
+find_keyword = { fg = "#fabd2f", bold = true, italic = true }
+find_position = { fg = "#fb4934", bold = true }
+marker_selected = { fg = "#b8bb26", bg = "#b8bb26" }
+marker_copied = { fg = "#fabd2f", bg = "#fabd2f" }
+marker_cut = { fg = "#fb4934", bg = "#fb4934" }
+tab_active = { fg = "#282828", bg = "#d79921", bold = true }
+tab_inactive = { fg = "#ebdbb2", bg = "#3c3836" }
+border_style = { fg = "#d79921" }
+
+[status]
+separator_open = ""
+separator_close = ""
+separator_style = { fg = "#3c3836", bg = "#3c3836" }
+mode_normal = { fg = "#282828", bg = "#d79921", bold = true }
+mode_select = { fg = "#282828", bg = "#b8bb26", bold = true }
+mode_unset = { fg = "#282828", bg = "#fb4934", bold = true }
+progress_label = { fg = "#ffffff", bold = true }
+progress_normal = { fg = "#d79921", bg = "#3c3836" }
+progress_error = { fg = "#fb4934", bg = "#3c3836" }
+permissions_t = { fg = "#d79921" }
+permissions_r = { fg = "#fabd2f" }
+permissions_w = { fg = "#fb4934" }
+permissions_x = { fg = "#b8bb26" }
+permissions_s = { fg = "#665c54" }
+
+[select]
+border = { fg = "#d79921" }
+active = { fg = "#fb4934", bold = true }
+inactive = { fg = "#ebdbb2" }
+
+[input]
+border = { fg = "#d79921" }
+title = { fg = "#d79921" }
+value = { fg = "#ebdbb2" }
+selected = { reversed = true }
+
+[which]
+cols = 3
+mask = { bg = "#1d2021" }
+cand = { fg = "#d79921" }
+rest = { fg = "#fe8019" }
+desc = { fg = "#ebdbb2" }
+separator = "  "
+separator_style = { fg = "#504945" }
+
+[filetype]
+rules = [
+    { mime = "inode/directory", fg = "#d79921", bold = true },
+    { mime = "application/*zip", fg = "#fb4934" },
+    { mime = "application/x-tar", fg = "#fb4934" },
+    { mime = "application/x-bzip*", fg = "#fb4934" },
+    { mime = "application/x-7z-compressed", fg = "#fb4934" },
+    { mime = "application/x-rar", fg = "#fb4934" },
+    { mime = "image/*", fg = "#fabd2f" },
+    { mime = "video/*", fg = "#fe8019" },
+    { mime = "audio/*", fg = "#fe8019" },
+    { mime = "application/pdf", fg = "#b8bb26" },
+    { url = "*", fg = "#ebdbb2" }
+]

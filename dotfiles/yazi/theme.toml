@@ -1,18 +1,1 @@
-[mgr]
-hovered         = { fg = "#141414", bg = "#9564DD", bold = true }
-border_style    = { fg = "#333333" }
-
-[status]
-separator_open  = ""
-separator_close = ""
-separator_style = { fg = "transparent", bg = "transparent" }
-
-[filetype]
-rules = [
-    { mime = "image/*", fg = "#ffced8" },
-    { mime = "video/*", fg = "#e0a84e" },
-    { mime = "audio/*", fg = "#a8e0a8" },
-    { mime = "application/zip", fg = "#e05f65" },
-    { mime = "application/pdf", fg = "#e05f65" },
-    { url = "*/", fg = "#9564DD" },
-]
+/home/why/hyprland-from-scratch/dotfiles/yazi/themes/dark.toml

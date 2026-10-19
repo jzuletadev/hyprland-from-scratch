@@ -2,6 +2,18 @@
 import curses
 import subprocess
 import sys
+import os
+
+MODE_FILE = os.path.expanduser("~/.config/hypr/current_mode")
+
+def get_current_mode():
+    if os.path.exists(MODE_FILE):
+        try:
+            with open(MODE_FILE, "r") as f:
+                return f.read().strip()
+        except Exception:
+            pass
+    return "dark"
 
 def get_current_profile():
     try:
@@ -20,12 +32,23 @@ def main(stdscr):
     curses.curs_set(0)
     curses.use_default_colors()
     
-    # Colores: Cyan (cabeceras), Morado/Azul (selección), Gris (ayuda)
-    curses.init_pair(1, curses.COLOR_GREEN, -1)   # Bordes / Título
-    curses.init_pair(2, curses.COLOR_CYAN, -1)    # Campos / etiquetas
-    curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_MAGENTA) # Resaltado activo
-    curses.init_pair(4, curses.COLOR_YELLOW, -1)  # Indicadores
-    curses.init_pair(5, curses.COLOR_WHITE, -1)   # Texto normal
+    mode = get_current_mode()
+    is_light = (mode == "light")
+
+    if is_light:
+        # Colores contrastados para fondo claro
+        curses.init_pair(1, curses.COLOR_GREEN, -1)   # Marco
+        curses.init_pair(2, curses.COLOR_BLUE, -1)    # Ayuda / Conectado
+        curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_MAGENTA) # Cursor activo
+        curses.init_pair(4, curses.COLOR_BLUE, -1)    # Encabezados (Azul oscuro legible)
+        curses.init_pair(5, curses.COLOR_BLACK, -1)   # Texto normal (NEGRO)
+    else:
+        # Colores para fondo oscuro
+        curses.init_pair(1, curses.COLOR_GREEN, -1)   # Marco
+        curses.init_pair(2, curses.COLOR_CYAN, -1)    # Ayuda / Conectado
+        curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_MAGENTA) # Cursor activo
+        curses.init_pair(4, curses.COLOR_YELLOW, -1)  # Encabezados
+        curses.init_pair(5, curses.COLOR_WHITE, -1)   # Texto normal (BLANCO)
 
     profiles = [
         ("performance", "Performance ", "Máximo rendimiento / Mayor consumo"),
