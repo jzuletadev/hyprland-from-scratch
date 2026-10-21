@@ -22,7 +22,7 @@
         "format": "\uf303",
         "tooltip-format": "Click: system info \u00b7 Right-click: settings\nApps: tap SUPER \u00b7 Help: SUPER + /",
         "on-click": "~/hyprland-from-scratch/scripts/sysinfo.sh",
-        "on-click-right": "kitty --class theme-floating -e ~/hyprland-from-scratch/scripts/theme-tui.py"
+        "on-click-right": "kitty --class theme-floating -e python3 ~/hyprland-from-scratch/scripts/theme-tui.py"
     },
     "hyprland/workspaces": {
         "format": "{id}",
@@ -45,25 +45,20 @@
         "return-type": "json",
         "interval": 1,
         "signal": 9,
-        "on-click": "~/hyprland-from-scratch/scripts/screen-record.sh"
+        "on-click": "python3 ~/hyprland-from-scratch/scripts/screen-record-tui.py stop"
     },
     "group/status": {
         "orientation": "horizontal",
         "modules": [
             "group/brightness",
-            "group/network",
+            "network",
             "group/volume",
-            "group/bluetooth",
-            "group/battery"
+            "custom/bluetooth",
+            "battery"
         ]
     },
     "group/brightness": {
         "orientation": "horizontal",
-        "drawer": {
-            "transition-duration": 300,
-            "children-class": "brightness-drawer",
-            "transition-left-to-right": true
-        },
         "modules": [
             "backlight"
         ]
@@ -74,28 +69,23 @@
         "tooltip-format": "Laptop screen: {percent}%\nHover: slider · Scroll: ±5%",
         "on-scroll-up": "brightnessctl -d amdgpu_bl1 set 5%+",
         "on-scroll-down": "brightnessctl -d amdgpu_bl1 set 5%-",
-        "on-click": "kitty --class brightness-floating -e ~/hyprland-from-scratch/scripts/brightness-tui.py"
+        "on-click": "kitty --class brightness-floating -e python3 ~/hyprland-from-scratch/scripts/brightness-tui.py"
     },
-    "group/network": {
+    "network": {
         "format-wifi": "\uf1eb  {essid}",
         "format-ethernet": "\uf108  {ifname}",
         "format-disconnected": "\uf071  disconnected",
         "tooltip-format-wifi": "Wi-Fi: {essid} ({signalStrength}%)\n{ipaddr} via {gwaddr}\nClick: network menu",
         "tooltip-format-ethernet": "Wired: {ifname}\n{ipaddr} via {gwaddr}\nClick: network menu",
         "tooltip-format-disconnected": "Disconnected\nClick: network menu",
-        "on-click": "kitty --class wifi-floating -e python3 /home/why/hyprland-from-scratch/scripts/wifi-tui.py"
+        "on-click": "kitty --class wifi-floating -e python3 ~/hyprland-from-scratch/scripts/wifi-tui.py"
     },
     "group/volume": {
         "orientation": "horizontal",
-        "drawer": {
-            "transition-duration": 300,
-            "children-class": "volume-drawer",
-            "transition-left-to-right": true
-        },
         "modules": [
             "wireplumber"
         ],
-        "on-click": "kitty --class volume-floating -e ~/hyprland-from-scratch/scripts/volume-tui.py"
+        "on-click": "kitty --class volume-floating -e python3 ~/hyprland-from-scratch/scripts/volume-tui.py"
     },
     "wireplumber": {
         "format": "{icon}  {volume}%",
@@ -107,16 +97,16 @@
         ],
         "scroll-step": 5,
         "tooltip-format": "{node_name}: {volume}%\nClick: audio menu \u00b7 Right-click: mute \u00b7 Scroll: \u00b15%",
-        "on-click": "kitty --class volume-floating -e ~/hyprland-from-scratch/scripts/volume-tui.py",
+        "on-click": "kitty --class volume-floating -e python3 ~/hyprland-from-scratch/scripts/volume-tui.py",
         "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle"
     },
-    "group/bluetooth": {
+    "custom/bluetooth": {
         "exec": "~/hyprland-from-scratch/scripts/waybar-bluetooth.sh",
         "return-type": "json",
         "interval": 5,
-        "on-click": "kitty --class bluetooth-floating -e python3 /home/why/hyprland-from-scratch/scripts/bluetooth-tui.py"
+        "on-click": "kitty --class bluetooth-floating -e python3 ~/hyprland-from-scratch/scripts/bluetooth-tui.py"
     },
-    "group/battery": {
+    "battery": {
         "format": "{icon}  {capacity}%",
         "format-icons": [
             "\uf244",
@@ -132,11 +122,11 @@
         },
         "format-time": "{H}h {M}min",
         "tooltip-format": "{capacity}% \u00b7 {timeTo}\nPower draw: {power:.1f} W\nHealth: {health}% of design capacity",
-        "on-click": "kitty --class power-floating -e ~/hyprland-from-scratch/scripts/power-profile-tui.py"
+        "on-click": "kitty --class power-floating -e python3 ~/hyprland-from-scratch/scripts/power-profile-tui.py"
     },
     "clock": {
         "format": "\uf017 {:%H:%M   \uf133  %d %b %Y}",
-        "on-click": "kitty --class calendar-floating -e python3 /home/why/hyprland-from-scratch/scripts/calendar-tui.py",
+        "on-click": "kitty --class calendar-floating -e python3 ~/hyprland-from-scratch/scripts/calendar-tui.py",
         "tooltip-format": "{:%A, %d %B %Y}\nClick: calendar"
     },
     "idle_inhibitor": {

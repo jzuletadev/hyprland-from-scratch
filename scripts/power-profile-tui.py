@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import curses
 import subprocess
-import sys
 import os
 
 MODE_FILE = os.path.expanduser("~/.config/hypr/current_mode")
@@ -28,34 +27,44 @@ def set_profile(profile):
     except Exception:
         pass
 
+def safe_addstr(win, y, x, text, attr=0):
+    try:
+        max_y, max_x = win.getmaxyx()
+        if y < 0 or y >= max_y or x < 0 or x >= max_x:
+            return
+        available = max_x - x - 1
+        if available > 0:
+            win.addstr(y, x, text[:available], attr)
+    except curses.error:
+        pass
+
 def main(stdscr):
     curses.curs_set(0)
     curses.use_default_colors()
-    
+    stdscr.keypad(True)
+
     mode = get_current_mode()
     is_light = (mode == "light")
 
     if is_light:
-        # Colores contrastados para fondo claro
-        curses.init_pair(1, curses.COLOR_GREEN, -1)   # Marco
-        curses.init_pair(2, curses.COLOR_BLUE, -1)    # Ayuda / Conectado
+        curses.init_pair(1, curses.COLOR_GREEN, -1)                   # Marco
+        curses.init_pair(2, curses.COLOR_BLUE, -1)                    # Ayuda / Conectado
         curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_MAGENTA) # Cursor activo
-        curses.init_pair(4, curses.COLOR_BLUE, -1)    # Encabezados (Azul oscuro legible)
-        curses.init_pair(5, curses.COLOR_BLACK, -1)   # Texto normal (NEGRO)
+        curses.init_pair(4, curses.COLOR_BLUE, -1)                    # Encabezados
+        curses.init_pair(5, curses.COLOR_BLACK, -1)                   # Texto normal
     else:
-        # Colores para fondo oscuro
-        curses.init_pair(1, curses.COLOR_GREEN, -1)   # Marco
-        curses.init_pair(2, curses.COLOR_CYAN, -1)    # Ayuda / Conectado
+        curses.init_pair(1, curses.COLOR_GREEN, -1)                   # Marco
+        curses.init_pair(2, curses.COLOR_CYAN, -1)                    # Ayuda / Conectado
         curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_MAGENTA) # Cursor activo
-        curses.init_pair(4, curses.COLOR_YELLOW, -1)  # Encabezados
-        curses.init_pair(5, curses.COLOR_WHITE, -1)   # Texto normal (BLANCO)
+        curses.init_pair(4, curses.COLOR_YELLOW, -1)                  # Encabezados
+        curses.init_pair(5, curses.COLOR_WHITE, -1)                   # Texto normal
 
     profiles = [
         ("performance", "Performance ", "Máximo rendimiento / Mayor consumo"),
         ("balanced",    "Balanced    ", "Equilibrado / Recomendado"),
         ("power-saver", "Power-saver ", "Ahorro de batería"),
     ]
-    
+
     current = get_current_profile()
     selected_idx = 1
     for idx, (p_id, _, _) in enumerate(profiles):
@@ -66,53 +75,69 @@ def main(stdscr):
     while True:
         stdscr.erase()
         h, w = stdscr.getmaxyx()
-        
-        # 1. Caja principal superior: "Power Management"
-        box_top = 1
-        box_h = 9
-        box_w = min(w - 2, 54)
-        box_x = max(1, (w - box_w) // 2)
 
-        # Dibujar marco de caja
+        if h < 8 or w < 30:
+            safe_addstr(stdscr, 0, 0, "Ventana muy pequeña", curses.color_pair(4))
+            stdscr.refresh()
+            if stdscr.getch() in [27, ord('q'), ord('Q')]:
+                break
+            continue
+
+        box_top = 0
+        box_h = max(7, h - 1)
+        box_w = max(28, w - 2)
+        box_x = 1
+
+        # Dibujar marco de caja protegido
         stdscr.attron(curses.color_pair(1))
         for x in range(box_x, box_x + box_w):
-            stdscr.addch(box_top, x, curses.ACS_HLINE)
-            stdscr.addch(box_top + box_h - 1, x, curses.ACS_HLINE)
+            try:
+                stdscr.addch(box_top, x, curses.ACS_HLINE)
+                stdscr.addch(box_top + box_h - 1, x, curses.ACS_HLINE)
+            except curses.error:
+                pass
         for y in range(box_top, box_top + box_h):
-            stdscr.addch(y, box_x, curses.ACS_VLINE)
-            stdscr.addch(y, box_x + box_w - 1, curses.ACS_VLINE)
-        stdscr.addch(box_top, box_x, curses.ACS_ULCORNER)
-        stdscr.addch(box_top, box_x + box_w - 1, curses.ACS_URCORNER)
-        stdscr.addch(box_top + box_h - 1, box_x, curses.ACS_LLCORNER)
-        stdscr.addch(box_top + box_h - 1, box_x + box_w - 1, curses.ACS_LRCORNER)
+            try:
+                stdscr.addch(y, box_x, curses.ACS_VLINE)
+                stdscr.addch(y, box_x + box_w - 1, curses.ACS_VLINE)
+            except curses.error:
+                pass
+        try:
+            stdscr.addch(box_top, box_x, curses.ACS_ULCORNER)
+            stdscr.addch(box_top, box_x + box_w - 1, curses.ACS_URCORNER)
+            stdscr.addch(box_top + box_h - 1, box_x, curses.ACS_LLCORNER)
+            stdscr.addch(box_top + box_h - 1, box_x + box_w - 1, curses.ACS_LRCORNER)
+        except curses.error:
+            pass
+        stdscr.attroff(curses.color_pair(1))
 
         # Título en el borde superior
         title = " Power Profiles "
-        stdscr.addstr(box_top, box_x + 2, title, curses.color_pair(1) | curses.A_BOLD)
-        stdscr.attroff(curses.color_pair(1))
+        safe_addstr(stdscr, box_top, box_x + 2, title, curses.color_pair(1) | curses.A_BOLD)
 
         # Encabezado de columnas
-        stdscr.addstr(box_top + 1, box_x + 4, "Mode", curses.color_pair(4) | curses.A_BOLD)
-        stdscr.addstr(box_top + 1, box_x + 20, "Status / Description", curses.color_pair(4) | curses.A_BOLD)
+        safe_addstr(stdscr, box_top + 1, box_x + 4, "Mode", curses.color_pair(4) | curses.A_BOLD)
+        safe_addstr(stdscr, box_top + 1, box_x + 20, "Status / Description", curses.color_pair(4) | curses.A_BOLD)
 
         # Opciones
         for i, (p_id, name, desc) in enumerate(profiles):
             y = box_top + 3 + i
+            if y >= box_top + box_h - 1:
+                break
             is_active = (p_id == current)
             mark = "●" if is_active else " "
-            
+
             line_str = f" {mark} {name}  {desc[:26]:<26} "
             if i == selected_idx:
-                stdscr.addstr(y, box_x + 2, line_str, curses.color_pair(3) | curses.A_BOLD)
+                safe_addstr(stdscr, y, box_x + 2, line_str, curses.color_pair(3) | curses.A_BOLD)
             else:
-                stdscr.addstr(y, box_x + 2, f" {mark} ", curses.color_pair(2) if is_active else curses.color_pair(5))
-                stdscr.addstr(y, box_x + 5, f"{name}  {desc[:26]}", curses.color_pair(5))
+                safe_addstr(stdscr, y, box_x + 2, f" {mark} ", curses.color_pair(2) if is_active else curses.color_pair(5))
+                safe_addstr(stdscr, y, box_x + 5, f"{name}  {desc[:26]}", curses.color_pair(5))
 
-        # Barra inferior de atajos (estilo impala)
-        footer_y = box_top + box_h + 1
-        if footer_y < h:
-            help_text = "↵ Apply | q/Esc Close | j,↓ Down | k,↑ Up"
-            stdscr.addstr(footer_y, max(1, (w - len(help_text)) // 2), help_text, curses.color_pair(2))
+        # Barra inferior de atajos
+        help_text = "↵ Apply | j/k Nav | q Close"
+        footer_x = max(box_x + 2, (w - len(help_text)) // 2)
+        safe_addstr(stdscr, box_top + box_h - 1, footer_x, f" {help_text} ", curses.color_pair(2))
 
         stdscr.refresh()
 

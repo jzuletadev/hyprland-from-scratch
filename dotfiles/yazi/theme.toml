@@ -1,1 +1,35 @@
-/home/why/hyprland-from-scratch/dotfiles/yazi/themes/dark.toml
+# Autogenerado desde monokai.yazi (Monokai)
+[flavor]
+use = "monokai"
+dark = "monokai"
+light = "monokai"
+
+[icon]
+prepend_dirs = [
+  { name = ".config", text = "", fg = "#ff6188" },
+  { name = ".git", text = "", fg = "#fc9867" },
+  { name = "Desktop", text = "", fg = "#78dce8" },
+  { name = "Downloads", text = "", fg = "#ffd866" },
+  { name = "Documents", text = "", fg = "#a9dc76" },
+  { name = "Music", text = "", fg = "#78dce8" },
+  { name = "Pictures", text = "", fg = "#ab9df2" },
+  { name = "Fotos", text = "", fg = "#ab9df2" },
+  { name = "Videos", text = "", fg = "#ff6188" },
+  { name = "Screenshots", text = "", fg = "#ab9df2" },
+  { name = "Public", text = "", fg = "#a9dc76" },
+  { name = "Templates", text = "", fg = "#fc9867" },
+  { name = "dev", text = "", fg = "#78dce8" },
+  { name = "hyprland-from-scratch", text = "󰣇", fg = "#ffd866" },
+]
+
+prepend_conds = [
+  { if = "dir & hovered", text = "", fg = "#ffd866" },
+  { if = "dir", text = "", fg = "#fc9867" },
+]
+
+prepend_globs = [
+  { url = "*.{jpg,jpeg,png,gif,webp,svg,bmp,ico,tiff,heic}", text = "", fg = "#ffd866" },
+  { url = "*.{mp4,mkv,mov,avi,webm,flv,wmv,mpeg}", text = "", fg = "#a9dc76" },
+  { url = "*.{mp3,flac,wav,m4a,ogg,opus,aac,wma}", text = "", fg = "#ab9df2" },
+  { url = "*.{zip,rar,7z*,tar,gzip,xz,zstd,bzip*,lzma,compress,archive,cpio,arj,xar,ms-cab*}", text = "", fg = "#ff6188" },
+]

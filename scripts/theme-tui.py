@@ -5,34 +5,24 @@ import subprocess
 
 THEME_SCRIPT = os.path.expanduser("~/hyprland-from-scratch/scripts/theme-manager.sh")
 PALETTE_FILE = os.path.expanduser("~/.config/hypr/current_theme")
-
 MODE_FILE = os.path.expanduser("~/.config/hypr/current_mode")
 
-def get_current_mode():
-    if os.path.exists(MODE_FILE):
-        try:
-            with open(MODE_FILE, "r") as f:
-                return f.read().strip()
-        except Exception:
-            pass
-    return "dark"
-
 PALETTES = [
+    ("monokai",      "Monokai Pro",    "Warm Charcoal / Bright Yellow"),
+    ("dracula",      "Dracula",        "Púrpura vampiro / Clásico"),
     ("nord",         "Nord Ice",       "Azul ártico / Frío"),
-    ("catppuccin",   "Catppuccin",     "Mocha pastel / Suave"),
-    ("tokyo-night",  "Tokyo Night",    "Azul neón / Nocturno"),
-    ("gruvbox",      "Gruvbox",        "Tierra retro / Cálido"),
-    ("arch-cyan",    "Arch Cyan",      "Azul Arch oficial"),
-    ("arch-purple",  "Arch Purple",    "Violeta clásico / Neutra"),
+    ("rose-pine-moon", "Rose Pine Moon", "Rosa suave / Elegante"),
+    ("tokyo-night",  "Tokyo Night",    "Azul noche / Moderno"),
+    ("everforest-medium", "Everforest Medium",     "Verde bosque / Cálido"),
 ]
 
 def get_state():
-    palette = "nord"
+    palette = "monokai"
     mode = "dark"
     if os.path.exists(PALETTE_FILE):
         try:
             with open(PALETTE_FILE, "r") as f:
-                palette = f.read().strip() or "nord"
+                palette = f.read().strip() or "monokai"
         except Exception:
             pass
     if os.path.exists(MODE_FILE):
@@ -44,10 +34,7 @@ def get_state():
     return palette, mode
 
 def apply_palette(palette_id):
-    subprocess.run([THEME_SCRIPT, palette_id], check=False)
-
-def toggle_mode():
-    subprocess.run([THEME_SCRIPT, "--mode", "toggle"], check=False)
+    subprocess.Popen(["bash", THEME_SCRIPT, palette_id], start_new_session=True)
 
 def safe_addstr(win, y, x, text, attr=0):
     try:
@@ -65,39 +52,31 @@ def main(stdscr):
     curses.use_default_colors()
     stdscr.keypad(True)
 
-    mode = get_current_mode()
-    is_light = (mode == "light")
-
-    if is_light:
-        # Colores contrastados para fondo claro
-        curses.init_pair(1, curses.COLOR_GREEN, -1)   # Marco
-        curses.init_pair(2, curses.COLOR_BLUE, -1)    # Ayuda / Conectado
-        curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_MAGENTA) # Cursor activo
-        curses.init_pair(4, curses.COLOR_BLUE, -1)    # Encabezados (Azul oscuro legible)
-        curses.init_pair(5, curses.COLOR_BLACK, -1)   # Texto normal (NEGRO)
-    else:
-        # Colores para fondo oscuro
-        curses.init_pair(1, curses.COLOR_GREEN, -1)   # Marco
-        curses.init_pair(2, curses.COLOR_CYAN, -1)    # Ayuda / Conectado
-        curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_MAGENTA) # Cursor activo
-        curses.init_pair(4, curses.COLOR_YELLOW, -1)  # Encabezados
-        curses.init_pair(5, curses.COLOR_WHITE, -1)   # Texto normal (BLANCO)
-
+    current_palette, current_mode = get_state()
     selected_idx = 0
+    for idx, (p_id, _, _) in enumerate(PALETTES):
+        if p_id == current_palette:
+            selected_idx = idx
+            break
 
     while True:
         stdscr.erase()
         h, w = stdscr.getmaxyx()
         current_palette, current_mode = get_state()
+        is_light = (current_mode == "light")
 
-        # Generar lista de opciones dinámicas (Fila 0 = Switch Modo; Filas siguientes = Paletas)
-        mode_label = f"Modo: {'☀ CLARO' if current_mode == 'light' else '🌙 OSCURO'}"
-        mode_desc = f"Cambiar a {'Modo Oscuro' if current_mode == 'light' else 'Modo Claro'} [Tecla m]"
-        
-        menu_items = [("__toggle_mode__", mode_label, mode_desc)] + PALETTES
-
-        if selected_idx >= len(menu_items):
-            selected_idx = len(menu_items) - 1
+        if is_light:
+            curses.init_pair(1, curses.COLOR_GREEN, -1)                   # Marco
+            curses.init_pair(2, curses.COLOR_BLUE, -1)                    # Atajos / Activo
+            curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_MAGENTA) # Cursor activo
+            curses.init_pair(4, curses.COLOR_BLUE, -1)                    # Encabezados
+            curses.init_pair(5, curses.COLOR_BLACK, -1)                   # Texto normal
+        else:
+            curses.init_pair(1, curses.COLOR_GREEN, -1)                   # Marco
+            curses.init_pair(2, curses.COLOR_CYAN, -1)                    # Atajos / Activo
+            curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_MAGENTA) # Cursor activo
+            curses.init_pair(4, curses.COLOR_YELLOW, -1)                  # Encabezados
+            curses.init_pair(5, curses.COLOR_WHITE, -1)                   # Texto normal
 
         if h < 8 or w < 30:
             safe_addstr(stdscr, 0, 0, "Ventana muy pequeña", curses.color_pair(4))
@@ -111,7 +90,7 @@ def main(stdscr):
         box_w = max(28, w - 2)
         box_x = 1
 
-        # Marco continuo protegido
+        # Marco exterior protegido
         stdscr.attron(curses.color_pair(1))
         for x in range(box_x, box_x + box_w):
             try:
@@ -134,42 +113,33 @@ def main(stdscr):
             pass
         stdscr.attroff(curses.color_pair(1))
 
-        # Título
-        title = f" System Appearance [{current_palette.capitalize()} · {current_mode.upper()}] "
+        # Título y encabezados
+        title = f" System Theme [{current_palette.capitalize()}] "
         safe_addstr(stdscr, box_top, box_x + 2, title, curses.color_pair(1) | curses.A_BOLD)
+        safe_addstr(stdscr, box_top + 1, box_x + 4, "Theme", curses.color_pair(4) | curses.A_BOLD)
+        safe_addstr(stdscr, box_top + 1, box_x + 21, "Palette Style", curses.color_pair(4) | curses.A_BOLD)
 
-        # Opciones
-        for i, (item_id, name, desc) in enumerate(menu_items):
+        # Lista de temas
+        for i, (item_id, name, desc) in enumerate(PALETTES):
             y = box_top + 2 + i
             if y >= box_top + box_h - 1:
                 break
             is_hovered = (i == selected_idx)
-            
-            if item_id == "__toggle_mode__":
-                col1 = f" ⏻ {name:<14}"
-                col2 = f" {desc}"
-            else:
-                is_active = (item_id == current_palette)
-                mark = "●" if is_active else " "
-                col1 = f" {mark} {name:<14}"
-                col2 = f" {desc}"
-
+            is_active = (item_id == current_palette)
+            mark = "●" if is_active else " "
+            col1 = f" {mark} {name:<14}"
+            col2 = f" {desc}"
             row_str = (col1 + col2).ljust(box_w - 4)
 
             if is_hovered:
                 safe_addstr(stdscr, y, box_x + 2, row_str, curses.color_pair(3) | curses.A_BOLD)
             else:
-                if item_id == "__toggle_mode__":
-                    safe_addstr(stdscr, y, box_x + 2, col1, curses.color_pair(4) | curses.A_BOLD)
-                    safe_addstr(stdscr, y, box_x + 2 + len(col1), col2, curses.color_pair(5))
-                else:
-                    is_active = (item_id == current_palette)
-                    attr = curses.color_pair(2) if is_active else curses.color_pair(5)
-                    safe_addstr(stdscr, y, box_x + 2, col1, attr)
-                    safe_addstr(stdscr, y, box_x + 2 + len(col1), col2, curses.color_pair(5))
+                attr = (curses.color_pair(2) | curses.A_BOLD) if is_active else curses.color_pair(5)
+                safe_addstr(stdscr, y, box_x + 2, col1, attr)
+                safe_addstr(stdscr, y, box_x + 2 + len(col1), col2, curses.color_pair(5))
 
-        # Atajos
-        help_text = "↵ Apply | m Toggle Mode | j/k Nav | q Close"
+        # Atajos inferiores
+        help_text = "↵ Apply Theme | j/k Nav | q Close"
         footer_x = max(box_x + 2, (w - len(help_text)) // 2)
         safe_addstr(stdscr, box_top + box_h - 1, footer_x, f" {help_text} ", curses.color_pair(2))
 
@@ -177,18 +147,13 @@ def main(stdscr):
 
         key = stdscr.getch()
         if key in [curses.KEY_UP, ord('k')]:
-            selected_idx = (selected_idx - 1) % len(menu_items)
+            selected_idx = (selected_idx - 1) % len(PALETTES)
         elif key in [curses.KEY_DOWN, ord('j')]:
-            selected_idx = (selected_idx + 1) % len(menu_items)
-        elif key in [ord('m'), ord('M')]:
-            toggle_mode()
-        elif key in [10, 13, curses.KEY_ENTER]:
-            item_id = menu_items[selected_idx][0]
-            if item_id == "__toggle_mode__":
-                toggle_mode()
-            else:
-                apply_palette(item_id)
-                break
+            selected_idx = (selected_idx + 1) % len(PALETTES)
+        elif key in [10, 13, curses.KEY_ENTER, ord(' ')]:
+            item_id = PALETTES[selected_idx][0]
+            apply_palette(item_id)
+            break
         elif key in [27, ord('q'), ord('Q')]:
             break
 

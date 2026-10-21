@@ -1,11 +1,8 @@
-// ~/hyprland-from-scratch/dotfiles/rofi/appearance.rasi
+// Autogenerado desde monokai.yazi (Monokai)
 
 * {
-    /* selected row and prompt (and the key column / today in the keybindings and calendar menus) */
-    accent: #88c0d0;
-    /* letters matching what you type: a lighter accent */
-    accent-highlight: bold #81a1c1;
-    /* the accent, or transparent (Invisible) */
-    menu-border-color: #88c0d0;
-    menu-border: 0px;
+    accent: #ffd866;
+    accent-highlight: bold #78dce8;
+    menu-border-color: #ffd866;
+    menu-border: 1px;
 }

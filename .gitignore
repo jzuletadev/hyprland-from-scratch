@@ -1,2 +1,4 @@
-# Python bytecode from running the helper scripts
 __pycache__/
+*.py[cod]
+*$py.class
+contexto-*.txt

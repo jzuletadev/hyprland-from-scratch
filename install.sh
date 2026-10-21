@@ -76,7 +76,7 @@ fi
 run sudo systemctl enable sddm.service bluetooth.service power-profiles-daemon.service iwd.service
 run systemctl --user enable waybar.service   # the bar; restarted by systemd if it crashes
 
-step "Default apps (images -> Loupe, video/audio -> Celluloid)"
+step "Default apps (images -> imv, video/audio -> mpv)"
 run "$REPO/scripts/default-apps.sh"
 
 step "Login screen theme"

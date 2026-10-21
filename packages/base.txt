@@ -47,7 +47,6 @@ ffmpegthumbnailer
 p7zip
 jq
 poppler
-imagemagick
 btop
 imv
 mpv
@@ -57,4 +56,5 @@ iwd
 impala
 bluetui
 dialog
-gumpython-gobject
+gum
+python-gobject

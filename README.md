@@ -3,18 +3,20 @@
 A complete, minimal Hyprland desktop for Arch Linux, built piece by piece and kept entirely in this
 repository so it can be installed again on any machine.
 
-- **Look:** "Arch Neutral" — neutral greys with one accent, the Arch logo blue. Adwaita Sans for
-  the interface, JetBrains Mono for the terminal.
-- **Bar (Waybar):** workspaces, music, window title, screen recording, brightness and volume
-  sliders, network / Bluetooth / audio menus, battery, power profiles, calendar.
-- **Launchers and menus (Rofi):** quick app search on SUPER, full launcher, settings, wallpaper
-  picker, keybinding help.
-- **Lock, idle and login:** hyprlock, hypridle and an SDDM theme that all match.
-- **Extras:** screenshots straight to the clipboard with annotation (Satty), screen recording,
-  touchpad gestures, minimize / show desktop.
-
-The full story of how it was built — every decision and bug — is in
-[`docs/build-log.md`](docs/build-log.md). This README is the install guide.
+- **Dynamic Theme Engine:** 7 curated palettes (**Catppuccin**, **Nord Ice**, **Tokyo Night**,
+  **Gruvbox**, **Rosé Pine**, **Dracula**, **Monokai Pro**) with live **Dark / Light** mode switching
+  across Hyprland borders, Kitty, Waybar, Rofi, Dunst, Yazi, and GTK apps.
+- **Typography:** Adwaita Sans for the interface, JetBrainsMono Nerd Font for the terminal and TUIs.
+- **Bar (Waybar):** system info & theme launcher, workspaces, active media (`mpris`), window title,
+  live recording timer, brightness, Wi-Fi, volume, Bluetooth, battery, and clock.
+- **Custom Python TUIs:** lightweight `curses` floating menus in Kitty for Wi-Fi, Bluetooth, audio
+  volume, screen brightness, power profiles, session/power actions, theme switching, wallpaper
+  picking, screen recording, calendar, and live keybinding search.
+- **File Manager & Monitor:** `yazi` (with dynamic flavor sync and hidden-files mode) and `btop`.
+- **Lock, Idle & Login:** `hyprlock`, `hypridle` (battery-aware), and a matching SDDM theme that
+  automatically syncs with your current wallpaper.
+- **Screenshots & Recording:** screenshots straight to the clipboard with annotation (`satty`) and
+  hardware-friendly screen/region recording (`wf-recorder`).
 
 ---
 
@@ -38,7 +40,7 @@ Everything else (locale, disk, timezone…) is up to you. Reboot into the TTY an
 Clone the repo **to this exact path** — configs and scripts refer to it:
 
 ```bash
-git clone https://github.com/jzuletadev/hyprland-from-scratch.git ~/hyprland-from-scratch
+git clone [https://github.com/jzuletadev/hyprland-from-scratch.git](https://github.com/jzuletadev/hyprland-from-scratch.git) ~/hyprland-from-scratch
 cd ~/hyprland-from-scratch
 ```
 
@@ -55,20 +57,23 @@ doing anything.
 
 The installer:
 
-1. installs the packages in `packages/base.txt` (asks for your sudo password);
+1. installs the packages in `packages/base.txt` (asks for your sudo password) and refreshes fonts;
 2. copies or links every folder of `dotfiles/` into `~/.config/` — anything already there is kept
    as `<name>.bak-<date>`;
-3. enables SDDM, Bluetooth and power profiles, and Waybar as a user service;
-4. sets the default apps (images → Loupe, video and music → Celluloid);
-5. installs the login screen theme.
+3. configures `~/.bashrc` to source `dotfiles/bash/bashrc` (history, `fzf`, `ble.sh` support);
+4. sets `iwd` as the Wi-Fi backend for NetworkManager and enables system/user services (`sddm`,
+   `bluetooth`, `power-profiles-daemon`, `iwd`, and `waybar`);
+5. sets default apps (images → `imv`, video/audio → `mpv`);
+6. installs the SDDM login screen theme and prepares `~/Pictures/wallpapers` with live SDDM background sync.
 
 **Hybrid laptop (AMD/Intel + NVIDIA)?** Do [annex A](#annex-a--hybrid-laptops-amdintel--nvidia)
 before rebooting. Then reboot and pick **Hyprland (uwsm)** on the login screen.
 
-Optional: AUR apps (Brave, VS Code, and `blesh-git` for suggestions while typing in the terminal) need an AUR helper:
+Optional: AUR apps (Brave, VS Code, and `blesh-git` for suggestions while typing in the terminal)
+need an AUR helper:
 
 ```bash
-git clone https://aur.archlinux.org/paru.git /tmp/paru && (cd /tmp/paru && makepkg -si)
+git clone [https://aur.archlinux.org/paru.git](https://aur.archlinux.org/paru.git) /tmp/paru && (cd /tmp/paru && makepkg -si)
 sed 's/#.*//' packages/aur.txt | xargs paru -S --needed
 ```
 
@@ -86,50 +91,67 @@ new config folders or the login theme.
 
 ## Keybindings
 
-`SUPER` is the Windows key — or the Menu key, the one left of the right Ctrl, which works as a
-second `SUPER` (handy on 60% keyboards whose Fn layer blocks the Windows key). **`SUPER + /` shows this list on screen** (generated from the config,
-so it's always current), and picking a row runs it.
+`SUPER` is the Windows key. **`SUPER + /` opens the interactive Keybindings TUI** (generated live
+from `hyprctl binds`), where you can filter shortcuts by name and press `Enter` to execute any bind.
+
+### Apps & System TUIs
 
 | Keys | Action |
 |------|--------|
-| `SUPER` (tap) | App search — type, Enter |
-| `SUPER + R` | Full launcher (apps / run / files / windows) |
-| `SUPER + T` | Terminal (kitty) |
-| `SUPER + E` | File manager (Thunar) |
-| `SUPER + W` | Wallpaper picker |
-| `SUPER + Esc` (or `CTRL + SHIFT + Esc`) | Task manager (Mission Center): apps, processes, CPU / RAM / disk / network / GPU |
-| `SUPER + Q` | Close window |
-| `SUPER + F` | Fullscreen on/off |
-| `SUPER + V` | Floating on/off |
-| `SUPER + arrows` | Focus the window in that direction |
-| `SUPER + SHIFT + arrows` | Move the window (swap with its neighbor) |
-| `SUPER + CTRL + arrows` | Resize the window (hold to repeat) |
-| `SUPER + J` | Side by side ↔ stacked |
-| `SUPER` + mouse drag | Left button: move · right button: resize |
-| Drag a window's edge or corner | Resize it (no keys needed) |
-| `SUPER + 1…9, 0` | Go to workspace 1–10 |
-| `SUPER + SHIFT + 1…9, 0` | Move the window to that workspace (and follow it) |
-| `SUPER + ALT + 1…9, 0` | Send the window to that workspace (stay here) |
-| `SUPER + N` / `SUPER + SHIFT + N` | Minimize window / restore minimized |
-| `SUPER + D` | Show desktop (minimize all / restore) |
-| `SUPER + S` | Screenshot of the monitor — saved and copied to the clipboard |
+| `SUPER` (tap) | App search (Rofi) — type, Enter |
+| `SUPER + T` | Terminal (`kitty`) |
+| `SUPER + E` | File manager (`yazi`) |
+| `SUPER + SHIFT + E` | File manager showing hidden files (`yazi`) |
+| `SUPER + A` | Theme & Dark/Light Mode Picker (`theme-tui.py`) |
+| `SUPER + W` | Wallpaper Picker (`wallpaper-tui.py`) |
+| `SUPER + Z` | Wi-Fi Manager (`wifi-tui.py`) |
+| `SUPER + B` | Bluetooth Manager (`bluetooth-tui.py`) |
+| `SUPER + V` | Volume Control Menu (`volume-tui.py`) |
+| `SUPER + M` | Mute / unmute audio |
+| `SUPER + G` | Brightness Control Menu (`brightness-tui.py`) |
+| `SUPER + P` | Power Profile Selector (`power-profile-tui.py`) |
+| `SUPER + C` | Calendar (`calendar-tui.py`) |
+| `SUPER + R` | Screen Record Menu / Stop recording (`screen-record-tui.py`) |
+| `SUPER + SHIFT + Esc` | Task Manager (`btop`) |
+| `SUPER + /` | Keybindings Help & Search (`keybinds-tui.py`) |
+| `SUPER + L` | Lock screen (`hyprlock`) |
+| `SUPER + Esc` | Session & Power Menu (`power-tui.py`: Lock, Sleep, Logout, Reboot, Power Off, Hibernate) |
+
+### Windows & Workspaces
+
+| Keys | Action |
+|------|--------|
+| `SUPER + Q` | Close active window |
+| `SUPER + F` | Toggle floating window |
+| `SUPER + SHIFT + F` | Toggle fullscreen (hides the bar) |
+| `SUPER + D` | Show desktop (minimize all windows on workspace / restore) |
+| `SUPER + arrows` | Focus window in that direction |
+| `SUPER + SHIFT + arrows` | Move window (swap places with neighbor) |
+| `SUPER + CTRL + arrows` | Resize window (hold to repeat) |
+| `SUPER` + mouse drag | Left button: move window · Right button: resize window |
+| Drag a window's edge or corner | Resize it directly with the mouse |
+| `SUPER + 1…9, 0` | Switch to workspace 1–10 (`0` = workspace 10) |
+| `SUPER + SHIFT + 1…9, 0` | Move window to workspace 1–10 and follow it |
+| `SUPER + ALT + 1…9, 0` | Send window to workspace 1–10 silently (stay here) |
+
+### Screenshots & Recording
+
+| Keys | Action |
+|------|--------|
+| `SUPER + S` | Screenshot of the focused monitor — saved and copied to clipboard |
 | `SUPER + SHIFT + S` | Screenshot of a region — saved and copied |
-| `SUPER + CTRL + S` | Screenshot of the window — saved and copied |
-| `SUPER + ALT + S` | Screenshot of a region, opened in Satty to annotate |
-| `SUPER + SHIFT + R` | Screen recording (again: stop and save) |
-| `SUPER + L` | Lock |
-| `SUPER + M` | Log out |
+| `SUPER + CTRL + S` | Screenshot of the active window — saved and copied |
+| `SUPER + ALT + S` | Screenshot of a region, opened directly in Satty to annotate |
+| `SUPER + R` | Open Screen Record TUI (or stop active recording immediately) |
 
-Click a screenshot's notification to annotate it. Screenshots go to `~/Pictures/screenshots`,
-recordings to `~/Videos/recordings`.
+Click a screenshot's notification to open it in Satty for annotation. Screenshots are saved to
+`~/Pictures/screenshots` and recordings to `~/Videos/recordings`.
 
-**Touchpad:** 3 fingers down / up — minimize all / restore · 3 fingers left / right — focus the
-window on that side · 4 fingers left / right — switch workspace · 4 fingers down / up — volume
-· spread / pinch 3 fingers — fullscreen on / off.
-
-**Bar:** Arch logo — system info (right-click: settings) · camera — record · brightness and volume —
-hover for a slider, scroll to adjust · volume / network / Bluetooth — click for their menus · power
-icon — switch profile · clock — hover for the calendar, click to browse months.
+**Bar interactions:**
+- **Arch logo:** Left-click opens system info (`fastfetch`) · Right-click opens the Theme Picker TUI.
+- **Recording indicator:** Appears while `wf-recorder` is active · Click to stop and save.
+- **Brightness & Volume:** Scroll to adjust ±5% · Click to open their TUI menus (Right-click volume to mute).
+- **Wi-Fi, Bluetooth, Battery & Clock:** Click any module to open its respective floating TUI.
 
 ---
 
@@ -137,47 +159,46 @@ icon — switch profile · clock — hover for the calendar, click to browse mon
 
 | What | Where |
 |------|-------|
-| Wallpaper | `SUPER + W`, or Thunar → right-click an image → *Set as wallpaper*. Add images to `assets/wallpapers/`. |
-| Light / dark apps, accent color (menus, bar, notifications, lock screen), window border color, border width (windows and menus) | Right-click the Arch logo → Settings. By hand: `scripts/accent.sh` for the accent; border values live in `dotfiles/hypr/appearance.conf` and `dotfiles/rofi/appearance.rasi` |
-| Keybindings, gestures, window rules | `dotfiles/hypr/hyprland.conf` — use `bindd` so the new bind shows in `SUPER + /` |
-| Bar | `dotfiles/waybar/config.jsonc`, `style.css` |
-| Menus and launcher | `dotfiles/rofi/` |
-| Lock screen, idle timeouts | `dotfiles/hypr/hyprlock.conf`, `hypridle.conf` |
-| Login screen | `system/sddm/` — then `sudo ./scripts/install-sddm-theme.sh` (it's copied into the system) |
-| Notifications | `dotfiles/dunst/dunstrc` |
-| Terminal | `dotfiles/kitty/kitty.conf` (`CTRL+SHIFT+A`, then `M` / `L`: more / less transparent, live) |
-| Shell (history, suggestions, `Ctrl+R` search) | `dotfiles/bash/bashrc`, sourced from `~/.bashrc` — personal lines (tokens, paths) go in `~/.bashrc` |
-| System info logo (Arch logo click) | Put an image at `dotfiles/fastfetch/logo.png` (`.jpg` / `.webp` too) — any shape, it's fitted into a square. Without one: the official Arch logo. |
+| Theme & Dark/Light Mode | Press `SUPER + A` or right-click the Arch logo in Waybar. Definitions live in `dotfiles/themes/*.conf` and are applied by `scripts/theme-manager.sh`. |
+| Wallpaper | Press `SUPER + W`. Put your images in `~/Pictures/wallpapers/` (initial defaults come from `assets/wallpapers/`). |
+| Keybindings & Window Rules | `dotfiles/hypr/hyprland.conf` — use `bindd` so new shortcuts automatically appear in `SUPER + /`. |
+| Bar | `dotfiles/waybar/config.jsonc` and `dotfiles/waybar/style.css` (accent colors are auto-generated in `accent.css`). |
+| App Search | `dotfiles/rofi/config.rasi` and `dotfiles/rofi/search.rasi`. |
+| TUI Menus | `scripts/*-tui.py` (built with Python `curses`, automatically adapts to Dark/Light mode). |
+| Lock Screen & Idle | `dotfiles/hypr/hyprlock.conf` and `dotfiles/hypr/hypridle.conf` (triggers `scripts/idle.sh` on battery). |
+| Login Screen (SDDM) | `system/sddm/` — run `sudo ./scripts/install-sddm-theme.sh` to update system files. |
+| Notifications | `dotfiles/dunst/dunstrc` (accent frame auto-generated in `dunstrc.d/50-accent.conf`). |
+| Terminal | `dotfiles/kitty/kitty.conf` (dynamic palette written to `dotfiles/kitty/theme.conf` and reloaded live via socket). |
+| File Manager | `dotfiles/yazi/` and `dotfiles/yazi-hidden/` (flavors live in `dotfiles/yazi/flavors/`). |
+| Shell | `dotfiles/bash/bashrc`, sourced from `~/.bashrc` — keep personal tokens/paths in `~/.bashrc`. |
+| System Info Logo | Place a custom image at `dotfiles/fastfetch/logo.png` (`.jpg` / `.webp` supported). Falls back to the official Arch logo. |
 | Packages | `packages/*.txt` |
 
-The palette (Phase 15 of the build log): background `#141414`, surface `#1f1f1f`, text `#e0e0e0`,
-accent `#1793d1`, light accent `#5db3df`, warning `#e0a84e`, critical `#e05f65`.
-
-After editing (in `--link` mode): Hyprland reloads by itself; Waybar needs
-`systemctl --user restart waybar`; Rofi and the lock screen read their files on every launch.
+After editing (in `--link` mode): Hyprland reloads automatically; Waybar reloads styles via
+`theme-manager.sh` or restarts with `systemctl --user restart waybar`; Kitty updates colors live.
 
 ## Troubleshooting
 
 | Problem | Fix |
 |---------|-----|
-| The bar disappeared | `systemctl --user restart waybar` (it also restarts by itself after a crash) |
-| A config error banner at the top | `hyprctl configerrors` shows the line |
+| The bar disappeared | `systemctl --user restart waybar` (systemd also restarts it automatically on crash) |
+| A config error banner at the top | `hyprctl configerrors` shows the exact line |
 | Login screen looks like plain SDDM | `sudo ./scripts/install-sddm-theme.sh`, then log out |
-| An app or website is light | Settings → Apps theme; Brave also needs its theme set to "Device" |
-| Emoji or Asian text show as boxes | Install `noto-fonts-emoji` / `noto-fonts-cjk` (in `packages/base.txt`), `fc-cache -f`, then quit the browser completely (`pkill -x brave`: it keeps running in the background) |
+| Emoji or Asian text show as boxes | Install `noto-fonts-emoji` / `noto-fonts-cjk` (in `packages/base.txt`), run `fc-cache -f`, and restart your browser (`pkill -x brave`) |
 | Stuck on a red "lockscreen died" screen | `Ctrl+Alt+F3`, log in, `hyprctl --instance 0 dispatch exec hyprlock` |
-| The external monitor runs at 60 Hz | Add a `monitor = desc:…, <res>@<hz>, auto, 1` line (`hyprctl monitors all` lists modes) |
+| External monitor runs at 60 Hz | Add a `monitor = desc:…, <res>@<hz>, auto, 1` line to `hyprland.conf` (`hyprctl monitors all` lists modes) |
 
 ## Repository layout
 
 ```text
 install.sh            installer (copy or --link mode)
 dotfiles/             one folder per app, copied or linked into ~/.config/
-scripts/              menus, bar helpers, screenshots, recording, wallpaper, idle, installers
-assets/wallpapers/    wallpapers (any image you add shows in the picker)
+  themes/             modular color palettes (*.conf) for Dark and Light modes
+  yazi/flavors/       Yazi color flavors synced by theme-manager.sh
+scripts/              Python curses TUIs (*-tui.py) and Bash backends (*.sh)
+assets/wallpapers/    default wallpapers copied to ~/Pictures/wallpapers/ on install
 packages/             package lists: base, apps, aur, nvidia-hybrid
 system/               files copied outside ~/.config: SDDM theme, hybrid-GPU configs
-docs/build-log.md     the phase-by-phase build story
 ```
 
 ---
@@ -191,7 +212,7 @@ docs/build-log.md     the phase-by-phase build story
 
 The desktop runs on the integrated GPU (cooler, longer battery); the NVIDIA GPU drives the external
 outputs wired to it and runs the apps you start with `prime-run`. Built and tested on a Dell G15
-(Ryzen + RTX 3060); details in the build log, Phase 12.
+(Ryzen + RTX 3060).
 
 1. **Driver** (needs `linux-headers`):
 
