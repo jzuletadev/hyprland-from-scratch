@@ -48,8 +48,15 @@ def find_hex(pattern, text, default=None):
     m = re.search(pattern, text, re.IGNORECASE | re.DOTALL)
     return m.group(1).lower() if m else default
 
-bg = find_hex(r'<key>background</key>\s*<string>(#[0-9a-fA-F]{6})', xml_text)
-fg = find_hex(r'<key>foreground</key>\s*<string>(#[0-9a-fA-F]{6})', xml_text)
+# The tmTheme is an XML plist: <key>settings</key><array><dict><key>settings</key><dict>...
+# holds the *main editor* colors. Anchoring here avoids grabbing unrelated keys that appear
+# earlier in the file (e.g. monokai's `gutterSettings`) whose background/foreground are not
+# the editor's real colors.
+m = re.search(r'<key>settings</key>\s*<array>\s*<dict>\s*<key>settings</key>\s*<dict>', xml_text, re.DOTALL)
+scope = xml_text[m.end():] if m else xml_text
+
+bg = find_hex(r'<key>background</key>\s*<string>(#[0-9a-fA-F]{6})', scope)
+fg = find_hex(r'<key>foreground</key>\s*<string>(#[0-9a-fA-F]{6})', scope)
 
 if not bg:
     bg = find_hex(r'overall\s*=\s*\{\s*bg\s*=\s*"(#[0-9a-fA-F]{6})"', toml_text) or \
@@ -67,8 +74,17 @@ accent = find_hex(r'normal_main\s*=.*?bg\s*=\s*"(#[0-9a-fA-F]{6})"', toml_text) 
          find_hex(r'active\s*=.*?bg\s*=\s*"(#[0-9a-fA-F]{6})"', toml_text) or \
          find_hex(r'cwd\s*=\s*\{\s*fg\s*=\s*"(#[0-9a-fA-F]{6})"', toml_text, "#cba6f7")
 
-light_accent = find_hex(r'cwd\s*=\s*\{\s*fg\s*=\s*"(#[0-9a-fA-F]{6})"', toml_text) or \
-               find_hex(r'select_main\s*=.*?bg\s*=\s*"(#[0-9a-fA-F]{6})"', toml_text, accent)
+def hex2rgb(h):
+    h = h.lstrip('#')
+    return tuple(int(h[i:i+2], 16) for i in (0, 2, 4))
+
+def lighten(h, f=0.15):
+    r, g, b = hex2rgb(h)
+    return "#%02x%02x%02x" % (round(r * (1 - f) + 255 * f), round(g * (1 - f) + 255 * f), round(b * (1 - f) + 255 * f))
+
+# Light accent must be a lighter variant of the same accent hue, so hovers/highlights
+# stay coherent with borders, bar and notifications instead of jumping to another hue.
+light_accent = lighten(accent)
 
 border_inactive = find_hex(r'border_style\s*=.*?fg\s*=\s*"(#[0-9a-fA-F]{6})"', toml_text) or \
                   find_hex(r'normal_alt\s*=.*?bg\s*=\s*"(#[0-9a-fA-F]{6})"', toml_text, "#403e41")

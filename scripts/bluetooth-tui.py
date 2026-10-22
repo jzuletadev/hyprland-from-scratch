@@ -69,19 +69,22 @@ def main(stdscr):
 
     mode = get_current_mode()
     is_light = (mode == "light")
+    from theme_colors import get_accent_hex, ansi_accent, hover_colors
+    ACCENT_COLOR = ansi_accent(get_accent_hex())
+    HOVER_FG, HOVER_BG = hover_colors(is_light)
 
     if is_light:
         # Colores contrastados para fondo claro
         curses.init_pair(1, curses.COLOR_GREEN, -1)   # Marco
-        curses.init_pair(2, curses.COLOR_BLUE, -1)    # Ayuda / Conectado
-        curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_MAGENTA) # Cursor activo
+        curses.init_pair(2, ACCENT_COLOR, -1)    # Ayuda / Conectado
+        curses.init_pair(3, HOVER_FG, HOVER_BG) # Cursor activo
         curses.init_pair(4, curses.COLOR_BLUE, -1)    # Encabezados (Azul oscuro legible)
         curses.init_pair(5, curses.COLOR_BLACK, -1)   # Texto normal (NEGRO)
     else:
         # Colores para fondo oscuro
         curses.init_pair(1, curses.COLOR_GREEN, -1)   # Marco
-        curses.init_pair(2, curses.COLOR_CYAN, -1)    # Ayuda / Conectado
-        curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_MAGENTA) # Cursor activo
+        curses.init_pair(2, ACCENT_COLOR, -1)    # Ayuda / Conectado
+        curses.init_pair(3, HOVER_FG, HOVER_BG) # Cursor activo
         curses.init_pair(4, curses.COLOR_YELLOW, -1)  # Encabezados
         curses.init_pair(5, curses.COLOR_WHITE, -1)   # Texto normal (BLANCO)
 
@@ -156,6 +159,9 @@ def main(stdscr):
             row_str = f" {mark} {d['name'][:18]:<18}  {status:<10}".ljust(box_w - 4)
 
             if is_hovered:
+                _bar_end = min(box_x + box_w - 1, box_x + 2 + len(row_str))
+                for _bx in range(box_x + 2, _bar_end):
+                    stdscr.addstr(y, _bx, ' ', curses.color_pair(3))
                 safe_addstr(stdscr, y, box_x + 2, row_str, curses.color_pair(3) | curses.A_BOLD)
             else:
                 attr = curses.color_pair(2) if is_connected else curses.color_pair(5)

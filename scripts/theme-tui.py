@@ -11,9 +11,9 @@ PALETTES = [
     ("monokai",      "Monokai Pro",    "Warm Charcoal / Bright Yellow"),
     ("dracula",      "Dracula",        "Púrpura vampiro / Clásico"),
     ("nord",         "Nord Ice",       "Azul ártico / Frío"),
-    ("rose-pine-moon", "Rose Pine Moon", "Rosa suave / Elegante"),
+    ("rose-pine-moon", "Rose Pine", "Rosa suave / Elegante"),
     ("tokyo-night",  "Tokyo Night",    "Azul noche / Moderno"),
-    ("everforest-medium", "Everforest Medium",     "Verde bosque / Cálido"),
+    ("everforest-medium", "Everforest",     "Verde bosque / Cálido"),
 ]
 
 def get_state():
@@ -64,17 +64,20 @@ def main(stdscr):
         h, w = stdscr.getmaxyx()
         current_palette, current_mode = get_state()
         is_light = (current_mode == "light")
+        from theme_colors import get_accent_hex, ansi_accent, hover_colors
+        ACCENT_COLOR = ansi_accent(get_accent_hex())
+        HOVER_FG, HOVER_BG = hover_colors(is_light)
 
         if is_light:
             curses.init_pair(1, curses.COLOR_GREEN, -1)                   # Marco
-            curses.init_pair(2, curses.COLOR_BLUE, -1)                    # Atajos / Activo
-            curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_MAGENTA) # Cursor activo
+            curses.init_pair(2, ACCENT_COLOR, -1)                    # Atajos / Activo
+            curses.init_pair(3, HOVER_FG, HOVER_BG) # Cursor activo
             curses.init_pair(4, curses.COLOR_BLUE, -1)                    # Encabezados
             curses.init_pair(5, curses.COLOR_BLACK, -1)                   # Texto normal
         else:
             curses.init_pair(1, curses.COLOR_GREEN, -1)                   # Marco
-            curses.init_pair(2, curses.COLOR_CYAN, -1)                    # Atajos / Activo
-            curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_MAGENTA) # Cursor activo
+            curses.init_pair(2, ACCENT_COLOR, -1)                    # Atajos / Activo
+            curses.init_pair(3, HOVER_FG, HOVER_BG) # Cursor activo
             curses.init_pair(4, curses.COLOR_YELLOW, -1)                  # Encabezados
             curses.init_pair(5, curses.COLOR_WHITE, -1)                   # Texto normal
 
@@ -116,8 +119,8 @@ def main(stdscr):
         # Título y encabezados
         title = f" System Theme [{current_palette.capitalize()}] "
         safe_addstr(stdscr, box_top, box_x + 2, title, curses.color_pair(1) | curses.A_BOLD)
-        safe_addstr(stdscr, box_top + 1, box_x + 4, "Theme", curses.color_pair(4) | curses.A_BOLD)
-        safe_addstr(stdscr, box_top + 1, box_x + 21, "Palette Style", curses.color_pair(4) | curses.A_BOLD)
+        safe_addstr(stdscr, box_top + 1, box_x + 7, "Theme", curses.color_pair(4) | curses.A_BOLD)
+        safe_addstr(stdscr, box_top + 1, box_x + 22, "Palette Style", curses.color_pair(4) | curses.A_BOLD)
 
         # Lista de temas
         for i, (item_id, name, desc) in enumerate(PALETTES):
@@ -132,6 +135,9 @@ def main(stdscr):
             row_str = (col1 + col2).ljust(box_w - 4)
 
             if is_hovered:
+                _bar_end = min(box_x + box_w - 1, box_x + 2 + len(row_str))
+                for _bx in range(box_x + 2, _bar_end):
+                    stdscr.addstr(y, _bx, ' ', curses.color_pair(3))
                 safe_addstr(stdscr, y, box_x + 2, row_str, curses.color_pair(3) | curses.A_BOLD)
             else:
                 attr = (curses.color_pair(2) | curses.A_BOLD) if is_active else curses.color_pair(5)

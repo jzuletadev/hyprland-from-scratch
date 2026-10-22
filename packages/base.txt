@@ -58,3 +58,4 @@ bluetui
 dialog
 gum
 python-gobject
+resvg

@@ -61,18 +61,21 @@ def main(stdscr):
 
     mode = get_current_mode()
     is_light = (mode == "light")
+    from theme_colors import get_accent_hex, ansi_accent, hover_colors
+    ACCENT_COLOR = ansi_accent(get_accent_hex())
+    HOVER_FG, HOVER_BG = hover_colors(is_light)
 
     if is_light:
         curses.init_pair(1, curses.COLOR_GREEN, -1)                   # Marco
-        curses.init_pair(2, curses.COLOR_BLUE, -1)                    # Ayuda / Conectado
-        curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_MAGENTA) # Cursor activo
+        curses.init_pair(2, ACCENT_COLOR, -1)                    # Ayuda / Conectado
+        curses.init_pair(3, HOVER_FG, HOVER_BG) # Cursor activo
         curses.init_pair(4, curses.COLOR_BLUE, -1)                    # Encabezados
         curses.init_pair(5, curses.COLOR_BLACK, -1)                   # Texto normal
         curses.init_pair(6, curses.COLOR_RED, -1)                     # Muted
     else:
         curses.init_pair(1, curses.COLOR_GREEN, -1)                   # Marco
-        curses.init_pair(2, curses.COLOR_CYAN, -1)                    # Ayuda / Conectado
-        curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_MAGENTA) # Cursor activo
+        curses.init_pair(2, ACCENT_COLOR, -1)                    # Ayuda / Conectado
+        curses.init_pair(3, HOVER_FG, HOVER_BG) # Cursor activo
         curses.init_pair(4, curses.COLOR_YELLOW, -1)                  # Encabezados
         curses.init_pair(5, curses.COLOR_WHITE, -1)                   # Texto normal
         curses.init_pair(6, curses.COLOR_RED, -1)                     # Muted
@@ -133,11 +136,12 @@ def main(stdscr):
         title = f" Master Volume [{state_label}] "
         safe_addstr(stdscr, box_top, box_x + 2, title, curses.color_pair(6 if is_muted else 1) | curses.A_BOLD)
 
-        # Encabezados
-        safe_addstr(stdscr, box_top + 1, box_x + 4, "Level", curses.color_pair(4) | curses.A_BOLD)
-        safe_addstr(stdscr, box_top + 1, box_x + 18, "Output Status", curses.color_pair(4) | curses.A_BOLD)
+        # Encabezados alineados con las columnas
+        safe_addstr(stdscr, box_top + 1, box_x + 5, "Level", curses.color_pair(4) | curses.A_BOLD)
+        safe_addstr(stdscr, box_top + 1, box_x + 16, "Output Status", curses.color_pair(4) | curses.A_BOLD)
 
-        # Opciones
+        # Opciones con barra hover dentro del marco (1 espacio de margen a cada lado)
+        inner_w = box_w - 4
         for i, (pct, name, desc) in enumerate(presets):
             y = box_top + 3 + i
             if y >= box_top + box_h - 1:
@@ -145,17 +149,29 @@ def main(stdscr):
             is_hovered = (i == selected_idx)
             mark = "●" if is_hovered else " "
 
-            line_str = f" {mark} {name:<5}  {desc[:24]:<24} "
+            # 3 chars (" ● ") + 11 chars (name:<11) = 14 chars -> empieza en box_x + 2 + 14 = box_x + 16
+            line_str = f" {mark} {name:<11}{desc}".ljust(inner_w)
             if is_hovered:
                 safe_addstr(stdscr, y, box_x + 2, line_str, curses.color_pair(3) | curses.A_BOLD)
             else:
-                safe_addstr(stdscr, y, box_x + 2, f"   {name:<5}  {desc[:24]}", curses.color_pair(5))
+                safe_addstr(stdscr, y, box_x + 2, line_str, curses.color_pair(5))
+
+        # Barra de progreso visual en el espacio inferior
+        bar_y = box_top + 3 + len(presets) + 1
+        if bar_y < box_top + box_h - 1:
+            bar_max_w = inner_w - 9  # Espacio para la barra descontando etiqueta
+            if bar_max_w > 5:
+                filled = 0 if is_muted else int(round((vol / 100.0) * bar_max_w))
+                empty = bar_max_w - filled
+                status_txt = "MUTE" if is_muted else f"{vol:>3}%"
+                bar_color = curses.color_pair(6 if is_muted else 2) | curses.A_BOLD
+                bar_visual = f" [{'█' * filled}{'░' * empty}] {status_txt}"
+                safe_addstr(stdscr, bar_y, box_x + 2, bar_visual, bar_color)
 
         # Barra inferior de atajos en el borde
         help_text = "↵ Set | m Mute | ←/h -5% | →/l +5% | q Close"
         footer_x = max(box_x + 2, (w - len(help_text)) // 2)
         safe_addstr(stdscr, box_top + box_h - 1, footer_x, f" {help_text} ", curses.color_pair(2))
-
         stdscr.refresh()
 
         key = stdscr.getch()

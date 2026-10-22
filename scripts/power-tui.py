@@ -46,19 +46,22 @@ def main(stdscr):
 
     mode = get_current_mode()
     is_light = (mode == "light")
+    from theme_colors import get_accent_hex, ansi_accent, hover_colors
+    ACCENT_COLOR = ansi_accent(get_accent_hex())
+    HOVER_FG, HOVER_BG = hover_colors(is_light)
 
     if is_light:
         # Colores contrastados para fondo claro
         curses.init_pair(1, curses.COLOR_GREEN, -1)   # Marco
-        curses.init_pair(2, curses.COLOR_BLUE, -1)    # Ayuda / Conectado
-        curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_MAGENTA) # Cursor activo
+        curses.init_pair(2, ACCENT_COLOR, -1)    # Ayuda / Conectado
+        curses.init_pair(3, HOVER_FG, HOVER_BG) # Cursor activo
         curses.init_pair(4, curses.COLOR_BLUE, -1)    # Encabezados (Azul oscuro legible)
         curses.init_pair(5, curses.COLOR_BLACK, -1)   # Texto normal (NEGRO)
     else:
         # Colores para fondo oscuro
         curses.init_pair(1, curses.COLOR_GREEN, -1)   # Marco
-        curses.init_pair(2, curses.COLOR_CYAN, -1)    # Ayuda / Conectado
-        curses.init_pair(3, curses.COLOR_WHITE, curses.COLOR_MAGENTA) # Cursor activo
+        curses.init_pair(2, ACCENT_COLOR, -1)    # Ayuda / Conectado
+        curses.init_pair(3, HOVER_FG, HOVER_BG) # Cursor activo
         curses.init_pair(4, curses.COLOR_YELLOW, -1)  # Encabezados
         curses.init_pair(5, curses.COLOR_WHITE, -1)   # Texto normal (BLANCO)
 
@@ -117,28 +120,35 @@ def main(stdscr):
         title = " Session & Power Control "
         safe_addstr(stdscr, box_top, box_x + 2, title, curses.color_pair(1) | curses.A_BOLD)
 
-        # Opciones
+        # Opciones dentro del marco (con 1 espacio de margen a cada lado)
+        inner_w = box_w - 4
         for i, (action_id, key_hint, label, desc) in enumerate(actions):
             y = box_top + 2 + i
-            if y >= box_top + box_h - 2:
+            if y >= box_top + box_h - 1:
                 break
             is_hovered = (i == selected_idx)
 
-            line_str = f" [{key_hint}] {label:<16} {desc}"
+            # 15 caracteres para la etiqueta (ej. "Sleep / Suspend") + 2 espacios
+            prefix = f" [{key_hint}] "
+            label_col = f"{label:<15}  "
+            max_desc = max(0, inner_w - len(prefix) - len(label_col))
+            desc_clipped = desc[:max_desc]
+
+            line_str = f"{prefix}{label_col}{desc_clipped}".ljust(inner_w)[:inner_w]
+
             if is_hovered:
-                safe_addstr(stdscr, y, box_x + 2, line_str.ljust(box_w - 4), curses.color_pair(3) | curses.A_BOLD)
+                safe_addstr(stdscr, y, box_x + 2, line_str, curses.color_pair(3) | curses.A_BOLD)
             else:
-                # Resaltar la tecla de acceso rápido
-                prefix = f" [{key_hint}] "
                 safe_addstr(stdscr, y, box_x + 2, prefix, curses.color_pair(2) | curses.A_BOLD)
-                safe_addstr(stdscr, y, box_x + 2 + len(prefix), f"{label:<16}", curses.color_pair(4) if action_id in ["reboot", "shutdown"] else curses.color_pair(5))
-                safe_addstr(stdscr, y, box_x + 2 + len(prefix) + 17, desc, curses.color_pair(5))
+                label_color = curses.color_pair(4) if action_id in ["reboot", "shutdown"] else curses.color_pair(5)
+                safe_addstr(stdscr, y, box_x + 2 + len(prefix), label_col, label_color)
+                safe_addstr(stdscr, y, box_x + 2 + len(prefix) + len(label_col), desc_clipped, curses.color_pair(5))
 
-        # Footer inferior
-        help_text = "↵ Execute | Hotkeys (l/s/e/r/p) | j/k Nav | q Cancel"
-        footer_x = max(box_x + 2, (w - len(help_text)) // 2)
-        safe_addstr(stdscr, box_top + box_h - 1, footer_x, f" {help_text} ", curses.color_pair(2))
-
+        # Footer inferior compacto que respeta las esquinas del marco
+        help_text = "↵ Run | l/s/e/r/p/h Keys | j/k Nav | q Quit"
+        footer_str = f" {help_text[:inner_w - 2]} "
+        footer_x = max(box_x + 2, box_x + (box_w - len(footer_str)) // 2)
+        safe_addstr(stdscr, box_top + box_h - 1, footer_x, footer_str, curses.color_pair(2))
         stdscr.refresh()
 
         key = stdscr.getch()

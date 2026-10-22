@@ -1,35 +1,35 @@
-# Autogenerado desde monokai.yazi (Monokai)
+# Autogenerado desde dracula.yazi (Dracula)
 [flavor]
-use = "monokai"
-dark = "monokai"
-light = "monokai"
+use = "dracula"
+dark = "dracula"
+light = "dracula"
 
 [icon]
 prepend_dirs = [
-  { name = ".config", text = "", fg = "#ff6188" },
-  { name = ".git", text = "", fg = "#fc9867" },
-  { name = "Desktop", text = "", fg = "#78dce8" },
-  { name = "Downloads", text = "", fg = "#ffd866" },
-  { name = "Documents", text = "", fg = "#a9dc76" },
-  { name = "Music", text = "", fg = "#78dce8" },
-  { name = "Pictures", text = "", fg = "#ab9df2" },
-  { name = "Fotos", text = "", fg = "#ab9df2" },
-  { name = "Videos", text = "", fg = "#ff6188" },
-  { name = "Screenshots", text = "", fg = "#ab9df2" },
-  { name = "Public", text = "", fg = "#a9dc76" },
-  { name = "Templates", text = "", fg = "#fc9867" },
-  { name = "dev", text = "", fg = "#78dce8" },
-  { name = "hyprland-from-scratch", text = "󰣇", fg = "#ffd866" },
+  { name = ".config", text = "", fg = "#ff5555" },
+  { name = ".git", text = "", fg = "#bd93f9" },
+  { name = "Desktop", text = "", fg = "#8be9fd" },
+  { name = "Downloads", text = "", fg = "#f1fa8c" },
+  { name = "Documents", text = "", fg = "#50fa7b" },
+  { name = "Music", text = "", fg = "#8be9fd" },
+  { name = "Pictures", text = "", fg = "#ff79c6" },
+  { name = "Fotos", text = "", fg = "#ff79c6" },
+  { name = "Videos", text = "", fg = "#ff5555" },
+  { name = "Screenshots", text = "", fg = "#ff79c6" },
+  { name = "Public", text = "", fg = "#50fa7b" },
+  { name = "Templates", text = "", fg = "#bd93f9" },
+  { name = "dev", text = "", fg = "#8be9fd" },
+  { name = "hyprland-from-scratch", text = "󰣇", fg = "#f1fa8c" },
 ]
 
 prepend_conds = [
-  { if = "dir & hovered", text = "", fg = "#ffd866" },
-  { if = "dir", text = "", fg = "#fc9867" },
+  { if = "dir & hovered", text = "", fg = "#f1fa8c" },
+  { if = "dir", text = "", fg = "#bd93f9" },
 ]
 
 prepend_globs = [
-  { url = "*.{jpg,jpeg,png,gif,webp,svg,bmp,ico,tiff,heic}", text = "", fg = "#ffd866" },
-  { url = "*.{mp4,mkv,mov,avi,webm,flv,wmv,mpeg}", text = "", fg = "#a9dc76" },
-  { url = "*.{mp3,flac,wav,m4a,ogg,opus,aac,wma}", text = "", fg = "#ab9df2" },
-  { url = "*.{zip,rar,7z*,tar,gzip,xz,zstd,bzip*,lzma,compress,archive,cpio,arj,xar,ms-cab*}", text = "", fg = "#ff6188" },
+  { url = "*.{jpg,jpeg,png,gif,webp,svg,bmp,ico,tiff,heic}", text = "", fg = "#f1fa8c" },
+  { url = "*.{mp4,mkv,mov,avi,webm,flv,wmv,mpeg}", text = "", fg = "#50fa7b" },
+  { url = "*.{mp3,flac,wav,m4a,ogg,opus,aac,wma}", text = "", fg = "#ff79c6" },
+  { url = "*.{zip,rar,7z*,tar,gzip,xz,zstd,bzip*,lzma,compress,archive,cpio,arj,xar,ms-cab*}", text = "", fg = "#ff5555" },
 ]
