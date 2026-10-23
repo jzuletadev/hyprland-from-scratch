@@ -167,7 +167,7 @@ def main(stdscr):
                 attr = curses.color_pair(2) if is_connected else curses.color_pair(5)
                 safe_addstr(stdscr, y, box_x + 2, row_str, attr)
 
-        help_text = "↵ Toggle Conn | p Power | r Scan | q Close"
+        help_text = "↵ conn/disc | p power | r scan | q quit"
         footer_x = max(box_x + 2, (w - len(help_text)) // 2)
         safe_addstr(stdscr, box_top + box_h - 1, footer_x, f" {help_text} ", curses.color_pair(2))
 

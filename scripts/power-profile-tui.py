@@ -63,8 +63,8 @@ def main(stdscr):
         curses.init_pair(5, curses.COLOR_WHITE, -1)                   # Texto normal
 
     profiles = [
-        ("performance", "Performance ", "Máximo rendimiento / Mayor consumo"),
-        ("balanced",    "Balanced    ", "Equilibrado / Recomendado"),
+        ("performance", "Performance ", "Máximo rendimiento"),
+        ("balanced",    "Balanced    ", "Equilibrado"),
         ("power-saver", "Power-saver ", "Ahorro de batería"),
     ]
 
@@ -141,7 +141,7 @@ def main(stdscr):
                 safe_addstr(stdscr, y, box_x + 5, f"{name}  {desc[:26]}", curses.color_pair(5))
 
         # Barra inferior de atajos
-        help_text = "↵ Apply | j/k Nav | q Close"
+        help_text = "↵ apply | j/k nav | q quit"
         footer_x = max(box_x + 2, (w - len(help_text)) // 2)
         safe_addstr(stdscr, box_top + box_h - 1, footer_x, f" {help_text} ", curses.color_pair(2))
 

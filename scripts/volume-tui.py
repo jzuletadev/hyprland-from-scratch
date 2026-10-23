@@ -169,9 +169,10 @@ def main(stdscr):
                 safe_addstr(stdscr, bar_y, box_x + 2, bar_visual, bar_color)
 
         # Barra inferior de atajos en el borde
-        help_text = "↵ Set | m Mute | ←/h -5% | →/l +5% | q Close"
+        help_text = "↵ set | m mute | ←/h -5% | →/l +5% | q quit"
         footer_x = max(box_x + 2, (w - len(help_text)) // 2)
         safe_addstr(stdscr, box_top + box_h - 1, footer_x, f" {help_text} ", curses.color_pair(2))
+        
         stdscr.refresh()
 
         key = stdscr.getch()

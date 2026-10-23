@@ -195,7 +195,7 @@ def main(stdscr):
                 attr = (curses.color_pair(2) | curses.A_BOLD) if is_active else curses.color_pair(5)
                 safe_addstr(stdscr, y, box_x + 2, row_str, attr)
 
-        help_text = "↵ Connect | r Rescan | j/k Nav | q Close"
+        help_text = "↵ conn | r rescan | j/k nav | q quit"
         footer_x = max(box_x + 2, (w - len(help_text)) // 2)
         safe_addstr(stdscr, box_top + box_h - 1, footer_x, f" {help_text} ", curses.color_pair(2))
 

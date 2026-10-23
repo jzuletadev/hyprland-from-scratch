@@ -66,12 +66,12 @@ def main(stdscr):
         curses.init_pair(5, curses.COLOR_WHITE, -1)   # Texto normal (BLANCO)
 
     actions = [
-        ("lock",      "l", "Lock Screen",   "Bloquear pantalla con hyprlock"),
-        ("sleep",     "s", "Sleep / Suspend","Suspender equipo (RAM)"),
-        ("logout",    "e", "Logout Session","Cerrar sesión de Hyprland"),
-        ("reboot",    "r", "Reboot System", "Reiniciar el equipo"),
-        ("shutdown",  "p", "Power Off",     "Apagar el sistema por completo"),
-        ("hibernate", "h", "Hibernate",     "Guardar estado en swap y apagar"),
+        ("lock",      "l", "Lock Screen",   "Bloquear pantalla"),
+        ("sleep",     "s", "Sleep / Suspend","Suspender equipo"),
+        ("logout",    "e", "Logout Session","Cerrar sesión"),
+        ("reboot",    "r", "Reboot System", "Reiniciar"),
+        ("shutdown",  "p", "Power Off",     "Apagar el sistema"),
+        ("hibernate", "h", "Hibernate",     "Hibernar"),
     ]
 
     selected_idx = 0

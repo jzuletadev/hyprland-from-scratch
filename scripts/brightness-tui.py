@@ -153,18 +153,19 @@ def main(stdscr):
                 bar_visual = f" [{'█' * filled}{'░' * empty}] {current_val:>3}%"
                 safe_addstr(stdscr, bar_y, box_x + 2, bar_visual, curses.color_pair(2) | curses.A_BOLD)
 
-        # Barra de atajos segura
-        help_text = "↵ Set | ←/h -5% | →/l +5% | q Close"
+        # Barra de atajos segura linea 1
+        help_text = "↵ set | ←/j -5% | →/l +5% | q quit"
         footer_x = max(box_x + 2, (w - len(help_text)) // 2)
         safe_addstr(stdscr, box_top + box_h - 1, footer_x, f" {help_text} ", curses.color_pair(2))
+
         stdscr.refresh()
 
         key = stdscr.getch()
-        if key in [curses.KEY_UP, ord('k')]:
+        if key in [curses.KEY_UP, ord('i')]:
             selected_idx = (selected_idx - 1) % len(presets)
-        elif key in [curses.KEY_DOWN, ord('j')]:
+        elif key in [curses.KEY_DOWN, ord('k')]:
             selected_idx = (selected_idx + 1) % len(presets)
-        elif key in [curses.KEY_LEFT, ord('h')]:
+        elif key in [curses.KEY_LEFT, ord('j')]:
             current_val = set_brightness(current_val - 5)
         elif key in [curses.KEY_RIGHT, ord('l')]:
             current_val = set_brightness(current_val + 5)

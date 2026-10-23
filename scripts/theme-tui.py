@@ -8,12 +8,12 @@ PALETTE_FILE = os.path.expanduser("~/.config/hypr/current_theme")
 MODE_FILE = os.path.expanduser("~/.config/hypr/current_mode")
 
 PALETTES = [
-    ("monokai",      "Monokai Pro",    "Warm Charcoal / Bright Yellow"),
-    ("dracula",      "Dracula",        "Púrpura vampiro / Clásico"),
-    ("nord",         "Nord Ice",       "Azul ártico / Frío"),
-    ("rose-pine-moon", "Rose Pine", "Rosa suave / Elegante"),
-    ("tokyo-night",  "Tokyo Night",    "Azul noche / Moderno"),
-    ("everforest-medium", "Everforest",     "Verde bosque / Cálido"),
+    ("monokai",      "Monokai Pro",    "Warm Charcoal"),
+    ("dracula",      "Dracula",        "Púrpura vampiro"),
+    ("nord",         "Nord Ice",       "Azul ártico"),
+    ("rose-pine-moon", "Rose Pine", "Rosa suave"),
+    ("tokyo-night",  "Tokyo Night",    "Azul noche"),
+    ("everforest-medium", "Everforest",     "Verde bosque"),
 ]
 
 def get_state():
