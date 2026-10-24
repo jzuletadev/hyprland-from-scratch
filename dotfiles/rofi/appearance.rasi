@@ -1,8 +1,8 @@
-// Autogenerado desde dracula.yazi (Dracula)
+// Autogenerado desde monokai.yazi (Monokai)
 
 * {
-    accent: #bd93f9;
-    accent-highlight: bold #c7a3fa;
-    menu-border-color: #bd93f9;
+    accent: #ffd866;
+    accent-highlight: bold #ffde7d;
+    menu-border-color: #ffd866;
     menu-border: 1px;
 }

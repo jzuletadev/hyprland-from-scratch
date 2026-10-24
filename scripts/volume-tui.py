@@ -81,11 +81,11 @@ def main(stdscr):
         curses.init_pair(6, curses.COLOR_RED, -1)                     # Muted
 
     presets = [
-        (100, "100%", "Volumen máximo"),
-        (75,  " 75%", "Alto"),
-        (50,  " 50%", "Medio (Normal)"),
-        (25,  " 25%", "Bajo"),
-        (10,  " 10%", "Mínimo"),
+        (100, "100%", "Maximum Volume"),
+        (75,  " 75%", "High"),
+        (50,  " 50%", "Medium (Normal)"),
+        (25,  " 25%", "Low"),
+        (10,  " 10%", "Minimum Volume"),
     ]
 
     vol, is_muted = get_volume_info()
@@ -137,8 +137,8 @@ def main(stdscr):
         safe_addstr(stdscr, box_top, box_x + 2, title, curses.color_pair(6 if is_muted else 1) | curses.A_BOLD)
 
         # Encabezados alineados con las columnas
-        safe_addstr(stdscr, box_top + 1, box_x + 5, "Level", curses.color_pair(4) | curses.A_BOLD)
-        safe_addstr(stdscr, box_top + 1, box_x + 16, "Output Status", curses.color_pair(4) | curses.A_BOLD)
+        safe_addstr(stdscr, box_top + 2, box_x + 5, "Level", curses.color_pair(4) | curses.A_BOLD)
+        safe_addstr(stdscr, box_top + 2, box_x + 16, "Output Status", curses.color_pair(4) | curses.A_BOLD)
 
         # Opciones con barra hover dentro del marco (1 espacio de margen a cada lado)
         inner_w = box_w - 4
@@ -169,18 +169,18 @@ def main(stdscr):
                 safe_addstr(stdscr, bar_y, box_x + 2, bar_visual, bar_color)
 
         # Barra inferior de atajos en el borde
-        help_text = "↵ set | m mute | ←/h -5% | →/l +5% | q quit"
+        help_text = "↵ set | ←/j -5% | →/l +5% | q quit"
         footer_x = max(box_x + 2, (w - len(help_text)) // 2)
         safe_addstr(stdscr, box_top + box_h - 1, footer_x, f" {help_text} ", curses.color_pair(2))
         
         stdscr.refresh()
 
         key = stdscr.getch()
-        if key in [curses.KEY_UP, ord('k')]:
+        if key in [curses.KEY_UP, ord('i')]:
             selected_idx = (selected_idx - 1) % len(presets)
-        elif key in [curses.KEY_DOWN, ord('j')]:
+        elif key in [curses.KEY_DOWN, ord('k')]:
             selected_idx = (selected_idx + 1) % len(presets)
-        elif key in [curses.KEY_LEFT, ord('h')]:
+        elif key in [curses.KEY_LEFT, ord('j')]:
             vol, is_muted = set_volume(vol - 5)
         elif key in [curses.KEY_RIGHT, ord('l')]:
             vol, is_muted = set_volume(vol + 5)

@@ -142,10 +142,10 @@ def tui_menu(stdscr):
         curses.init_pair(5, curses.COLOR_WHITE, -1)                   # Texto normal
 
     options = [
-        ("screen", False, "Screen",         "Pantalla completa"),
-        ("screen", True,  "Screen + Audio", "Pantalla con audio"),
-        ("region", False, "Region",         "Área rectangular"),
-        ("region", True,  "Region + Audio", "Área con audio"),
+        ("screen", False, "Screen",         "Fullscreen"),
+        ("screen", True,  "Screen + Audio", "Fullscreen with audio"),
+        ("region", False, "Region",         "Rectangular area"),
+        ("region", True,  "Region + Audio", "Area with audio"),
     ]
 
     selected_idx = 0
@@ -191,8 +191,8 @@ def tui_menu(stdscr):
         title = " Screen Recording "
         safe_addstr(stdscr, box_top, box_x + 2, title, curses.color_pair(1) | curses.A_BOLD)
 
-        safe_addstr(stdscr, box_top + 1, box_x + 4, "Mode", curses.color_pair(4) | curses.A_BOLD)
-        safe_addstr(stdscr, box_top + 1, box_x + 20, "Description", curses.color_pair(4) | curses.A_BOLD)
+        safe_addstr(stdscr, box_top + 2, box_x + 5, "Mode", curses.color_pair(4) | curses.A_BOLD)
+        safe_addstr(stdscr, box_top + 2, box_x + 21, "Description", curses.color_pair(4) | curses.A_BOLD)
 
         for i, (m, a, name, desc) in enumerate(options):
             y = box_top + 3 + i
@@ -210,16 +210,16 @@ def tui_menu(stdscr):
             else:
                 safe_addstr(stdscr, y, box_x + 2, f"   {name:<14}  {desc[:22]}", curses.color_pair(5))
 
-        help_text = "↵ Record | j/k Nav | q Close"
+        help_text = "↵ record | i/k nav | q quit"
         footer_x = max(box_x + 2, (w - len(help_text)) // 2)
         safe_addstr(stdscr, box_top + box_h - 1, footer_x, f" {help_text} ", curses.color_pair(2))
 
         stdscr.refresh()
 
         key = stdscr.getch()
-        if key in [curses.KEY_UP, ord('k')]:
+        if key in [curses.KEY_UP, ord('i')]:
             selected_idx = (selected_idx - 1) % len(options)
-        elif key in [curses.KEY_DOWN, ord('j')]:
+        elif key in [curses.KEY_DOWN, ord('k')]:
             selected_idx = (selected_idx + 1) % len(options)
         elif key in [10, 13, curses.KEY_ENTER, ord(' ')]:
             return options[selected_idx][0], options[selected_idx][1]

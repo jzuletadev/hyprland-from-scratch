@@ -63,9 +63,9 @@ def main(stdscr):
         curses.init_pair(5, curses.COLOR_WHITE, -1)                   # Texto normal
 
     profiles = [
-        ("performance", "Performance ", "Máximo rendimiento"),
-        ("balanced",    "Balanced    ", "Equilibrado"),
-        ("power-saver", "Power-saver ", "Ahorro de batería"),
+        ("performance", "Performance ", "Best performance"),
+        ("balanced",    "Balanced    ", "Balanced"),
+        ("power-saver", "Power-saver ", "Power saving"),
     ]
 
     current = get_current_profile()
@@ -118,11 +118,12 @@ def main(stdscr):
         title = " Power Profiles "
         safe_addstr(stdscr, box_top, box_x + 2, title, curses.color_pair(1) | curses.A_BOLD)
 
-        # Encabezado de columnas
-        safe_addstr(stdscr, box_top + 1, box_x + 4, "Mode", curses.color_pair(4) | curses.A_BOLD)
-        safe_addstr(stdscr, box_top + 1, box_x + 20, "Status / Description", curses.color_pair(4) | curses.A_BOLD)
+        # Encabezado de columnas alineado
+        safe_addstr(stdscr, box_top + 2, box_x + 5, "Mode", curses.color_pair(4) | curses.A_BOLD)
+        safe_addstr(stdscr, box_top + 2, box_x + 19, "Status / Description", curses.color_pair(4) | curses.A_BOLD)
 
-        # Opciones
+        # Opciones ajustadas al ancho interno del marco (1 espacio de margen a cada lado)
+        inner_w = box_w - 4
         for i, (p_id, name, desc) in enumerate(profiles):
             y = box_top + 3 + i
             if y >= box_top + box_h - 1:
@@ -130,18 +131,17 @@ def main(stdscr):
             is_active = (p_id == current)
             mark = "●" if is_active else " "
 
-            line_str = f" {mark} {name}  {desc[:26]:<26} "
+            # " ● " (3 chars) + name (12 chars) + "  " (2 chars) = 17 chars -> desc empieza en box_x + 2 + 17 = box_x + 19
+            line_str = f" {mark} {name}  {desc}".ljust(inner_w)[:inner_w]
             if i == selected_idx:
-                _bar_end = min(box_x + box_w - 1, box_x + 2 + len(line_str))
-                for _bx in range(box_x + 2, _bar_end):
-                    stdscr.addstr(y, _bx, ' ', curses.color_pair(3))
                 safe_addstr(stdscr, y, box_x + 2, line_str, curses.color_pair(3) | curses.A_BOLD)
             else:
                 safe_addstr(stdscr, y, box_x + 2, f" {mark} ", curses.color_pair(2) if is_active else curses.color_pair(5))
-                safe_addstr(stdscr, y, box_x + 5, f"{name}  {desc[:26]}", curses.color_pair(5))
+                rest_w = max(0, inner_w - 3)
+                safe_addstr(stdscr, y, box_x + 5, f"{name}  {desc}"[:rest_w], curses.color_pair(5))
 
         # Barra inferior de atajos
-        help_text = "↵ apply | j/k nav | q quit"
+        help_text = "↵ set | j/k nav | q quit"
         footer_x = max(box_x + 2, (w - len(help_text)) // 2)
         safe_addstr(stdscr, box_top + box_h - 1, footer_x, f" {help_text} ", curses.color_pair(2))
 

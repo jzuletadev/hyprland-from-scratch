@@ -120,10 +120,14 @@ def main(stdscr):
         title = " Session & Power Control "
         safe_addstr(stdscr, box_top, box_x + 2, title, curses.color_pair(1) | curses.A_BOLD)
 
+        # Encabezado de columnas alineado
+        safe_addstr(stdscr, box_top + 2, box_x + 7, "Action", curses.color_pair(4) | curses.A_BOLD)
+        safe_addstr(stdscr, box_top + 2, box_x + 24, "Description", curses.color_pair(4) | curses.A_BOLD)
+
         # Opciones dentro del marco (con 1 espacio de margen a cada lado)
         inner_w = box_w - 4
         for i, (action_id, key_hint, label, desc) in enumerate(actions):
-            y = box_top + 2 + i
+            y = box_top + 3 + i
             if y >= box_top + box_h - 1:
                 break
             is_hovered = (i == selected_idx)
@@ -145,16 +149,16 @@ def main(stdscr):
                 safe_addstr(stdscr, y, box_x + 2 + len(prefix) + len(label_col), desc_clipped, curses.color_pair(5))
 
         # Footer inferior compacto que respeta las esquinas del marco
-        help_text = "↵ Run | l/s/e/r/p/h Keys | j/k Nav | q Quit"
+        help_text = "↵ run | i/k nav | q quit"
         footer_str = f" {help_text[:inner_w - 2]} "
         footer_x = max(box_x + 2, box_x + (box_w - len(footer_str)) // 2)
         safe_addstr(stdscr, box_top + box_h - 1, footer_x, footer_str, curses.color_pair(2))
         stdscr.refresh()
 
         key = stdscr.getch()
-        if key in [curses.KEY_UP, ord('k')]:
+        if key in [curses.KEY_UP, ord('i')]:
             selected_idx = (selected_idx - 1) % len(actions)
-        elif key in [curses.KEY_DOWN, ord('j')]:
+        elif key in [curses.KEY_DOWN, ord('k')]:
             selected_idx = (selected_idx + 1) % len(actions)
         elif key in [10, 13, curses.KEY_ENTER, ord(' ')]:
             execute_action(actions[selected_idx][0])

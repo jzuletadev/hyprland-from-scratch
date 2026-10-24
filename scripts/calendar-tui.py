@@ -67,10 +67,11 @@ def main(stdscr):
                 break
             continue
 
+        # Ocupar todo el espacio de la ventana (460x310) como el resto de tus TUIs
         box_top = 0
-        box_h = max(10, min(h - 1, 12))
-        box_w = max(30, min(w - 2, 38))
-        box_x = max(1, (w - box_w) // 2)
+        box_h = max(11, h - 1)
+        box_w = max(38, w - 2)
+        box_x = 1
 
         # Marco continuo
         stdscr.attron(curses.color_pair(1))
@@ -95,45 +96,59 @@ def main(stdscr):
             pass
         stdscr.attroff(curses.color_pair(1))
 
-        # Título con Mes y Año
+        # Título con Mes y Año centrado en el borde superior
         month_name = calendar.month_name[view_month]
         title = f" {month_name} {view_year} "
         safe_addstr(stdscr, box_top, box_x + max(2, (box_w - len(title)) // 2), title, curses.color_pair(1) | curses.A_BOLD)
 
-        # Horario actual local
-        now_str = datetime.datetime.now().strftime("%H:%M:%S")
-        safe_addstr(stdscr, box_top + 1, box_x + max(2, (box_w - len(now_str)) // 2), now_str, curses.color_pair(4) | curses.A_BOLD)
-
-        # Días de la semana
-        days_header = " Mo Tu We Th Fr Sa Su "
-        hx = box_x + max(2, (box_w - len(days_header)) // 2)
-        safe_addstr(stdscr, box_top + 2, hx, days_header, curses.color_pair(2) | curses.A_BOLD)
-
-        # Matriz del mes
+        # Matriz del mes y cálculo de centrado vertical
         cal_matrix = calendar.monthcalendar(view_year, view_month)
+        num_weeks = len(cal_matrix)
+        # Altura del contenido: 1 (reloj) + 1 (espacio) + 1 (cabecera días) + num_weeks
+        content_h = 3 + num_weeks
+        inner_h = box_h - 2
+        start_y = box_top + 1 + max(0, (inner_h - content_h) // 2)
+
+        # Horario actual local centrado
+        now_str = f"── {datetime.datetime.now().strftime('%H:%M:%S')} ──"
+        safe_addstr(stdscr, start_y, box_x + max(2, (box_w - len(now_str)) // 2), now_str, curses.color_pair(4) | curses.A_BOLD)
+
+        # Días de la semana espaciados (5 columnas por día -> 35 caracteres en total)
+        col_w = 5 if box_w >= 40 else 4
+        days_names = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
+        days_header = "".join(f"{d:^{col_w}}" for d in days_names)
+        grid_w = len(days_header)
+        hx = box_x + max(2, (box_w - grid_w) // 2)
+
+        header_y = start_y + 2
+        safe_addstr(stdscr, header_y, hx, days_header, curses.color_pair(2) | curses.A_BOLD)
+
+        # Dibujar números de los días
         for r_idx, week in enumerate(cal_matrix):
-            row_y = box_top + 3 + r_idx
+            row_y = header_y + 1 + r_idx
             if row_y >= box_top + box_h - 1:
                 break
             for d_idx, day in enumerate(week):
-                col_x = hx + (d_idx * 3) + 1
                 if day == 0:
                     continue
-                day_str = f"{day:2d}"
+                col_x = hx + (d_idx * col_w)
+                day_cell = f"{day:^{col_w}}"
                 is_today = (view_year == today.year and view_month == today.month and day == today.day)
                 if is_today:
-                    safe_addstr(stdscr, row_y, col_x, day_str, curses.color_pair(3) | curses.A_BOLD)
+                    safe_addstr(stdscr, row_y, col_x, day_cell, curses.color_pair(3) | curses.A_BOLD)
                 else:
-                    safe_addstr(stdscr, row_y, col_x, day_str, curses.color_pair(5))
+                    safe_addstr(stdscr, row_y, col_x, day_cell, curses.color_pair(5))
 
-        help_text = "h/l Prev/Next | t Today | q Close"
-        footer_x = max(box_x + 2, (w - len(help_text)) // 2)
-        safe_addstr(stdscr, box_top + box_h - 1, footer_x, f" {help_text} ", curses.color_pair(2))
+        # Footer inferior centrado en el marco
+        help_text = "j/l prev/next | t today | q quit"
+        footer_str = f" {help_text} "
+        footer_x = box_x + max(2, (box_w - len(footer_str)) // 2)
+        safe_addstr(stdscr, box_top + box_h - 1, footer_x, footer_str, curses.color_pair(2))
 
         stdscr.refresh()
 
         key = stdscr.getch()
-        if key in [curses.KEY_LEFT, ord('h')]:
+        if key in [curses.KEY_LEFT, ord('j')]:
             view_month -= 1
             if view_month < 1:
                 view_month = 12

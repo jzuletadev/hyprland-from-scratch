@@ -8,12 +8,12 @@ PALETTE_FILE = os.path.expanduser("~/.config/hypr/current_theme")
 MODE_FILE = os.path.expanduser("~/.config/hypr/current_mode")
 
 PALETTES = [
-    ("monokai",      "Monokai Pro",    "Warm Charcoal"),
-    ("dracula",      "Dracula",        "Púrpura vampiro"),
-    ("nord",         "Nord Ice",       "Azul ártico"),
-    ("rose-pine-moon", "Rose Pine", "Rosa suave"),
-    ("tokyo-night",  "Tokyo Night",    "Azul noche"),
-    ("everforest-medium", "Everforest",     "Verde bosque"),
+    ("monokai",           "Monokai Pro",    "Warm Charcoal"),
+    ("dracula",           "Dracula",        "Púrpura vampire"),
+    ("nord",              "Nord Ice",       "Arctic Blue"),
+    ("rose-pine-moon",    "Rose Pine",      "Rose Moon"),
+    ("tokyo-night",       "Tokyo Night",    "Arctic Night"),
+    ("everforest-medium", "Everforest",     "Medium Green"),
 ]
 
 def get_state():
@@ -119,12 +119,12 @@ def main(stdscr):
         # Título y encabezados
         title = f" System Theme [{current_palette.capitalize()}] "
         safe_addstr(stdscr, box_top, box_x + 2, title, curses.color_pair(1) | curses.A_BOLD)
-        safe_addstr(stdscr, box_top + 1, box_x + 7, "Theme", curses.color_pair(4) | curses.A_BOLD)
-        safe_addstr(stdscr, box_top + 1, box_x + 22, "Palette Style", curses.color_pair(4) | curses.A_BOLD)
+        safe_addstr(stdscr, box_top + 2, box_x + 5, "Theme", curses.color_pair(4) | curses.A_BOLD)
+        safe_addstr(stdscr, box_top + 2, box_x + 20, "Palette Style", curses.color_pair(4) | curses.A_BOLD)
 
         # Lista de temas
         for i, (item_id, name, desc) in enumerate(PALETTES):
-            y = box_top + 2 + i
+            y = box_top + 3 + i
             if y >= box_top + box_h - 1:
                 break
             is_hovered = (i == selected_idx)
@@ -145,16 +145,16 @@ def main(stdscr):
                 safe_addstr(stdscr, y, box_x + 2 + len(col1), col2, curses.color_pair(5))
 
         # Atajos inferiores
-        help_text = "↵ Apply Theme | j/k Nav | q Close"
+        help_text = "↵ set | i/k nav | q quit"
         footer_x = max(box_x + 2, (w - len(help_text)) // 2)
         safe_addstr(stdscr, box_top + box_h - 1, footer_x, f" {help_text} ", curses.color_pair(2))
 
         stdscr.refresh()
 
         key = stdscr.getch()
-        if key in [curses.KEY_UP, ord('k')]:
+        if key in [curses.KEY_UP, ord('i')]:
             selected_idx = (selected_idx - 1) % len(PALETTES)
-        elif key in [curses.KEY_DOWN, ord('j')]:
+        elif key in [curses.KEY_DOWN, ord('k')]:
             selected_idx = (selected_idx + 1) % len(PALETTES)
         elif key in [10, 13, curses.KEY_ENTER, ord(' ')]:
             item_id = PALETTES[selected_idx][0]

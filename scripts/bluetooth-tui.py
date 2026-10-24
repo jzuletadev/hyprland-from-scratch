@@ -136,8 +136,8 @@ def main(stdscr):
         safe_addstr(stdscr, box_top, box_x + 2, title, curses.color_pair(1) | curses.A_BOLD)
 
         # Encabezado
-        safe_addstr(stdscr, box_top + 1, box_x + 4, "Device Name", curses.color_pair(4) | curses.A_BOLD)
-        safe_addstr(stdscr, box_top + 1, box_x + 24, "Status", curses.color_pair(4) | curses.A_BOLD)
+        safe_addstr(stdscr, box_top + 2, box_x + 4, "Device Name", curses.color_pair(4) | curses.A_BOLD)
+        safe_addstr(stdscr, box_top + 2, box_x + 24, "Status", curses.color_pair(4) | curses.A_BOLD)
 
         visible_lines = box_h - 3
         if selected_idx < scroll_offset:
@@ -150,7 +150,7 @@ def main(stdscr):
             if item_idx >= len(devices):
                 break
             d = devices[item_idx]
-            y = box_top + 2 + i
+            y = box_top + 3 + i
             is_hovered = (item_idx == selected_idx)
             is_connected = d["connected"]
 
@@ -167,23 +167,23 @@ def main(stdscr):
                 attr = curses.color_pair(2) if is_connected else curses.color_pair(5)
                 safe_addstr(stdscr, y, box_x + 2, row_str, attr)
 
-        help_text = "↵ conn/disc | p power | r scan | q quit"
+        help_text = "↵ conn/disc | p power | s scan | q quit"
         footer_x = max(box_x + 2, (w - len(help_text)) // 2)
         safe_addstr(stdscr, box_top + box_h - 1, footer_x, f" {help_text} ", curses.color_pair(2))
 
         stdscr.refresh()
 
         key = stdscr.getch()
-        if key in [curses.KEY_UP, ord('k')]:
+        if key in [curses.KEY_UP, ord('i')]:
             if devices:
                 selected_idx = (selected_idx - 1) % len(devices)
-        elif key in [curses.KEY_DOWN, ord('j')]:
+        elif key in [curses.KEY_DOWN, ord('k')]:
             if devices:
                 selected_idx = (selected_idx + 1) % len(devices)
         elif key in [ord('p'), ord('P')]:
             toggle_power()
             devices = get_devices()
-        elif key in [ord('r'), ord('R')]:
+        elif key in [ord('s'), ord('S')]:
             devices = get_devices()
             selected_idx = 0
         elif key in [10, 13, curses.KEY_ENTER]:

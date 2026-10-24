@@ -160,9 +160,9 @@ def main(stdscr):
 
         # Barra de filtro
         filter_display = f"Filter: {filter_text}_" if filter_text else "Type to filter..."
-        safe_addstr(stdscr, box_top + 1, box_x + 3, filter_display, curses.color_pair(4) | curses.A_BOLD)
+        safe_addstr(stdscr, box_top + 2, box_x + 3, filter_display, curses.color_pair(4) | curses.A_BOLD)
 
-        visible_lines = box_h - 3
+        visible_lines = box_h - 5
         if selected_idx < scroll_offset:
             scroll_offset = selected_idx
         elif selected_idx >= scroll_offset + visible_lines:
@@ -174,7 +174,7 @@ def main(stdscr):
             if item_idx >= len(filtered):
                 break
             name, path = filtered[item_idx]
-            y = box_top + 2 + i
+            y = box_top + 3 + i
             is_hovered = (item_idx == selected_idx)
             is_active = (path == current_path)
 
@@ -191,17 +191,17 @@ def main(stdscr):
                 safe_addstr(stdscr, y, box_x + 2, display_name.ljust(box_w - 4), attr)
 
         # Barra de ayuda segura
-        help_text = "↵ Set | p Preview | j/k Nav | q Close"
+        help_text = "↵ set | p preview | i/k nav | q quit"
         footer_x = max(box_x + 2, (w - len(help_text)) // 2)
         safe_addstr(stdscr, box_top + box_h - 1, footer_x, f" {help_text} ", curses.color_pair(2))
 
         stdscr.refresh()
 
         key = stdscr.getch()
-        if key in [curses.KEY_UP, ord('k')]:
+        if key in [curses.KEY_UP, ord('i')]:
             if filtered:
                 selected_idx = (selected_idx - 1) % len(filtered)
-        elif key in [curses.KEY_DOWN, ord('j')]:
+        elif key in [curses.KEY_DOWN, ord('k')]:
             if filtered:
                 selected_idx = (selected_idx + 1) % len(filtered)
         elif key in [10, 13, curses.KEY_ENTER]:

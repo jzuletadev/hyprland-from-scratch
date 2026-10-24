@@ -69,11 +69,11 @@ def main(stdscr):
         curses.init_pair(5, curses.COLOR_WHITE, -1)   # Texto normal (BLANCO)
     
     presets = [
-        (100, "100%", "Máximo / Exterior"),
-        (75,  " 75%", "Alto / Día brillante"),
-        (50,  " 50%", "Medio / Oficina"),
-        (25,  " 25%", "Bajo / Luz tenue"),
-        (10,  " 10%", "Mínimo / Noche"),
+        (100, "100%", "Maximum  / Exterior"),
+        (75,  " 75%", "High     / Day Bright"),
+        (50,  " 50%", "Medium   / Office"),
+        (25,  " 25%", "Low      / Lounge"),
+        (10,  " 10%", "Minimum  / Night"),
     ]
 
     current_val = get_brightness()
@@ -124,8 +124,8 @@ def main(stdscr):
         safe_addstr(stdscr, box_top, box_x + 2, title, curses.color_pair(1) | curses.A_BOLD)
 
         # Encabezados alineados con las columnas
-        safe_addstr(stdscr, box_top + 1, box_x + 5, "Level", curses.color_pair(4) | curses.A_BOLD)
-        safe_addstr(stdscr, box_top + 1, box_x + 16, "Preset / Context", curses.color_pair(4) | curses.A_BOLD)
+        safe_addstr(stdscr, box_top + 2, box_x + 5, "Level", curses.color_pair(4) | curses.A_BOLD)
+        safe_addstr(stdscr, box_top + 2, box_x + 16, "Preset   / Context", curses.color_pair(4) | curses.A_BOLD)
 
         # Opciones con barra hover de extremo a extremo (con 1 espacio de margen)
         inner_w = box_w - 4
