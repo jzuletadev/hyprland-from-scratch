@@ -209,6 +209,14 @@ def main(stdscr):
             if networks:
                 selected_idx = (selected_idx + 1) % len(networks)
         elif key in [ord('s'), ord('S')]:
+            stdscr.erase()
+            h, w = stdscr.getmaxyx()
+            msg = "Scanning Wi-Fi networks..."
+            try:
+                stdscr.addstr(h // 2, max(0, (w - len(msg)) // 2), msg, curses.color_pair(2) | curses.A_BOLD)
+            except curses.error:
+                pass
+            stdscr.refresh()
             networks = get_wifi_networks()
             selected_idx = 0
         elif key in [10, 13, curses.KEY_ENTER]:

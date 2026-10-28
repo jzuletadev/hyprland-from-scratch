@@ -139,7 +139,7 @@ def main(stdscr):
         safe_addstr(stdscr, box_top + 2, box_x + 4, "Device Name", curses.color_pair(4) | curses.A_BOLD)
         safe_addstr(stdscr, box_top + 2, box_x + 24, "Status", curses.color_pair(4) | curses.A_BOLD)
 
-        visible_lines = box_h - 3
+        visible_lines = box_h - 5
         if selected_idx < scroll_offset:
             scroll_offset = selected_idx
         elif selected_idx >= scroll_offset + visible_lines:
@@ -184,6 +184,15 @@ def main(stdscr):
             toggle_power()
             devices = get_devices()
         elif key in [ord('s'), ord('S')]:
+            stdscr.erase()
+            h, w = stdscr.getmaxyx()
+            msg = "Scanning Bluetooth devices..."
+            try:
+                stdscr.addstr(h // 2, max(0, (w - len(msg)) // 2), msg, curses.color_pair(2) | curses.A_BOLD)
+            except curses.error:
+                pass
+            stdscr.refresh()
+            subprocess.run(["bluetoothctl", "--timeout", "4", "scan", "on"], capture_output=True)
             devices = get_devices()
             selected_idx = 0
         elif key in [10, 13, curses.KEY_ENTER]:

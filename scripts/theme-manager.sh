@@ -229,6 +229,7 @@ cat << CSS > "$C/waybar/accent.css"
 @define-color accent_light $LIGHT_ACCENT;
 CSS
 pkill -SIGUSR2 waybar 2>/dev/null || true
+pkill -SIGUSR2 -f "waybar-autohide.sh" 2>/dev/null || true
 
 # 9. Dunst: Notificaciones con marco de acento
 cat << CONF > "$C/dunst/dunstrc.d/50-accent.conf"
@@ -243,12 +244,11 @@ dunstctl reload 2>/dev/null || killall -SIGUSR2 dunst 2>/dev/null || true
 # 10. Rofi: Colores y bordes para el app launcher
 cat << RASI > "$C/rofi/appearance.rasi"
 // Autogenerado desde $FLAVOR.yazi ($NAME)
-
 * {
     accent: $ACCENT;
     accent-highlight: bold $LIGHT_ACCENT;
     menu-border-color: $ACCENT;
-    menu-border: 1px;
+    menu-border: 2px;
 }
 RASI
 
