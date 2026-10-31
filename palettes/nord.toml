@@ -1,0 +1,18 @@
+name      = "nord"
+mode      = "dark"
+
+bg        = "#2e3440"
+surface   = "#3b4252"
+overlay   = "#434c5e"
+
+fg        = "#d8dee9"
+muted     = "#9aa3b2"
+dim       = "#4c566a"
+
+accent    = "#88c0d0"
+on_accent = "#2e3440"
+
+ok        = "#a3be8c"
+warn      = "#ebcb8b"
+bad       = "#bf616a"
+info      = "#81a1c1"

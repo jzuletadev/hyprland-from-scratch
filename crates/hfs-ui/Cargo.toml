@@ -1,0 +1,15 @@
+[package]
+name = "hfs-ui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+hfs-core = { path = "../hfs-core" }
+gtk4 = { version = "0.11", features = ["v4_12"] }
+gtk4-layer-shell = { version = "0.8", features = ["v1_3"] }
+
+# Solo para el ejemplo `shape`, que escribe un PNG: gtk4 trae cairo pero sin su
+# funcion de guardar PNG.
+[dev-dependencies]
+cairo-rs = { version = "0.22", features = ["png"] }

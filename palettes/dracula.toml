@@ -1,0 +1,20 @@
+name      = "dracula"
+mode      = "dark"
+
+bg        = "#282a36"
+surface   = "#2f3240"
+overlay   = "#44475a"
+
+fg        = "#f8f8f2"
+muted     = "#a3a7b8"
+dim       = "#6272a4"
+
+accent    = "#bd93f9"
+# El morado se queda justo en la frontera del contraste automatico, asi que el texto
+# que va encima se dice a mano.
+on_accent = "#282a36"
+
+ok        = "#50fa7b"
+warn      = "#f1fa8c"
+bad       = "#ff5555"
+info      = "#8be9fd"

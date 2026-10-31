@@ -1,0 +1,19 @@
+name      = "rose-pine-moon"
+mode      = "dark"
+
+bg        = "#232136"
+surface   = "#2a273f"
+overlay   = "#393552"
+
+fg        = "#e0def4"
+muted     = "#908caa"
+dim       = "#6e6a86"
+
+accent    = "#9ccfd8"
+on_accent = "#232136"
+
+# Rose Pine no tiene verde: «ok» es el pino, que es el frio mas vivo de la paleta.
+ok        = "#3e8fb0"
+warn      = "#f6c177"
+bad       = "#eb6f92"
+info      = "#c4a7e7"

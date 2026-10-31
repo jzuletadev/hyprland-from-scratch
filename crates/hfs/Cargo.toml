@@ -1,0 +1,14 @@
+[package]
+name = "hfs"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "hfs"
+path = "src/main.rs"
+
+[dependencies]
+hfs-core = { path = "../hfs-core" }
+hfs-ui = { path = "../hfs-ui" }
+gtk4 = { version = "0.11", features = ["v4_12"] }

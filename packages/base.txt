@@ -10,8 +10,6 @@ adwaita-fonts
 papirus-icon-theme
 noto-fonts-emoji
 noto-fonts-cjk
-waybar
-rofi
 dunst
 libnotify
 brightnessctl
@@ -43,11 +41,16 @@ gvfs
 tumbler
 fzf
 yazi
+# v2 desktop: Thunar replaces Yazi as the file manager (SUPER+E prefers it as soon
+# as it is installed). tumbler draws the thumbnails, gvfs mounts removable media.
+thunar
+thunar-volman
+tumbler
+gvfs
 ffmpegthumbnailer
-p7zip
+7zip
 jq
 poppler
-btop
 imv
 mpv
 xdg-utils
@@ -59,3 +62,14 @@ dialog
 gum
 python-gobject
 resvg
+
+# v2 desktop: the `hfs` binary (install.sh builds crates/ into ~/.local/bin).
+rust
+gtk4
+gtk4-layer-shell
+adwaita-icon-theme
+
+# Bandeja (StatusNotifierItem). udiskie necesita el typelib de AppIndicator3 para
+# publicar su icono; sin el arranca igual pero sin bandeja, que es como estaba.
+libappindicator
+udiskie

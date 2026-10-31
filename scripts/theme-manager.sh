@@ -7,7 +7,7 @@ FLAVORS_DIR="$DOTFILES/yazi/flavors"
 
 THEME_TRACKER="$C/hypr/current_theme"
 
-mkdir -p "$C/hypr" "$C/kitty" "$C/waybar" "$C/dunst/dunstrc.d" "$C/rofi" "$C/yazi" "$C/yazi-hidden" "$HOME/.local/state/hyprland-from-scratch"
+mkdir -p "$C/hypr" "$C/kitty" "$C/dunst/dunstrc.d" "$C/yazi" "$C/yazi-hidden" "$HOME/.local/state/hyprland-from-scratch"
 
 # 1. Determinar el flavor solicitado o leer el actual
 FLAVOR="${1:-}"
@@ -222,16 +222,7 @@ if [ -d "$DOTFILES/yazi-hidden" ]; then
     generate_yazi_theme "$DOTFILES/yazi-hidden/theme.toml"
 fi
 
-# 8. Waybar: Variables CSS de acento
-cat << CSS > "$C/waybar/accent.css"
-/* Autogenerado desde $FLAVOR.yazi ($NAME) */
-@define-color accent $ACCENT;
-@define-color accent_light $LIGHT_ACCENT;
-CSS
-pkill -SIGUSR2 waybar 2>/dev/null || true
-pkill -SIGUSR2 -f "waybar-autohide.sh" 2>/dev/null || true
-
-# 9. Dunst: Notificaciones con marco de acento
+# 8. Dunst: Notificaciones con marco de acento
 cat << CONF > "$C/dunst/dunstrc.d/50-accent.conf"
 [global]
     frame_color = "$ACCENT"
@@ -240,16 +231,5 @@ cat << CONF > "$C/dunst/dunstrc.d/50-accent.conf"
     highlight = "$ACCENT"
 CONF
 dunstctl reload 2>/dev/null || killall -SIGUSR2 dunst 2>/dev/null || true
-
-# 10. Rofi: Colores y bordes para el app launcher
-cat << RASI > "$C/rofi/appearance.rasi"
-// Autogenerado desde $FLAVOR.yazi ($NAME)
-* {
-    accent: $ACCENT;
-    accent-highlight: bold $LIGHT_ACCENT;
-    menu-border-color: $ACCENT;
-    menu-border: 2px;
-}
-RASI
 
 notify-send -a "Theme Engine" "Tema: $NAME" "Flavor: $FLAVOR.yazi ($MODE)" || true

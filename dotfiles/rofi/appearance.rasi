@@ -1,7 +1,0 @@
-// Autogenerado desde monokai.yazi (Monokai)
-* {
-    accent: #ffd866;
-    accent-highlight: bold #ffde7d;
-    menu-border-color: #ffd866;
-    menu-border: 2px;
-}

@@ -1,0 +1,18 @@
+# ~/hyprland-from-scratch/Cargo.toml
+# El escritorio v2. Un solo binario (`hfs`) con subcomandos, sobre dos bibliotecas:
+#   hfs-core  los datos y el estado. Sin GTK y sin dependencias externas.
+#   hfs-ui    la capa de dibujo: layer-shell, CSS desde la paleta y la forma del panel.
+[workspace]
+resolver = "3"
+members = ["crates/hfs-core", "crates/hfs-ui", "crates/hfs"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+strip = true

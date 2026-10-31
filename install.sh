@@ -58,6 +58,14 @@ else
     run "$REPO/scripts/link-dotfiles.sh"
 fi
 
+step "Desktop binary (crates/ -> ~/.local/bin/hfs)"
+# The edge surfaces and the controls dock are one Rust binary. It is referenced by
+# absolute path from hyprland.conf ($bin), because Hyprland starts through uwsm and
+# does not inherit an interactive shell's PATH.
+run mkdir -p "$HOME/.local/bin"
+run cargo build --release --manifest-path "$REPO/Cargo.toml"
+run install -Dm755 "$REPO/target/release/hfs" "$HOME/.local/bin/hfs"
+
 step "Shell: history and suggestions (~/.bashrc)"
 # ~/.bashrc stays the user's own (personal tokens, paths); it only sources ours
 if grep -qF '.config/bash/bashrc' "$HOME/.bashrc" 2>/dev/null; then
@@ -74,7 +82,6 @@ if ! (( DRY )); then
     printf '[device]\nwifi.backend=iwd\n' | sudo tee /etc/NetworkManager/conf.d/wifi-backend.conf >/dev/null
 fi
 run sudo systemctl enable sddm.service bluetooth.service power-profiles-daemon.service iwd.service
-run systemctl --user enable waybar.service   # the bar; restarted by systemd if it crashes
 
 step "Default apps (images -> imv, video/audio -> mpv)"
 run "$REPO/scripts/default-apps.sh"

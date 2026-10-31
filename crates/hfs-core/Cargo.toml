@@ -1,0 +1,9 @@
+[package]
+name = "hfs-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+# A proposito sin dependencias: el formato de paleta es nuestro y es plano, asi que
+# un parser de 40 lineas sale mas barato que serde + toml y no ata la version de nada.
+[dependencies]

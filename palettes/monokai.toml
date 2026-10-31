@@ -1,0 +1,18 @@
+name      = "monokai"
+mode      = "dark"
+
+bg        = "#221f22"
+surface   = "#2d2a2e"
+overlay   = "#403e41"
+
+fg        = "#fcfcfa"
+muted     = "#939293"
+dim       = "#727072"
+
+accent    = "#ffd866"
+on_accent = "#221f22"
+
+ok        = "#a9dc76"
+warn      = "#fc9867"
+bad       = "#ff6188"
+info      = "#78dce8"

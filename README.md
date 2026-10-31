@@ -3,20 +3,29 @@
 A complete, minimal Hyprland desktop for Arch Linux, built piece by piece and kept entirely in this
 repository so it can be installed again on any machine.
 
-- **Dynamic Theme Engine:** 7 curated palettes (**Catppuccin**, **Nord Ice**, **Tokyo Night**,
-  **Gruvbox**, **Rosé Pine**, **Dracula**, **Monokai Pro**) with live **Dark / Light** mode switching
-  across Hyprland borders, Kitty, Waybar, Rofi, Dunst, Yazi, and GTK apps.
-- **Typography:** Adwaita Sans for the interface, JetBrainsMono Nerd Font for the terminal and TUIs.
-- **Bar (Waybar):** system info & theme launcher, workspaces, active media (`mpris`), window title,
-  live recording timer, brightness, Wi-Fi, volume, Bluetooth, battery, and clock.
-- **Custom Python TUIs:** lightweight `curses` floating menus in Kitty for Wi-Fi, Bluetooth, audio
-  volume, screen brightness, power profiles, session/power actions, theme switching, wallpaper
-  picking, screen recording, calendar, and live keybinding search.
-- **File Manager & Monitor:** `yazi` (with dynamic flavor sync and hidden-files mode) and `btop`.
+- **No bar, no launcher.** The desktop is a set of panels that are born from the screen edges when
+  you brush them, plus a wheel in the middle on `SUPER`. Nothing reserves screen space and nothing
+  polls the cursor. It is one process, `hfs`, written in Rust with GTK4 and wlr-layer-shell.
+- **The surfaces:** volume and brightness on the right edge; workspaces on the left; clock and
+  calendar bottom-right; media and system monitor top-centre; power top-left; notifications
+  top-right; clipboard history bottom-left. Inside the wheel: app search, Wi-Fi, Bluetooth,
+  screenshots and recording, wallpaper, and theme.
+- **Dynamic theme engine:** 6 palettes (**Nord**, **Tokyo Night**, **Everforest**, **Dracula**,
+  **Rosé Pine Moon**, **Monokai**) applied live across Hyprland borders, Kitty, Dunst, Yazi and GTK.
+  The desktop follows the change without restarting.
+- **Typography:** Adwaita Sans for the interface, JetBrainsMono Nerd Font for the terminal.
+- **File manager:** `thunar`.
 - **Lock, Idle & Login:** `hyprlock`, `hypridle` (battery-aware), and a matching SDDM theme that
   automatically syncs with your current wallpaper.
 - **Screenshots & Recording:** screenshots straight to the clipboard with annotation (`satty`) and
   hardware-friendly screen/region recording (`wf-recorder`).
+
+> **v1 and v2.** This desktop was first built with Waybar, Rofi and eleven Python `curses` TUIs.
+> Those are gone: see [`V2-PLAN.md`](V2-PLAN.md) for what replaced each one and what is still left.
+>
+> **Working on it?** [`DESARROLLO.md`](DESARROLLO.md) is the hands-on loop — build, install
+> over the running binary, restart, and check nothing broke. [`crates/README.md`](crates/README.md)
+> explains the architecture and the traps.
 
 ---
 
@@ -62,7 +71,7 @@ The installer:
    as `<name>.bak-<date>`;
 3. configures `~/.bashrc` to source `dotfiles/bash/bashrc` (history, `fzf`, `ble.sh` support);
 4. sets `iwd` as the Wi-Fi backend for NetworkManager and enables system/user services (`sddm`,
-   `bluetooth`, `power-profiles-daemon`, `iwd`, and `waybar`);
+   `bluetooth`, `power-profiles-daemon`, and `iwd`);
 5. sets default apps (images → `imv`, video/audio → `mpv`);
 6. installs the SDDM login screen theme and prepares `~/Pictures/wallpapers` with live SDDM background sync.
 
@@ -91,31 +100,29 @@ new config folders or the login theme.
 
 ## Keybindings
 
-`SUPER` is the Windows key. **`SUPER + /` opens the interactive Keybindings TUI** (generated live
-from `hyprctl binds`), where you can filter shortcuts by name and press `Enter` to execute any bind.
+`SUPER` is the Windows key. **`SUPER + /` opens the Atajos panel** (generated live from
+`hyprctl binds`), where you can filter every shortcut by name.
 
-### Apps & System TUIs
+> **Wi-Fi, Bluetooth, volume, brightness, power, power profiles and the calendar no longer have
+> their own key.** They live on the always-present edge surfaces and inside the wheel: brush the
+> right edge for volume and brightness, the top-left corner for power, the bottom-right for the
+> calendar, and tap `SUPER` for Wi-Fi and Bluetooth.
+
+### Apps & panels
 
 | Keys | Action |
 |------|--------|
-| `SUPER` (tap) | App search (Rofi) — type, Enter |
+| `SUPER` (tap) | The wheel — app search and every settings panel |
+| `SUPER + SHIFT + A` | Peek every edge surface at once |
 | `SUPER + T` | Terminal (`kitty`) |
-| `SUPER + E` | File manager (`yazi`) |
-| `SUPER + SHIFT + E` | File manager showing hidden files (`yazi`) |
-| `SUPER + A` | Theme & Dark/Light Mode Picker (`theme-tui.py`) |
-| `SUPER + W` | Wallpaper Picker (`wallpaper-tui.py`) |
-| `SUPER + Z` | Wi-Fi Manager (`wifi-tui.py`) |
-| `SUPER + B` | Bluetooth Manager (`bluetooth-tui.py`) |
-| `SUPER + V` | Volume Control Menu (`volume-tui.py`) |
+| `SUPER + E` | File manager (`thunar`) |
+| `SUPER + SHIFT + E` | File manager (`thunar`; hidden files are `Ctrl+H` inside it) |
+| `SUPER + A` | Theme picker — the wheel's Tema panel |
+| `SUPER + W` | Wallpaper picker — the wheel's Fondo panel |
 | `SUPER + M` | Mute / unmute audio |
-| `SUPER + G` | Brightness Control Menu (`brightness-tui.py`) |
-| `SUPER + P` | Power Profile Selector (`power-profile-tui.py`) |
-| `SUPER + C` | Calendar (`calendar-tui.py`) |
-| `SUPER + R` | Screen Record Menu / Stop recording (`screen-record-tui.py`) |
-| `SUPER + SHIFT + Esc` | Task Manager (`btop`) |
-| `SUPER + /` | Keybindings Help & Search (`keybinds-tui.py`) |
+| `SUPER + R` | Screenshots and screen recording — the wheel's Captura panel |
+| `SUPER + /` | Keybindings help and search — the wheel's Atajos panel |
 | `SUPER + L` | Lock screen (`hyprlock`) |
-| `SUPER + Esc` | Session & Power Menu (`power-tui.py`: Lock, Sleep, Logout, Reboot, Power Off, Hibernate) |
 
 ### Windows & Workspaces
 
@@ -123,7 +130,7 @@ from `hyprctl binds`), where you can filter shortcuts by name and press `Enter` 
 |------|--------|
 | `SUPER + Q` | Close active window |
 | `SUPER + F` | Toggle floating window |
-| `SUPER + SHIFT + F` | Toggle fullscreen (hides the bar) |
+| `SUPER + SHIFT + F` | Toggle fullscreen |
 | `SUPER + D` | Show desktop (minimize all windows on workspace / restore) |
 | `SUPER + arrows` | Focus window in that direction |
 | `SUPER + SHIFT + arrows` | Move window (swap places with neighbor) |
@@ -142,16 +149,21 @@ from `hyprctl binds`), where you can filter shortcuts by name and press `Enter` 
 | `SUPER + SHIFT + S` | Screenshot of a region — saved and copied |
 | `SUPER + CTRL + S` | Screenshot of the active window — saved and copied |
 | `SUPER + ALT + S` | Screenshot of a region, opened directly in Satty to annotate |
-| `SUPER + R` | Open Screen Record TUI (or stop active recording immediately) |
+| `SUPER + R` | The Captura panel — the four screenshots and screen recording |
 
 Click a screenshot's notification to open it in Satty for annotation. Screenshots are saved to
 `~/Pictures/screenshots` and recordings to `~/Videos/recordings`.
 
-**Bar interactions:**
-- **Arch logo:** Left-click opens system info (`fastfetch`) · Right-click opens the Theme Picker TUI.
-- **Recording indicator:** Appears while `wf-recorder` is active · Click to stop and save.
-- **Brightness & Volume:** Scroll to adjust ±5% · Click to open their TUI menus (Right-click volume to mute).
-- **Wi-Fi, Bluetooth, Battery & Clock:** Click any module to open its respective floating TUI.
+**Surface interactions:**
+- **Arch logo** (top of the left rail): opens the machine's card — model, CPU, both GPUs, kernel,
+  packages, disk, uptime and the active palette.
+- **Workspaces** (left rail): click a dot to switch · scroll anywhere on the rail to move through
+  them, including to one that does not exist yet.
+- **Volume & brightness** (right edge): drag the bars, or use the media keys — the panel peeks on
+  its own when you do.
+- **Notifications** (top-right): click an entry to put it back on screen, which is the only thing
+  that brings its actions back.
+- **Clipboard** (bottom-left): click an entry to copy it again.
 
 ---
 
@@ -159,29 +171,30 @@ Click a screenshot's notification to open it in Satty for annotation. Screenshot
 
 | What | Where |
 |------|-------|
-| Theme & Dark/Light Mode | Press `SUPER + A` or right-click the Arch logo in Waybar. Definitions live in `dotfiles/themes/*.conf` and are applied by `scripts/theme-manager.sh`. |
+| Theme | Press `SUPER + A` (the wheel's Tema panel). The v2 palettes live in `palettes/*.toml`; `scripts/theme-manager.sh` applies the matching Yazi flavor to Kitty, Dunst, Yazi, GTK and the Hyprland borders. |
 | Wallpaper | Press `SUPER + W`. Put your images in `~/Pictures/wallpapers/` (initial defaults come from `assets/wallpapers/`). |
-| Keybindings & Window Rules | `dotfiles/hypr/hyprland.conf` — use `bindd` so new shortcuts automatically appear in `SUPER + /`. |
-| Bar | `dotfiles/waybar/config.jsonc` and `dotfiles/waybar/style.css` (accent colors are auto-generated in `accent.css`). |
-| App Search | `dotfiles/rofi/config.rasi` and `dotfiles/rofi/search.rasi`. |
-| TUI Menus | `scripts/*-tui.py` (built with Python `curses`, automatically adapts to Dark/Light mode). |
+| Keybindings & Window Rules | `dotfiles/hypr/hyprland.conf` — use `bindd` so new shortcuts get a readable description in `SUPER + /` (undescribed ones still show up, labelled with what they run). |
+| The surfaces and the wheel | `crates/` — one binary, `hfs`. See [`crates/README.md`](crates/README.md). |
 | Lock Screen & Idle | `dotfiles/hypr/hyprlock.conf` and `dotfiles/hypr/hypridle.conf` (triggers `scripts/idle.sh` on battery). |
 | Login Screen (SDDM) | `system/sddm/` — run `sudo ./scripts/install-sddm-theme.sh` to update system files. |
 | Notifications | `dotfiles/dunst/dunstrc` (accent frame auto-generated in `dunstrc.d/50-accent.conf`). |
 | Terminal | `dotfiles/kitty/kitty.conf` (dynamic palette written to `dotfiles/kitty/theme.conf` and reloaded live via socket). |
-| File Manager | `dotfiles/yazi/` and `dotfiles/yazi-hidden/` (flavors live in `dotfiles/yazi/flavors/`). |
+| File Manager | `thunar`. Yazi is still installed because its flavors are where `theme-manager.sh` reads its colours from (`dotfiles/yazi/flavors/`). |
 | Shell | `dotfiles/bash/bashrc`, sourced from `~/.bashrc` — keep personal tokens/paths in `~/.bashrc`. |
 | System Info Logo | Place a custom image at `dotfiles/fastfetch/logo.png` (`.jpg` / `.webp` supported). Falls back to the official Arch logo. |
 | Packages | `packages/*.txt` |
 
-After editing (in `--link` mode): Hyprland reloads automatically; Waybar reloads styles via
-`theme-manager.sh` or restarts with `systemctl --user restart waybar`; Kitty updates colors live.
+After editing (in `--link` mode): Hyprland reloads automatically; Kitty updates colors live; the
+desktop watches `~/.config/hypr` and rebuilds its surfaces when the theme changes. After editing
+the Rust, `cargo build --release` and restart it with `pkill -x hfs` (Hyprland's `exec-once` does
+not bring it back — run `~/.local/bin/hfs shell &` or log out and in).
 
 ## Troubleshooting
 
 | Problem | Fix |
 |---------|-----|
-| The bar disappeared | `systemctl --user restart waybar` (systemd also restarts it automatically on crash) |
+| The edge panels disappeared | `pkill -x hfs; ~/.local/bin/hfs shell &` · `hyprctl layers` should list one `hfs-*` namespace per surface per monitor |
+| A surface opened on the wrong monitor | The compositor decides that at map time; restart `hfs shell` with the monitor already connected |
 | A config error banner at the top | `hyprctl configerrors` shows the exact line |
 | Login screen looks like plain SDDM | `sudo ./scripts/install-sddm-theme.sh`, then log out |
 | Emoji or Asian text show as boxes | Install `noto-fonts-emoji` / `noto-fonts-cjk` (in `packages/base.txt`), run `fc-cache -f`, and restart your browser (`pkill -x brave`) |
@@ -192,10 +205,12 @@ After editing (in `--link` mode): Hyprland reloads automatically; Waybar reloads
 
 ```text
 install.sh            installer (copy or --link mode)
+crates/               the desktop: one Rust binary, `hfs` (see crates/README.md)
+design/               the navigable mockup the v2 was built from
+palettes/             the v2 palettes (*.toml), owned by this repo
 dotfiles/             one folder per app, copied or linked into ~/.config/
-  themes/             modular color palettes (*.conf) for Dark and Light modes
-  yazi/flavors/       Yazi color flavors synced by theme-manager.sh
-scripts/              Python curses TUIs (*-tui.py) and Bash backends (*.sh)
+  yazi/flavors/       Yazi color flavors, still the source for theme-manager.sh
+scripts/              Bash glue (*.sh): install, theme engine, screenshots, wallpaper
 assets/wallpapers/    default wallpapers copied to ~/Pictures/wallpapers/ on install
 packages/             package lists: base, apps, aur, nvidia-hybrid
 system/               files copied outside ~/.config: SDDM theme, hybrid-GPU configs
