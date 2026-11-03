@@ -72,11 +72,11 @@ pub enum Seguridad {
 impl Seguridad {
     pub fn texto(self) -> &'static str {
         match self {
-            Seguridad::Abierta => "abierta",
+            Seguridad::Abierta => "open",
             Seguridad::Wep => "WEP",
             Seguridad::Wpa2 => "WPA2",
             Seguridad::Wpa3 => "WPA3",
-            Seguridad::Empresa => "empresa",
+            Seguridad::Empresa => "enterprise",
         }
     }
     fn necesita_clave(self) -> bool {
@@ -431,7 +431,7 @@ pub fn panel(palette: &Palette) -> (gtk::Widget, Rc<dyn Fn()>, Option<crate::Tec
 
     let clave = gtk::Entry::new();
     clave.set_visibility(false);
-    clave.set_placeholder_text(Some("contraseña"));
+    clave.set_placeholder_text(Some("password"));
     clave.add_css_class("clave");
     let clave_fila = gtk::Box::new(gtk::Orientation::Horizontal, 8);
     clave_fila.append(&clave);
@@ -443,7 +443,7 @@ pub fn panel(palette: &Palette) -> (gtk::Widget, Rc<dyn Fn()>, Option<crate::Tec
     aviso.set_wrap(true);
     aviso.set_visible(false);
 
-    let pie = gtk::Label::new(Some("⏎ conectar · esc cerrar"));
+    let pie = gtk::Label::new(Some("⏎ connect · esc close"));
     pie.add_css_class("foot");
     pie.set_xalign(0.0);
 
@@ -467,18 +467,18 @@ pub fn panel(palette: &Palette) -> (gtk::Widget, Rc<dyn Fn()>, Option<crate::Tec
         let (wifi, pendiente) = (wifi.clone(), pendiente.clone());
         Rc::new(move || {
             let Some(w) = wifi.as_ref() else {
-                estado.set_text("sin NetworkManager");
+                estado.set_text("no NetworkManager");
                 return;
             };
             estado.set_text(&match w.ssid_activo() {
-                Some(s) => format!("conectado a {s}"),
+                Some(s) => format!("connected to {s}"),
                 None => "desconectado".into(),
             });
 
             widgets::clear(&lista);
             let puntos = w.puntos();
             if puntos.is_empty() {
-                let l = gtk::Label::new(Some("no se ve ninguna red"));
+                let l = gtk::Label::new(Some("no networks in range"));
                 l.add_css_class("sempty");
                 l.set_xalign(0.0);
                 lista.append(&l);
@@ -491,13 +491,13 @@ pub fn panel(palette: &Palette) -> (gtk::Widget, Rc<dyn Fn()>, Option<crate::Tec
                 }
                 let img = gtk::Image::from_icon_name(p.icono());
                 img.set_pixel_size(15);
-                let nombre = widgets::ellipsized(Some(&p.ssid), "");
+                let nombre = widgets::flexible(Some(&p.ssid), "nm");
                 nombre.set_hexpand(true);
                 let detalle = gtk::Label::new(Some(&format!(
                     "{} · {}{}",
                     p.banda(),
                     p.seguridad.texto(),
-                    if p.guardada.is_some() { " · guardada" } else { "" }
+                    if p.guardada.is_some() { " · saved" } else { "" }
                 )));
                 detalle.add_css_class("k");
                 fila.append(&img);

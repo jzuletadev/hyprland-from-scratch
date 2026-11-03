@@ -20,9 +20,11 @@ pub type Teclas = std::rc::Rc<
 >;
 
 mod atajos;
+mod accesos;
 mod bandeja;
 mod bluetooth;
 mod cabecera;
+mod calendario;
 mod captura;
 mod ctrl;
 mod energia;
@@ -35,7 +37,6 @@ mod portapapeles;
 mod proc;
 mod sni;
 mod red;
-mod reloj;
 mod rueda;
 mod shell;
 mod sonido;
@@ -81,7 +82,7 @@ fn main() -> std::process::ExitCode {
             Ok(())
         }
         "captura" | "shot" => {
-            ipc::nudge(ipc::Aviso::Panel("captura"));
+            ipc::nudge(ipc::Aviso::Accesos);
             Ok(())
         }
         "sonido" | "audio" => {
@@ -100,7 +101,7 @@ fn main() -> std::process::ExitCode {
             Ok(())
         }
         otro => Err(hfs_core::Error::new(format!(
-            "no conozco «{otro}». Prueba con: hfs --help"
+            "unknown command «{otro}». Try: hfs --help"
         ))),
     };
 
@@ -115,32 +116,35 @@ fn main() -> std::process::ExitCode {
 
 fn ayuda() {
     println!(
-        "hfs {} — el escritorio
+        "hfs {} — the desktop
 
-  hfs shell                 levanta el escritorio entero (un proceso, 8 superficies
-                            por pantalla). Es el `exec-once` de hyprland.conf.
+  hfs shell                 bring up the whole desktop (one process, 8 surfaces
+                            per monitor). This is hyprland.conf's `exec-once`.
 
-  hfs vol up|down|mute|N    volumen; N es 0-100
-  hfs bri up|down|N         brillo; N es 1-100
+  hfs vol up|down|mute|N    volume; N is 0-100
+  hfs bri up|down|N         brightness; N is 1-100
 
-  hfs wheel                 abre o cierra la rueda y el buscador        SUPER
-  hfs all                   enseña todas las superficies a la vez       SUPER+SHIFT+A
+  hfs wheel                 open or close the wheel and the launcher     SUPER
+  hfs all                   peek every surface at once                   SUPER+SHIFT+A
 
-  hfs tema                  abre la rueda en el panel de temas          SUPER+A
-  hfs fondo                 ... en el de fondos                         SUPER+W
-  hfs captura               ... en el de capturas y grabacion           SUPER+R
-  hfs sonido                ... en el de entradas y salidas de audio    SUPER+V
-  hfs atajos                ... en la ayuda de atajos                   SUPER+/
-  hfs sistema               la ficha de la maquina (tambien el icono de arch)
+  hfs theme                 open the wheel on the theme panel            SUPER+A
+  hfs wallpaper             ... on the wallpaper grid                    SUPER+W
+  hfs shot                  peek screenshots and quick actions           SUPER+R
+  hfs audio                 ... on audio inputs and outputs              SUPER+V
+  hfs binds                 ... on the shortcut help                     SUPER+/
+  hfs sysinfo               the machine's card (also the arch icon)
 
-  hfs clip-add              guarda lo que venga por la entrada en el historial
-  hfs palette               enseña la paleta activa
+  hfs clip-add              store whatever comes in on stdin in the history
+  hfs palette               show the active palette
 
-Las teclas multimedia van a `hfs vol` y `hfs bri`: ademas de cambiar el valor,
-hacen que el dock se asome un segundo, asi que no hace falta un OSD aparte.
+The Spanish names still work as aliases: tema, fondo, captura, sonido, atajos,
+sistema, rueda, todo.
 
-Dentro de la rueda: ESC cierra desde donde sea, RETROCESO vuelve a la rueda,
-y escribir cualquier letra entra en el buscador de aplicaciones.",
+The media keys go through `hfs vol` and `hfs bri`: besides changing the value they
+make the dock peek for a second, so there is no separate OSD to write.
+
+Inside the wheel: ESC closes from anywhere, BACKSPACE goes back to the wheel, and
+typing any letter drops you into the app search.",
         env!("CARGO_PKG_VERSION")
     );
 }
@@ -156,12 +160,12 @@ fn volumen(args: &[String]) -> hfs_core::Result<()> {
         n => {
             let p: u8 = n
                 .parse()
-                .map_err(|_| hfs_core::Error::new(format!("«{n}» no es ni up, ni down, ni mute, ni un numero")))?;
+                .map_err(|_| hfs_core::Error::new(format!("«{n}» is not up, down, mute or a number")))?;
             audio::set(p)?;
             nudged(audio::get()?)
         }
     };
-    println!("{}{}", v.percent, if v.muted { " (mudo)" } else { "" });
+    println!("{}{}", v.percent, if v.muted { " (muted)" } else { "" });
     Ok(())
 }
 
@@ -175,7 +179,7 @@ fn brillo(args: &[String]) -> hfs_core::Result<()> {
         n => {
             let p: u8 = n
                 .parse()
-                .map_err(|_| hfs_core::Error::new(format!("«{n}» no es ni up, ni down, ni un numero")))?;
+                .map_err(|_| hfs_core::Error::new(format!("«{n}» is not up, down or a number")))?;
             bl.set(p)?;
             nudged(bl.percent()?)
         }
@@ -208,9 +212,9 @@ fn paleta() -> hfs_core::Result<()> {
     if let Some(e) = err {
         eprintln!("hfs: uso la paleta de reserva porque {e}");
     }
-    println!("tema activo : {nombre}");
-    println!("paleta      : {} ({})", p.name, p.mode.as_str());
-    println!("disponibles : {}", palette::available().join(", "));
+    println!("active theme : {nombre}");
+    println!("palette      : {} ({})", p.name, p.mode.as_str());
+    println!("available    : {}", palette::available().join(", "));
     println!();
     for (k, c) in [
         ("bg", p.bg),

@@ -13,6 +13,17 @@ pub fn stylesheet(p: &Palette) -> String {
         r#"
 /* generado por hfs-ui desde la paleta «{nombre}» ({modo}) */
 
+/* UNA ESCALA TIPOGRAFICA, NO UN TAMAÑO POR SITIO.
+   9  marca, pastilla, cabecera de calendario
+   10 dato secundario (.sub, .k, tiempos)
+   11 BASE: cuerpo, filas, pestañas, botones
+   13 titulo de panel y de cancion
+   20 el numero grande de una baldosa
+   32 el reloj
+   Lo que no diga tamaño hereda los 11 de su raiz. Eso es lo que faltaba: ni
+   `.key` ni el texto del portapapeles lo decian, asi que cogian el del tema de
+   GTK (~15 px) y salian dos puntos mas grandes que todo lo que tenian al lado. */
+
 window.hfs {{
   background-color: transparent;
 }}
@@ -24,6 +35,7 @@ window.hfs .root {{
   padding: 10px 7px;
   color: {fg};
   font-family: "IBM Plex Mono", "JetBrainsMono Nerd Font", monospace;
+  font-size: 11px;
 }}
 
 /* ---- dock de controles ---- */
@@ -106,7 +118,7 @@ window.hfs .root {{
   padding: 12px 16px 14px 16px;
 }}
 .clock {{
-  font-size: 34px;
+  font-size: 32px;
   font-weight: 500;
   color: {fg};
 }}
@@ -137,6 +149,7 @@ window.hfs .root {{
 /* ---- rueda y buscador ---- */
 .rueda-raiz {{
   font-family: "IBM Plex Mono", "JetBrainsMono Nerd Font", monospace;
+  font-size: 11px;
   color: {fg};
 }}
 /* El circulo: un radio enorme sobre un widget cuadrado. GTK4 no tiene `transform`,
@@ -155,7 +168,7 @@ window.hfs .root {{
   color: {accent};
 }}
 .nodo-tag {{
-  font-size: 12px;
+  font-size: 11px;
   color: {muted};
   opacity: 0;
   transition: opacity 150ms ease;
@@ -186,7 +199,7 @@ entry.sq, entry.sq > text {{
   padding: 0;
   min-height: 0;
   color: {fg};
-  font-size: 15px;
+  font-size: 16px;
   caret-color: {accent};
 }}
 entry.sq > text > placeholder {{
@@ -225,7 +238,7 @@ entry.sq > text > placeholder {{
 
 /* ---- piezas compartidas ---- */
 .ph {{
-  font-size: 12px;
+  font-size: 13px;
   color: {fg};
   margin-bottom: 2px;
 }}
@@ -242,7 +255,7 @@ entry.sq > text > placeholder {{
   color: {dim};
 }}
 .big {{
-  font-size: 22px;
+  font-size: 20px;
   color: {fg};
 }}
 .ring-val {{
@@ -289,8 +302,15 @@ entry.sq > text > placeholder {{
 .panel.cabecera {{
   padding: 12px 14px 14px 14px;
 }}
+/* Las pestañas van centradas sobre el panel, no pegadas a la izquierda: son el
+   eje de la cabecera y lo de los lados (el tiempo encendido) es nota al pie. */
 .tabs {{
   margin-bottom: 10px;
+}}
+.tabs-grupo {{
+  background-color: {tile};
+  border-radius: 9px;
+  padding: 2px;
 }}
 .tab {{
   min-width: 0;
@@ -303,11 +323,8 @@ entry.sq > text > placeholder {{
   font-size: 11px;
   color: {muted};
 }}
+/* El grupo ya es {tile}: si el hover tambien lo fuera, no se veria. */
 .tab:hover {{
-  color: {fg};
-  background-color: {tile};
-}}
-.tab.on {{
   color: {accent};
   background-color: {acento_suave};
 }}
@@ -315,19 +332,56 @@ entry.sq > text > placeholder {{
   font-size: 10px;
   color: {dim};
 }}
+.tab.on, .tab.on:hover {{
+  background-color: {accent};
+  color: {on_accent};
+}}
+/* La tarjeta de lo que suena: caratula arriba, texto en medio, transporte abajo,
+   todo centrado sobre un mismo eje. Antes era una fila —caratula a la izquierda,
+   texto a la derecha— y en una columna ancha dejaba el texto flotando a media
+   altura sin nada que lo sujetara. */
+.media-card {{
+  padding: 10px 12px;
+}}
 .art {{
-  background-color: {tile};
-  border-radius: 8px;
-  color: {dim};
-  min-width: 64px;
-  min-height: 64px;
+  background-color: {acento_suave};
+  border-radius: 10px;
+  color: {accent};
+  min-width: 46px;
+  min-height: 46px;
 }}
 .media-src {{
   font-size: 10px;
   color: {accent};
 }}
+/* El transporte: el play manda y los saltos lo acompañan. */
+.media-ctl .bic {{
+  padding: 4px;
+}}
+.media-ctl .bic.main {{
+  background-color: {acento_suave};
+  color: {accent};
+  padding: 5px;
+}}
+.media-ctl .bic.main:hover {{
+  background-color: {accent};
+  color: {on_accent};
+}}
+/* Sin reproductor la tarjeta sigue entera, pero apagada: el hueco de la caratula
+   deja de pedir atencion y el transporte se queda en gris. */
+.media-card.off .art {{
+  background-color: {tile};
+  color: {dim};
+}}
+.media-card.off .media-title {{
+  color: {muted};
+}}
+.media-card.off .media-ctl .bic.main {{
+  background-color: {tile};
+  color: {muted};
+}}
 .media-title {{
-  font-size: 17px;
+  font-size: 13px;
   color: {fg};
 }}
 .media-sub {{
@@ -462,7 +516,7 @@ entry.sq > text > placeholder {{
   color: {dim};
 }}
 .note .ti {{
-  font-size: 12px;
+  font-size: 11px;
   color: {fg};
 }}
 .note .dt {{
@@ -476,6 +530,7 @@ entry.sq > text > placeholder {{
   border: 1px solid {borde};
   border-radius: 12px;
   padding: 14px 16px;
+  font-size: 11px;
   color: {fg};
 }}
 .invocado .row.on {{
@@ -497,7 +552,7 @@ entry.clave, entry.clave > text {{
   border-radius: 8px;
   padding: 6px 10px;
   color: {fg};
-  font-size: 12px;
+  font-size: 11px;
   caret-color: {accent};
 }}
 entry.clave {{
@@ -507,7 +562,7 @@ entry.clave {{
 /* ---- Tema: la fila de una paleta ---- */
 /* `.row` ya trae el hueco y el hover; aqui solo el nombre y la marca de activa. */
 .invocado .row .nm {{
-  font-size: 12px;
+  font-size: 11px;
   color: {fg};
 }}
 .invocado .row .k.acc {{
@@ -559,6 +614,7 @@ window.background {{
 }}
 .ficha {{
   border-radius: 14px;
+  font-size: 11px;
 }}
 .ficha .row {{
   padding: 1px 0;
@@ -572,6 +628,108 @@ window.background {{
 }}
 .invocado .row .k.mal {{
   color: {bad};
+}}
+
+/* ---- capturas y accesos rapidos ---- */
+.panel.accesos {{
+  padding: 12px 14px 14px 14px;
+}}
+.acc-ic {{
+  min-width: 0;
+  min-height: 0;
+  padding: 5px 7px;
+  background-color: {tile};
+  border: none;
+  box-shadow: none;
+  border-radius: 8px;
+  color: {muted};
+}}
+.acc-ic:hover {{
+  color: {accent};
+  background-color: {acento_suave};
+}}
+/* Un conmutador puesto: no dejar dormir la pantalla, avisos silenciados. */
+.acc-ic:checked {{
+  background-color: {accent};
+  color: {on_accent};
+}}
+
+/* ---- reloj del dashboard ---- */
+.reloj-tile {{
+  min-width: 128px;
+}}
+.clock-dia {{
+  font-size: 11px;
+  color: {accent};
+  letter-spacing: 0.4px;
+}}
+.clock-fecha {{
+  font-size: 10px;
+  color: {muted};
+}}
+
+/* ---- calendario, ahora dentro del dashboard ---- */
+.cal-caja {{
+  min-width: 190px;
+}}
+/* Compacto a proposito: aqui el calendario comparte panel y lo que sobra de alto se
+   lo lleva el panel entero, no sus filas. */
+.cal-day, .cal-head {{
+  padding: 1px 0;
+}}
+.cal-titulo {{
+  font-size: 11px;
+  color: {fg};
+}}
+.cal-nav {{
+  min-width: 0;
+  min-height: 0;
+  padding: 2px 4px;
+  background: none;
+  border: none;
+  box-shadow: none;
+  color: {dim};
+}}
+.cal-nav:hover {{
+  color: {accent};
+}}
+
+/* ---- bandeja: los indicadores propios ---- */
+.tray-pill {{
+  font-size: 9px;
+  padding: 3px 7px;
+  border-radius: 6px;
+  background-color: {tile};
+  color: {dim};
+  min-height: 0;
+  min-width: 0;
+  border: none;
+  box-shadow: none;
+}}
+/* Encendido: el bloqueo puesto, el servicio corriendo. Apagado sigue viendose, que
+   desaparecer obligaria a recordar que existia. */
+.tray-pill.on {{
+  background-color: {accent};
+  color: {on_accent};
+}}
+.tray-pill:hover {{
+  color: {accent};
+}}
+.tray-pill.on:hover {{
+  color: {on_accent};
+}}
+.tray-svc {{
+  padding: 3px;
+  border-radius: 7px;
+  color: {dim};
+}}
+.tray-svc.on {{
+  color: {ok};
+}}
+.tray-sep {{
+  min-width: 1px;
+  margin: 6px 4px;
+  background-color: {borde};
 }}
 
 /* ---- bandeja ---- */
@@ -612,6 +770,7 @@ window.background {{
         muted = p.muted,
         on_accent = p.on_accent,
         bad = p.bad,
+        ok = p.ok,
         accent = p.accent,
         dim = p.dim,
         sep = p.fg.mix(p.surface, 0.80),

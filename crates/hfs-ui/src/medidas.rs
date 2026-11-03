@@ -15,9 +15,10 @@ use crate::gtk::gdk;
 /// Un panel de esquina, en tanto por uno del ancho. Los cuatro miden igual.
 const ESQUINA_REL: f64 = 0.195;
 /// El panel de arriba al centro, que lleva dos pestañas.
-const CENTRO_REL: f64 = 0.38;
-/// El de abajo al centro: la bandeja crece con los iconos, esto es su minimo.
-const BANDEJA_REL: f64 = 0.11;
+const CENTRO_REL: f64 = 0.46;
+/// El de abajo al centro. La bandeja crece con los iconos, esto es su minimo: lo
+/// manda la franja de raton, que con un panel estrecho costaba encontrar.
+const BANDEJA_REL: f64 = 0.20;
 /// Lo que un rail entra en la pantalla. Va contra el ANCHO y no contra el lado
 /// corto: es una medida horizontal, y sacarla del alto dejaba el dock de controles
 /// en 32 px, demasiado estrecho para arrastrar una barra de volumen.

@@ -208,10 +208,10 @@ pub fn etiqueta(nombre: &str) -> String {
         .trim();
 
     let legible = match base {
-        "Speaker" => "Altavoces".to_string(),
-        "Headphones" => "Auriculares".to_string(),
-        "Digital Microphone" => "Micrófono interno".to_string(),
-        "Headset Mono Microphone" | "Headset Microphone" => "Micrófono de auriculares".to_string(),
+        "Speaker" => "Speakers".to_string(),
+        "Headphones" => "Headphones".to_string(),
+        "Digital Microphone" => "Internal microphone".to_string(),
+        "Headset Mono Microphone" | "Headset Microphone" => "Headset microphone".to_string(),
         otro => otro
             .replace("HDMI / DisplayPort ", "HDMI ")
             .replace(" Output", "")
@@ -375,14 +375,14 @@ Video
 
     #[test]
     fn las_etiquetas_se_entienden() {
-        assert_eq!(etiqueta("Ryzen HD Audio Controller Speaker"), "Altavoces");
+        assert_eq!(etiqueta("Ryzen HD Audio Controller Speaker"), "Speakers");
         assert_eq!(
             etiqueta("Ryzen HD Audio Controller Digital Microphone"),
-            "Micrófono interno"
+            "Internal microphone"
         );
         assert_eq!(
             etiqueta("Ryzen HD Audio Controller Headset Mono Microphone"),
-            "Micrófono de auriculares"
+            "Headset microphone"
         );
     }
 

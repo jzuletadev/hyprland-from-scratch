@@ -113,7 +113,7 @@ pub fn panel(
     let caja = gtk::Box::new(gtk::Orientation::Vertical, 8);
     caja.add_css_class("invocado");
 
-    let (cab, estado) = widgets::header("Fondo");
+    let (cab, estado) = widgets::header("Wallpaper");
     let rejilla = gtk::Grid::new();
     rejilla.set_row_spacing(6);
     rejilla.set_column_spacing(6);
@@ -124,7 +124,7 @@ pub fn panel(
     aviso.set_wrap(true);
     aviso.set_visible(false);
 
-    let pie = gtk::Label::new(Some("flechas mueven · ⏎ aplicar · esc cerrar"));
+    let pie = gtk::Label::new(Some("arrows move · ⏎ apply · esc close"));
     pie.add_css_class("foot");
     pie.set_xalign(0.0);
 
@@ -154,13 +154,13 @@ pub fn panel(
             let puesto = actual();
 
             estado.set_text(&match fondos.len() {
-                1 => "1 imagen".to_string(),
-                n => format!("{n} imágenes"),
+                1 => "1 image".to_string(),
+                n => format!("{n} images"),
             });
 
             if fondos.is_empty() {
                 aviso.set_text(&format!(
-                    "no hay imágenes en {}",
+                    "no images in {}",
                     directorio().display()
                 ));
                 aviso.set_visible(true);

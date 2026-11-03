@@ -70,8 +70,7 @@ fn fila(b: &Bind) -> gtk::Box {
     combo.set_xalign(0.0);
     f.append(&combo);
 
-    let que = widgets::ellipsized(Some(&b.label()), "nm");
-    que.set_hexpand(true);
+    let que = widgets::flexible(Some(&b.label()), "nm");
     que.set_xalign(0.0);
     if b.derivada() {
         // Sin `bindd`: se ensena, pero mas apagado, porque lo que se lee es la orden
@@ -92,10 +91,10 @@ pub fn panel(_palette: &Palette) -> (gtk::Widget, Rc<dyn Fn()>, Option<crate::Te
     let caja = gtk::Box::new(gtk::Orientation::Vertical, 8);
     caja.add_css_class("invocado");
 
-    let (cab, estado) = widgets::header("Atajos");
+    let (cab, estado) = widgets::header("Shortcuts");
 
     let filtro = gtk::Entry::new();
-    filtro.set_placeholder_text(Some("filtrar…"));
+    filtro.set_placeholder_text(Some("filter…"));
     filtro.add_css_class("clave");
     filtro.set_visibility(true);
 
@@ -109,7 +108,7 @@ pub fn panel(_palette: &Palette) -> (gtk::Widget, Rc<dyn Fn()>, Option<crate::Te
     rollo.set_max_content_height(MAX_ALTO);
     rollo.set_child(Some(&lista));
 
-    let pie = gtk::Label::new(Some("↑↓ mover · escribe para filtrar · esc cerrar"));
+    let pie = gtk::Label::new(Some("↑↓ move · type to filter · esc close"));
     pie.add_css_class("foot");
     pie.set_xalign(0.0);
 
@@ -158,7 +157,7 @@ pub fn panel(_palette: &Palette) -> (gtk::Widget, Rc<dyn Fn()>, Option<crate::Te
             rollo.vadjustment().set_value(0.0);
 
             if total == 0 {
-                let nada = gtk::Label::new(Some("ningún atajo coincide"));
+                let nada = gtk::Label::new(Some("no shortcut matches"));
                 nada.add_css_class("aviso");
                 nada.set_xalign(0.0);
                 lista.append(&nada);
@@ -166,9 +165,9 @@ pub fn panel(_palette: &Palette) -> (gtk::Widget, Rc<dyn Fn()>, Option<crate::Te
 
             let sin = v.iter().filter(|b| b.derivada()).count();
             estado.set_text(&if aguja.trim().is_empty() {
-                format!("{} · {sin} sin describir", v.len())
+                format!("{} · {sin} undescribed", v.len())
             } else {
-                format!("{total} de {}", v.len())
+                format!("{total} of {}", v.len())
             });
         })
     };
@@ -188,7 +187,7 @@ pub fn panel(_palette: &Palette) -> (gtk::Widget, Rc<dyn Fn()>, Option<crate::Te
                 Ok(v) => *todos.borrow_mut() = v,
                 Err(e) => {
                     eprintln!("hfs: no pude leer los atajos: {e}");
-                    estado.set_text("Hyprland no contesta");
+                    estado.set_text("Hyprland is not answering");
                     todos.borrow_mut().clear();
                 }
             }

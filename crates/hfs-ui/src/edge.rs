@@ -529,6 +529,13 @@ impl Handle {
     ///
     /// Es lo que quiere el reloj: el ancho lo manda el diseño, y lo que no se sabe de
     /// antemano es cuanto alto pide el calendario, que cambia con el mes.
+    /// El tamaño que tiene ahora la superficie. Lo necesita quien quiera imponer un
+    /// minimo despues de medirse: `fit_length` se ajusta al contenido y puede
+    /// quedarse por debajo de lo que el panel necesita para ser alcanzable.
+    pub fn size(&self) -> (i32, i32) {
+        self.size.get()
+    }
+
     pub fn fit_depth(&self) {
         let (sw, sh) = self.size.get();
         if self.spec.side.vertical_edge() {

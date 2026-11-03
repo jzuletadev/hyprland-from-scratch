@@ -46,37 +46,37 @@ struct Accion {
 
 const ACCIONES: &[Accion] = &[
     Accion {
-        titulo: "Bloquear",
+        titulo: "Lock",
         icono: "system-lock-screen-symbolic",
         cmd: "hyprlock",
         peligro: false,
     },
     Accion {
-        titulo: "Suspender",
+        titulo: "Sleep",
         icono: "weather-clear-night-symbolic",
         cmd: "hyprlock & sleep 0.5 && systemctl suspend",
         peligro: false,
     },
     Accion {
-        titulo: "Hibernar",
+        titulo: "Hibernate",
         icono: "media-playback-pause-symbolic",
         cmd: "hyprlock & sleep 0.5 && systemctl hibernate",
         peligro: false,
     },
     Accion {
-        titulo: "Sesión",
+        titulo: "Log out",
         icono: "system-log-out-symbolic",
         cmd: "hyprctl dispatch exit",
         peligro: true,
     },
     Accion {
-        titulo: "Reiniciar",
+        titulo: "Restart",
         icono: "system-reboot-symbolic",
         cmd: "systemctl reboot",
         peligro: true,
     },
     Accion {
-        titulo: "Apagar",
+        titulo: "Shut down",
         icono: "system-shutdown-symbolic",
         cmd: "systemctl poweroff",
         peligro: true,
@@ -86,9 +86,9 @@ const ACCIONES: &[Accion] = &[
 /// Como se llaman en castellano los perfiles de PowerProfiles.
 fn nombre_perfil(id: &str) -> &str {
     match id {
-        "power-saver" => "Ahorro",
-        "balanced" => "Equilibrado",
-        "performance" => "Máximo",
+        "power-saver" => "Saver",
+        "balanced" => "Balanced",
+        "performance" => "Maximum",
         otro => otro,
     }
 }
@@ -121,7 +121,7 @@ impl Energia {
         surface.body.set_spacing(10);
 
         // --- cabecera con el anillo de la bateria ---
-        let (cab, restante) = widgets::header("Energía");
+        let (cab, restante) = widgets::header("Power");
         let anillo = Ring::new(palette, 38);
         cab.append(&anillo.root);
 
@@ -139,9 +139,9 @@ impl Energia {
         let pregunta = gtk::Label::new(None);
         pregunta.set_hexpand(true);
         pregunta.set_xalign(0.0);
-        let si = gtk::Button::with_label("Sí");
+        let si = gtk::Button::with_label("Yes");
         si.add_css_class("confirm-si");
-        let no = gtk::Button::with_label("Cancelar");
+        let no = gtk::Button::with_label("Cancel");
         confirmar.append(&pregunta);
         confirmar.append(&no);
         confirmar.append(&si);
@@ -164,7 +164,7 @@ impl Energia {
             b.connect_clicked(move |_| {
                 if a.peligro {
                     *pendiente_.borrow_mut() = Some(a.cmd);
-                    pregunta_.set_text(&format!("¿{}?", a.titulo));
+                    pregunta_.set_text(&format!("{}?", a.titulo));
                     rejilla_.set_visible(false);
                     confirmar_.set_visible(true);
                 } else {
@@ -249,7 +249,7 @@ impl Energia {
             }
             None => {
                 eprintln!("hfs: sin power-profiles-daemon; no habra perfiles");
-                let l = gtk::Label::new(Some("sin perfiles de energía"));
+                let l = gtk::Label::new(Some("no power profiles"));
                 l.add_css_class("sub");
                 perfiles.append(&l);
             }
@@ -277,15 +277,15 @@ impl Energia {
                         };
                         anillo.set(b.percent, &format!("{}", b.percent), color);
                         restante.set_text(&match (b.time_left, b.status.as_str()) {
-                            (_, "Full") => "llena".to_string(),
-                            (Some(t), "Charging") => format!("{} para llenar", sys::human_duration(t)),
+                            (_, "Full") => "full".to_string(),
+                            (Some(t), "Charging") => format!("{} to full", sys::human_duration(t)),
                             (Some(t), _) => sys::human_duration(t),
                             (None, s) => s.to_string(),
                         });
                     }
                     None => {
                         anillo.set(0, "—", palette.muted);
-                        restante.set_text("sin batería");
+                        restante.set_text("no battery");
                     }
                 }
 
@@ -300,7 +300,7 @@ impl Energia {
                     }
                     let motivo = dbus::prop::<String>(p, "PerformanceDegraded").unwrap_or_default();
                     degradado.set_visible(!motivo.is_empty());
-                    degradado.set_text(&format!("rendimiento limitado: {motivo}"));
+                    degradado.set_text(&format!("performance capped: {motivo}"));
                 } else {
                     degradado.set_visible(false);
                 }

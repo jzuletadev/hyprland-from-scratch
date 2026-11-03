@@ -46,7 +46,7 @@ fn disco() -> Option<String> {
         return None;
     }
     Some(format!(
-        "{} de {} ({:.0} %){}",
+        "{} of {} ({:.0} %){}",
         sys::human_bytes(usado),
         sys::human_bytes(total),
         usado / total * 100.0,
@@ -61,7 +61,7 @@ fn disco() -> Option<String> {
 /// cierra, asi que no merece la pena mantenerla viva ni sondear nada.
 pub fn abrir(app: &gtk::Application, palette: &Palette) {
     let win = gtk::ApplicationWindow::new(app);
-    win.set_title(Some("Sistema"));
+    win.set_title(Some("System"));
     // Es lo que hace que la `windowrule` la agarre y la deje flotante y centrada.
     gtk::prelude::GtkWindowExt::set_default_size(&win, 900, 300);
 
@@ -73,7 +73,7 @@ pub fn abrir(app: &gtk::Application, palette: &Palette) {
     caja.set_margin_start(20);
     caja.set_margin_end(20);
 
-    let (cab, estado) = widgets::header("Sistema");
+    let (cab, estado) = widgets::header("System");
     estado.set_text(&sys::os_pretty().unwrap_or_else(|| "Linux".into()));
     caja.append(&cab);
 
@@ -85,22 +85,27 @@ pub fn abrir(app: &gtk::Application, palette: &Palette) {
 
     let nada = || "—".to_string();
 
-    izq.append(&dato("Máquina", &sys::host_model().unwrap_or_else(nada)));
+    izq.append(&dato("Machine", &sys::host_model().unwrap_or_else(nada)));
     izq.append(&dato("CPU", &sys::cpu_model().unwrap_or_else(nada)));
     let gpus = sys::gpus();
     if gpus.is_empty() {
-        izq.append(&dato("Gráfica", &nada()));
+        izq.append(&dato("Graphics", &nada()));
     } else {
         // Esta maquina es hibrida: dos tarjetas, y la ficha tiene que decirlo.
         for (i, g) in gpus.iter().enumerate() {
-            izq.append(&dato(if i == 0 { "Gráfica" } else { "" }, g));
+            let linea = match g.temp {
+                Some(t) => format!("{} · {t:.0} °C", g.nombre),
+                None if !g.despierta => format!("{} · asleep", g.nombre),
+                None => g.nombre.clone(),
+            };
+            izq.append(&dato(if i == 0 { "Graphics" } else { "" }, &linea));
         }
     }
     izq.append(&dato(
-        "Memoria",
+        "Memory",
         &match sys::memory() {
             Ok(m) => format!(
-                "{} de {}",
+                "{} of {}",
                 sys::human_bytes(m.used_kb as f64 * 1024.0),
                 sys::human_bytes(m.total_kb as f64 * 1024.0)
             ),
@@ -111,15 +116,15 @@ pub fn abrir(app: &gtk::Application, palette: &Palette) {
     der.append(&dato("Kernel", &sys::kernel().unwrap_or_else(nada)));
     der.append(&dato("Shell", &sys::shell().unwrap_or_else(nada)));
     der.append(&dato(
-        "Paquetes",
+        "Packages",
         &match sys::package_count() {
             Some(n) => format!("{n}"),
             None => nada(),
         },
     ));
-    der.append(&dato("Disco", &disco().unwrap_or_else(nada)));
+    der.append(&dato("Disk", &disco().unwrap_or_else(nada)));
     der.append(&dato(
-        "Encendido",
+        "Uptime",
         &match sys::uptime() {
             Ok(d) => sys::human_duration(d),
             Err(_) => nada(),
@@ -134,7 +139,7 @@ pub fn abrir(app: &gtk::Application, palette: &Palette) {
     // La paleta activa, con sus colores. Es la linea que el boceto pedia y la que
     // explica de un vistazo de donde salen los colores de todo lo demas.
     let fila_pal = widgets::row();
-    let et = gtk::Label::new(Some("Paleta"));
+    let et = gtk::Label::new(Some("Palette"));
     et.add_css_class("k");
     et.set_xalign(0.0);
     et.set_size_request(86, -1);
@@ -173,7 +178,7 @@ pub fn abrir(app: &gtk::Application, palette: &Palette) {
     fila_pal.append(&tiras);
     caja.append(&fila_pal);
 
-    let pie = gtk::Label::new(Some("esc o SUPER+Q para cerrar"));
+    let pie = gtk::Label::new(Some("esc or SUPER+Q to close"));
     pie.add_css_class("foot");
     pie.set_xalign(0.0);
     caja.append(&pie);

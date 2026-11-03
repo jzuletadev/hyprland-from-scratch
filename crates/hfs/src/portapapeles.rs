@@ -56,7 +56,7 @@ impl Portapapeles {
         surface.body.set_orientation(gtk::Orientation::Vertical);
         surface.body.set_spacing(6);
 
-        let (cab, cuenta) = widgets::header("Portapapeles");
+        let (cab, cuenta) = widgets::header("Clipboard");
         let vaciar = gtk::Button::new();
         vaciar.add_css_class("bic");
         vaciar.set_has_frame(false);
@@ -66,7 +66,7 @@ impl Portapapeles {
         cab.append(&vaciar);
 
         let lista = gtk::Box::new(gtk::Orientation::Vertical, 2);
-        let pie = gtk::Label::new(Some("tocar copia · Ctrl+V pega"));
+        let pie = gtk::Label::new(Some("click copies · Ctrl+V pastes"));
         pie.add_css_class("foot");
         pie.set_xalign(0.0);
 
@@ -87,9 +87,9 @@ impl Portapapeles {
                 let entradas = clipboard::list(VISIBLES);
                 let total = clipboard::list(usize::MAX).len();
                 cuenta.set_text(&match total {
-                    0 => "vacío".to_string(),
-                    1 => "1 entrada".to_string(),
-                    n => format!("{n} entradas"),
+                    0 => "empty".to_string(),
+                    1 => "1 entry".to_string(),
+                    n => format!("{n} entries"),
                 });
                 pintar(&lista, &entradas, &handle);
             })
@@ -139,7 +139,7 @@ fn icono_de(c: Clase) -> &'static str {
 fn pintar(lista: &gtk::Box, entradas: &[clipboard::Entrada], handle: &Handle) {
     widgets::clear(lista);
     if entradas.is_empty() {
-        let l = gtk::Label::new(Some("nada copiado todavía"));
+        let l = gtk::Label::new(Some("nothing copied yet"));
         l.add_css_class("sempty");
         l.set_xalign(0.0);
         lista.append(&l);
@@ -149,8 +149,7 @@ fn pintar(lista: &gtk::Box, entradas: &[clipboard::Entrada], handle: &Handle) {
         let fila = widgets::row();
         let img = gtk::Image::from_icon_name(icono_de(e.clase));
         img.set_pixel_size(14);
-        let texto = widgets::ellipsized(Some(&e.vista), "");
-        texto.set_hexpand(true);
+        let texto = widgets::flexible(Some(&e.vista), "nm");
         let edad = gtk::Label::new(Some(&hace(e.edad)));
         edad.add_css_class("k");
         fila.append(&img);
@@ -202,7 +201,7 @@ fn copiar(bytes: &[u8]) {
 fn hace(d: std::time::Duration) -> String {
     let s = d.as_secs();
     if s < 60 {
-        "ahora".into()
+        "just now".into()
     } else if s < 3600 * 24 {
         sys::human_duration(d)
     } else {

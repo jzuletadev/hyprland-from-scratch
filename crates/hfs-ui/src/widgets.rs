@@ -231,10 +231,24 @@ pub fn ellipsized(texto: Option<&str>, clase: &str) -> gtk4::Label {
     }
     l.set_xalign(0.0);
     l.set_ellipsize(gtk4::pango::EllipsizeMode::End);
-    // `ellipsize` NO basta. Elidir es lo que se hace al PINTAR; al MEDIR, la etiqueta
-    // sigue pidiendo el ancho natural de su texto entero. Sin este tope, una
-    // notificacion con una ruta larga o una entrada del portapapeles con un JSON
-    // dentro ensanchaban su panel y rompian la medida comun del escritorio.
+    l
+}
+
+/// Una etiqueta que **cede**: se queda con el hueco que haya y recorta lo que no quepa,
+/// en vez de pedir el ancho de su texto.
+///
+///   OJO CON LAS DOS COSAS JUNTAS. `ellipsize` NO basta: elidir es lo que se hace al
+///   PINTAR, y al MEDIR la etiqueta sigue pidiendo el ancho natural de su texto, asi
+///   que una notificacion con una ruta larga ensanchaba su propio panel.
+///   `max_width_chars(1)` lo ata, pero **solo sirve con `hexpand`**: sin el, la
+///   etiqueta pide un caracter y eso es exactamente lo que se le da. Poner el tope
+///   suelto en `ellipsized` dejo en «...» los nombres de media docena de paneles.
+///
+/// Por eso es una funcion aparte y no el comportamiento por omision: en una fila solo
+/// una etiqueta puede ceder, y las demas tienen que pedir lo suyo.
+pub fn flexible(texto: Option<&str>, clase: &str) -> gtk4::Label {
+    let l = ellipsized(texto, clase);
+    l.set_hexpand(true);
     l.set_max_width_chars(1);
     l
 }

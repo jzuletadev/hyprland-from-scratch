@@ -1,1 +1,19 @@
-export AQ_DRM_DEVICES=/dev/dri/amd-igpu:/dev/dri/nvidia-dgpu
+# ~/hyprland-from-scratch/system/nvidia-hybrid/env-hyprland
+
+# El DRIVER si es estable. La integrada va primero porque es la que mueve el panel y
+# la que debe pintar el escritorio; la dedicada queda detras para quien la pida.
+
+__igpu=""
+__dgpu=""
+for __card in /sys/class/drm/card[0-9]*; do
+    [ -e "$__card/device/uevent" ] || continue
+    case "$(sed -n 's/^DRIVER=//p' "$__card/device/uevent")" in
+        amdgpu|i915|xe) __igpu="/dev/dri/${__card##*/}" ;;
+        nvidia)         __dgpu="/dev/dri/${__card##*/}" ;;
+    esac
+done
+
+# Si solo hay una, se usa esa; si no hay ninguna, no se toca la variable y el
+__aq="${__igpu}${__igpu:+${__dgpu:+:}}${__dgpu}"
+[ -n "$__aq" ] && export AQ_DRM_DEVICES="$__aq"
+unset __igpu __dgpu __aq __card

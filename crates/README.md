@@ -42,7 +42,7 @@ existe.
 ## Lo que hay hoy
 
 ```bash
-hfs shell                 # el escritorio: controles, espacios, reloj y rueda
+hfs shell                 # el escritorio entero, en un proceso
 hfs vol up|down|mute|N    # volumen (N = 0-100)
 hfs bri up|down|N         # brillo  (N = 1-100)
 hfs wheel                 # abre o cierra la rueda y el buscador
@@ -56,7 +56,7 @@ Siete superficies de borde más la rueda, cada una en su sitio:
 |---|---|---|
 | **controles** | canto derecho, centrado | `wpctl`, `brightnessctl` |
 | **espacios** | canto izquierdo, centrado | socket de eventos de Hyprland |
-| **reloj** | esquina abajo-derecha | glib (hora local e idioma) |
+| **accesos** | esquina abajo-derecha | capturas, grabación, dunst, hypridle |
 | **cabecera** | arriba-centro | MPRIS, `/proc`, `/sys` |
 | **energía** | esquina arriba-izquierda | PowerProfiles (D-Bus), `/sys` |
 | **notificaciones** | esquina arriba-derecha | historial de dunst (D-Bus) |
@@ -182,7 +182,7 @@ copiado byte a byte en 11 de 11 ficheros.
 
 ### hfs — las superficies
 
-Un módulo por superficie: `ctrl.rs`, `espacios.rs`, `reloj.rs`, `cabecera.rs`,
+Un módulo por superficie: `ctrl.rs`, `espacios.rs`, `accesos.rs`, `cabecera.rs`,
 `energia.rs`, `notificaciones.rs`, `portapapeles.rs` y `rueda.rs`, más `red.rs`,
 `bluetooth.rs`, `captura.rs`, `fondo.rs`, `tema.rs` y `atajos.rs` para los paneles que
 viven dentro de la rueda, `bandeja.rs` con `sni.rs` debajo (el protocolo), y `sistema.rs`, que es el único que **no** es una superficie
@@ -323,6 +323,13 @@ arrancar; si no había nadie, muchos se rinden. Por eso al tomar el nombre se le
 empujón a `udiskie`, que es nuestro. Comprobar si la lista está vacía no vale: basta
 con que otro programa sí se haya registrado para que parezca que todo está bien, así
 que hay que preguntar por él en concreto.
+
+**En la bandeja solo van iconos de aplicación.** Llegó a llevar indicadores nuestros
+—Caps, Num, la distribución y una pastilla de Docker— y se veían mal: texto a tamaño de
+icono, en fila con iconos de verdad, parecían iconos rotos más que estado. Los tres
+primeros se fueron a Accesos. Docker se quitó entero: ningún tema de iconos instalado
+trae uno, así que nunca iba a ser otra cosa que texto, y la pastilla no hacía nada al
+pulsarla. Una fila de bandeja es para cosas sobre las que se puede actuar.
 
 ## El único sondeo permanente, y lo que costó
 
@@ -537,3 +544,85 @@ En Atajos las flechas mueven un cursor **y arrastran el scroll con él**. La pos
 la fila se saca con `compute_bounds` contra la lista, que es contra lo que mide el
 ajuste del scroll; sin eso, bajar mueve la marca pero la lista no sigue y el cursor se
 pierde por debajo del borde.
+
+
+## `ellipsize` + `max_width_chars` van juntos o no van
+
+Poner `max_width_chars(1)` dentro de `widgets::ellipsized` parecia la solucion limpia al
+problema de que una etiqueta elidida siga pidiendo su ancho natural. Dejo en «...» los
+nombres de media docena de paneles.
+
+El motivo: con el tope puesto la etiqueta pide **un caracter**, y eso es exactamente lo
+que se le da salvo que ademas se expanda. Las dos cosas van juntas, y en una fila solo
+**una** etiqueta puede ceder: las demas tienen que pedir lo suyo o no se lee ninguna.
+
+Por eso son dos funciones. `ellipsized` recorta al pintar y pide lo que mide su texto;
+`flexible` ademas cede. Se usa `flexible` donde el texto puede ser largo de verdad —una
+ruta de notificacion, un JSON del portapapeles, un SSID— y `ellipsized` en todo lo demas.
+
+
+## El dashboard y el alto de la cabecera
+
+El reloj **es un widget, no una etiqueta**: `%H:%M` grande, el día de la semana en el
+color de acento y `%e %B` debajo. La fecha se construye solo con especificadores de
+formato; poner `%e de %B` mete una preposición española en una cadena cuyo idioma decide
+el locale, y salió «2 de November».
+
+**La fila de medios está siempre**, con el hueco de la carátula y «Nada sonando» cuando
+no suena nada. Un widget que desaparece deja un agujero en una fila de tres columnas, y
+el agujero canta más que el estado en reposo.
+
+Rendimiento son **dos filas**, no cuatro: `[CPU | Memoria | Disco | GPU int | GPU ded]` y
+`[Red | Ventiladores | Batería]`. Con cuatro el panel se iba a 344 px, y lo que se mide
+no es la pestaña sino el alto de la cabecera entera — así que cada tarjeta que puede
+encoger (anillos más pequeños, dos líneas en vez de tres, el nombre completo de la GPU al
+tooltip) le gana alto a todas las pestañas. Ahora son 219 px.
+
+Los ventiladores leen 0 rpm en reposo en este portátil, y es verdad, así que dicen
+**«parados»** en vez de escribir `0 rpm`: la misma regla que la tarjeta NVIDIA — cuando
+el número solo parece una avería, hay que decir lo que significa.
+
+## El reloj se mudó, y la esquina cambió de oficio
+
+El calendario estaba en la esquina de abajo a la derecha, donde había que ir a
+buscarlo, y ocupaba un panel entero para enseñar un mes. Ahora vive en el **dashboard**
+de la cabecera, al lado del reloj —son el mismo dato a dos escalas— y de lo que suena,
+que se queda con el tercio de la derecha.
+
+Eso dejó libre la esquina, que ahora es **capturas y accesos rápidos** (`accesos.rs`):
+tres filas —captura, grabación y accesos— y las dos primeras acaban en el icono de su
+carpeta, porque después de la décima captura lo que hace falta no es otra captura sino
+encontrar las anteriores.
+
+El radio de Captura salió de la rueda: tenerlo en los dos sitios era duplicarlo.
+`captura.rs` se quedó solo con el motor —arrancar, parar, saber si graba— y la interfaz
+se fue a `accesos.rs`.
+
+**Los conmutadores de Accesos preguntan por el estado de verdad** en vez de recordar lo
+que se pulsó: `dunstctl is-paused` y si `hypridle` corre. Los dos se pueden cambiar por
+fuera, y un botón que miente es peor que no tenerlo.
+
+**Lo que tiene dos estados se pinta como conmutador.** El interruptor de satty era un
+botón normal mientras el de audio, al lado, era un `ToggleButton`: la misma forma decía
+dos cosas distintas en la misma fila. Ahora los dos son `ToggleButton`.
+
+Los botones de acción van en una caja `homogeneous`, que es lo que les da el mismo
+ancho; **el icono de carpeta se queda fuera de esa caja**, porque dentro la fila pedía
+más de los 391 px del panel y se salía. Y las carpetas abren **Thunar directamente**:
+`xdg-mime query default inode/directory` responde `kitty-open.desktop` en esta máquina,
+así que la llamada portable abría una terminal.
+
+Las pastillas de Caps, Num y distribución **bajaron aquí desde la bandeja**. Arriba eran
+texto al lado de iconos de aplicación, a tamaño de icono, y se leían como iconos rotos;
+aquí hay sitio para una pastilla con su etiqueta.
+
+## El calendario se puede mover de mes
+
+Antes solo pintaba el actual, que sirve para mirar qué día es y para nada más. Mirar si
+el 14 del mes que viene cae en sábado obligaba a abrir otra cosa.
+
+La aritmética va en base 0 (`año * 12 + (mes - 1) + paso`, luego `div_euclid` y
+`rem_euclid`): es lo que hace que diciembre + 1 sea enero del año que viene sin casos
+especiales, y que restar meses funcione igual hacia atrás. Tocar el título vuelve a hoy,
+que es la salida de haberse ido seis meses adelante, y **«hoy» solo se marca en su
+mes**: en marzo no hay un hoy.

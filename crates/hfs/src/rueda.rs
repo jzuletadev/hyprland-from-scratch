@@ -58,7 +58,6 @@ struct Nodo {
 enum Panel {
     Wifi,
     Bluetooth,
-    Captura,
     Fondo,
     Tema,
     Sonido,
@@ -98,22 +97,17 @@ const NODOS: &[Nodo] = &[
         panel: Panel::Bluetooth,
     },
     Nodo {
-        titulo: "Captura",
-        icono: "camera-photo-symbolic",
-        panel: Panel::Captura,
-    },
-    Nodo {
-        titulo: "Fondo",
+        titulo: "Wallpaper",
         icono: "preferences-desktop-wallpaper-symbolic",
         panel: Panel::Fondo,
     },
     Nodo {
-        titulo: "Tema",
+        titulo: "Theme",
         icono: "preferences-color-symbolic",
         panel: Panel::Tema,
     },
     Nodo {
-        titulo: "Sonido",
+        titulo: "Sound",
         icono: "audio-volume-high-symbolic",
         panel: Panel::Sonido,
     },
@@ -421,7 +415,6 @@ pub fn new(app: &gtk::Application, palette: &Palette, monitor: &gdk::Monitor) ->
             let (w, refrescar, teclas) = mapa.entry(cual).or_insert_with(|| match cual {
                 Panel::Wifi => crate::red::panel(&palette),
                 Panel::Bluetooth => crate::bluetooth::panel(&palette),
-                Panel::Captura => crate::captura::panel(&palette, cerrar.clone()),
                 Panel::Fondo => crate::fondo::panel(&palette, cerrar.clone()),
                 Panel::Tema => crate::tema::panel(&palette),
                 Panel::Atajos => crate::atajos::panel(&palette),
@@ -655,7 +648,7 @@ fn rellenar(
         lista.remove(&hijo);
     }
     if apps.is_empty() {
-        let l = gtk::Label::new(Some(&format!("sin resultados para «{consulta}»")));
+        let l = gtk::Label::new(Some(&format!("no results for «{consulta}»")));
         l.add_css_class("sempty");
         l.set_xalign(0.0);
         lista.append(&l);
@@ -779,7 +772,6 @@ impl Rueda {
             "sonido" => Panel::Sonido,
             "tema" => Panel::Tema,
             "fondo" => Panel::Fondo,
-            "captura" => Panel::Captura,
             otro => {
                 eprintln!("hfs: no conozco el panel «{otro}»; abro la rueda");
                 if !self.handle.is_open() {

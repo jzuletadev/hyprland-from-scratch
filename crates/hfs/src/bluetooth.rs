@@ -212,7 +212,7 @@ pub fn panel(palette: &Palette) -> (gtk::Widget, Rc<dyn Fn()>, Option<crate::Tec
     aviso.set_xalign(0.0);
     aviso.set_wrap(true);
     aviso.set_visible(false);
-    let pie = gtk::Label::new(Some("tocar conecta o desconecta · esc cerrar"));
+    let pie = gtk::Label::new(Some("click connects or disconnects · esc close"));
     pie.add_css_class("foot");
     pie.set_xalign(0.0);
 
@@ -234,21 +234,21 @@ pub fn panel(palette: &Palette) -> (gtk::Widget, Rc<dyn Fn()>, Option<crate::Tec
         );
         Rc::new(move || {
             let Some(b) = bt.as_ref() else {
-                estado.set_text("sin BlueZ");
+                estado.set_text("no BlueZ");
                 return;
             };
             let (ad, devs) = b.estado();
             estado.set_text(&match &ad {
-                Some(a) if a.buscando => "buscando…".to_string(),
-                Some(a) if a.encendido => format!("{} dispositivos", devs.len()),
+                Some(a) if a.buscando => "scanning…".to_string(),
+                Some(a) if a.encendido => format!("{} devices", devs.len()),
                 Some(_) => "apagado".to_string(),
-                None => "sin adaptador".to_string(),
+                None => "no adapter".to_string(),
             });
             *adaptador.borrow_mut() = ad;
 
             widgets::clear(&lista);
             if devs.is_empty() {
-                let l = gtk::Label::new(Some("ningún dispositivo"));
+                let l = gtk::Label::new(Some("no devices"));
                 l.add_css_class("sempty");
                 l.set_xalign(0.0);
                 lista.append(&l);
@@ -261,13 +261,13 @@ pub fn panel(palette: &Palette) -> (gtk::Widget, Rc<dyn Fn()>, Option<crate::Tec
                 }
                 let img = gtk::Image::from_icon_name(icono_de(&d.icono));
                 img.set_pixel_size(15);
-                let nombre = widgets::ellipsized(Some(&d.nombre), "");
+                let nombre = widgets::flexible(Some(&d.nombre), "nm");
                 nombre.set_hexpand(true);
                 let mut detalle = Vec::new();
                 if d.conectado {
-                    detalle.push("conectado".to_string());
+                    detalle.push("connected".to_string());
                 } else if d.emparejado {
-                    detalle.push("emparejado".to_string());
+                    detalle.push("paired".to_string());
                 }
                 if let Some(p) = d.bateria {
                     detalle.push(format!("{p} %"));

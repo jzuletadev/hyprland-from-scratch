@@ -14,6 +14,7 @@ pub mod hyprland;
 pub mod palette;
 pub mod paths;
 pub mod sys;
+pub mod teclado;
 
 pub use error::{Error, Result};
 pub use palette::{Mode, Palette, Rgb};

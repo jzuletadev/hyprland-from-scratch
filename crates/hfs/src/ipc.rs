@@ -33,6 +33,8 @@ pub enum Aviso {
     /// Abrir la ficha de la maquina. Normalmente se toca el icono de arch del rail,
     /// pero tenerlo aqui la hace invocable desde fuera, que es como se prueba.
     Sistema,
+    /// Asomar el panel de capturas y accesos de la esquina de abajo a la derecha.
+    Accesos,
 }
 
 impl Aviso {
@@ -43,6 +45,7 @@ impl Aviso {
             Aviso::Rueda => "rueda",
             Aviso::Panel(p) => p,
             Aviso::Sistema => "sistema",
+            Aviso::Accesos => "accesos",
         }
     }
 
@@ -52,14 +55,15 @@ impl Aviso {
             "todo" => Some(Aviso::Todo),
             "rueda" => Some(Aviso::Rueda),
             "sistema" => Some(Aviso::Sistema),
-            p @ ("atajos" | "tema" | "fondo" | "captura" | "sonido") => Some(Aviso::Panel(
+            "accesos" => Some(Aviso::Accesos),
+            p @ ("atajos" | "tema" | "fondo" | "sonido") => Some(Aviso::Panel(
                 // Se reescribe a un `&'static str` para que `Aviso` siga siendo Copy.
                 match p {
                     "atajos" => "atajos",
                     "tema" => "tema",
                     "fondo" => "fondo",
                     "sonido" => "sonido",
-                    _ => "captura",
+                    _ => "tema",
                 },
             )),
             _ => None,

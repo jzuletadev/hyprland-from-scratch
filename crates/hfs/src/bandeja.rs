@@ -64,12 +64,13 @@ impl Bandeja {
 
         let fila = gtk::Box::new(gtk::Orientation::Horizontal, 4);
         fila.set_halign(gtk::Align::Center);
-        let vacio = gtk::Label::new(Some("nada en segundo plano"));
+        let vacio = gtk::Label::new(Some("nothing in the background"));
         vacio.add_css_class("foot");
 
         surface.body.append(&fila);
         surface.body.append(&vacio);
 
+        let ancho_min = m.bandeja;
         let refrescar: Rc<dyn Fn()> = {
             let (fila, vacio, handle) = (fila.clone(), vacio.clone(), handle.clone());
             let sni = sni.cloned();
@@ -103,6 +104,13 @@ impl Bandeja {
                 // GTK lo avisaba con «needs at least 60» y el icono salia cortado.
                 handle.fit_depth();
                 handle.fit_length();
+                // `fit_length` mide el contenido, y con dos iconos eso son 250 px:
+                // una franja de raton de 250 px en el canto de abajo es justo lo que
+                // costaba encontrar. El minimo del `Spec` manda.
+                let (w, h) = handle.size();
+                if w < ancho_min {
+                    handle.resize(ancho_min, h);
+                }
             })
         };
         refrescar();
@@ -163,7 +171,7 @@ fn boton_grabacion(palette: &Palette) -> gtk::Button {
         ctx.fill().ok();
     });
     b.set_child(Some(&punto));
-    b.set_tooltip_text(Some("Grabando · tocar para parar"));
+    b.set_tooltip_text(Some("Recording · click to stop"));
     b.connect_clicked(|_| crate::captura::parar());
     b
 }

@@ -24,8 +24,8 @@ use hfs_core::Palette;
 use hfs_ui::css;
 
 use crate::{
-    bandeja, cabecera, ctrl, energia, espacios, hypr, ipc, notificaciones, portapapeles, reloj,
-    rueda, sni,
+    accesos, bandeja, cabecera, ctrl, energia, espacios, hypr, ipc, notificaciones,
+    portapapeles, rueda, sni,
 };
 
 const APP_ID: &str = "dev.hfs.shell";
@@ -40,7 +40,7 @@ struct Pantalla {
     connector: String,
     ctrl: ctrl::Ctrl,
     espacios: espacios::Espacios,
-    reloj: reloj::Reloj,
+    accesos: accesos::Accesos,
     cabecera: cabecera::Cabecera,
     energia: energia::Energia,
     notifs: notificaciones::Notificaciones,
@@ -66,7 +66,7 @@ impl Pantalla {
     fn destroy(&self) {
         self.ctrl.destroy();
         self.espacios.destroy();
-        self.reloj.destroy();
+        self.accesos.destroy();
         self.cabecera.destroy();
         self.energia.destroy();
         self.notifs.destroy();
@@ -161,7 +161,7 @@ fn build(app: &gtk::Application) {
                 let p = Pantalla {
                     ctrl: ctrl::Ctrl::new(&app, &palette, &monitor),
                     espacios: espacios::Espacios::new(&app, &palette, &monitor, &connector),
-                    reloj: reloj::Reloj::new(&app, &palette, &monitor),
+                    accesos: accesos::Accesos::new(&app, &palette, &monitor),
                     cabecera: cabecera::Cabecera::new(&app, &palette, &monitor),
                     energia: energia::Energia::new(&app, &palette, &monitor),
                     notifs: notificaciones::Notificaciones::new(&app, &palette, &monitor),
@@ -175,7 +175,7 @@ fn build(app: &gtk::Application) {
                 };
                 p.ctrl.present();
                 p.espacios.present();
-                p.reloj.present();
+                p.accesos.present();
                 p.cabecera.present();
                 p.energia.present();
                 p.notifs.present();
@@ -436,7 +436,7 @@ fn atender(aviso: ipc::Aviso, watch: &hypr::Watch, pantallas: &Rc<RefCell<Vec<Pa
                 for h in [
                     &p.ctrl.handle,
                     &p.espacios.handle,
-                    &p.reloj.handle,
+                    &p.accesos.handle,
                     &p.cabecera.handle,
                     &p.energia.handle,
                     &p.notifs.handle,
@@ -449,6 +449,10 @@ fn atender(aviso: ipc::Aviso, watch: &hypr::Watch, pantallas: &Rc<RefCell<Vec<Pa
             ipc::Aviso::Rueda => p.alternar_rueda(),
             ipc::Aviso::Panel(n) => p.abrir_panel(n),
             ipc::Aviso::Sistema => crate::sistema::abrir(&p.app, &p.palette),
+            ipc::Aviso::Accesos => {
+                p.accesos.refresh();
+                p.accesos.handle.peek(TODO_MS);
+            }
         }
     }
 }

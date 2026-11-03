@@ -42,15 +42,14 @@ fn fila(d: &Device, icono: &str, conectado: bool, refrescar: &Rc<dyn Fn()>) -> g
     img.set_pixel_size(14);
     caja.append(&img);
 
-    let nombre = widgets::ellipsized(Some(&audio::etiqueta(&d.nombre)), "nm");
-    nombre.set_hexpand(true);
+    let nombre = widgets::flexible(Some(&audio::etiqueta(&d.nombre)), "nm");
     nombre.set_xalign(0.0);
     caja.append(&nombre);
 
     // El volumen de cada uno, no solo el del activo: es lo que explica un dispositivo
     // que parece bien elegido y no suena porque esta a cero o silenciado.
     let vol = gtk::Label::new(Some(&if !conectado {
-        "sin conectar".to_string()
+        "not connected".to_string()
     } else if d.muted {
         "silenciado".to_string()
     } else {
@@ -63,7 +62,7 @@ fn fila(d: &Device, icono: &str, conectado: bool, refrescar: &Rc<dyn Fn()>) -> g
     caja.append(&vol);
 
     if d.activo {
-        let tag = gtk::Label::new(Some("en uso"));
+        let tag = gtk::Label::new(Some("in use"));
         tag.add_css_class("k");
         tag.add_css_class("acc");
         caja.append(&tag);
@@ -100,10 +99,10 @@ pub fn panel(_palette: &Palette) -> (gtk::Widget, Rc<dyn Fn()>, Option<crate::Te
     let caja = gtk::Box::new(gtk::Orientation::Vertical, 8);
     caja.add_css_class("invocado");
 
-    let (cab, estado) = widgets::header("Sonido");
+    let (cab, estado) = widgets::header("Sound");
     let cuerpo = gtk::Box::new(gtk::Orientation::Vertical, 4);
 
-    let pie = gtk::Label::new(Some("tocar elige · tocar el activo silencia · esc cerrar"));
+    let pie = gtk::Label::new(Some("click selects · click the active one to mute · esc close"));
     pie.add_css_class("foot");
     pie.set_xalign(0.0);
 
@@ -131,8 +130,8 @@ pub fn panel(_palette: &Palette) -> (gtk::Widget, Rc<dyn Fn()>, Option<crate::Te
                 Ok(d) => d,
                 Err(e) => {
                     eprintln!("hfs: no pude listar los dispositivos: {e}");
-                    estado.set_text("sin PipeWire");
-                    let v = gtk::Label::new(Some("wpctl no contesta"));
+                    estado.set_text("no PipeWire");
+                    let v = gtk::Label::new(Some("wpctl is not answering"));
                     v.add_css_class("aviso");
                     v.set_xalign(0.0);
                     cuerpo.append(&v);
@@ -152,13 +151,13 @@ pub fn panel(_palette: &Palette) -> (gtk::Widget, Rc<dyn Fn()>, Option<crate::Te
             };
             estado.set_text(&format!(
                 "{} · {}",
-                plural(utiles(&d.salidas), "salida", "salidas"),
-                plural(utiles(&d.entradas), "entrada", "entradas")
+                plural(utiles(&d.salidas), "output", "outputs"),
+                plural(utiles(&d.entradas), "input", "inputs")
             ));
 
-            cuerpo.append(&seccion("Salida"));
+            cuerpo.append(&seccion("Output"));
             if d.salidas.is_empty() {
-                cuerpo.append(&seccion("  ninguna"));
+                cuerpo.append(&seccion("  none"));
             }
             for s in &d.salidas {
                 let ok = !fuera.contains(&s.nombre);
@@ -166,9 +165,9 @@ pub fn panel(_palette: &Palette) -> (gtk::Widget, Rc<dyn Fn()>, Option<crate::Te
             }
 
             cuerpo.append(&widgets::sep());
-            cuerpo.append(&seccion("Entrada"));
+            cuerpo.append(&seccion("Input"));
             if d.entradas.is_empty() {
-                cuerpo.append(&seccion("  ninguna"));
+                cuerpo.append(&seccion("  none"));
             }
             for e in &d.entradas {
                 let ok = !fuera.contains(&e.nombre);

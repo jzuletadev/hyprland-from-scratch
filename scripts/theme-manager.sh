@@ -232,4 +232,4 @@ cat << CONF > "$C/dunst/dunstrc.d/50-accent.conf"
 CONF
 dunstctl reload 2>/dev/null || killall -SIGUSR2 dunst 2>/dev/null || true
 
-notify-send -a "Theme Engine" "Tema: $NAME" "Flavor: $FLAVOR.yazi ($MODE)" || true
+notify-send -a "Theme Engine" "Theme: $NAME" "Flavor: $FLAVOR.yazi ($MODE)" || true

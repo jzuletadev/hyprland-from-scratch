@@ -51,10 +51,10 @@ pub fn panel(_palette: &Palette) -> (gtk::Widget, Rc<dyn Fn()>, Option<crate::Te
     let caja = gtk::Box::new(gtk::Orientation::Vertical, 8);
     caja.add_css_class("invocado");
 
-    let (cab, estado) = widgets::header("Tema");
+    let (cab, estado) = widgets::header("Theme");
     let lista = gtk::Box::new(gtk::Orientation::Vertical, 3);
 
-    let pie = gtk::Label::new(Some("⏎ aplicar a todo el sistema · esc cerrar"));
+    let pie = gtk::Label::new(Some("⏎ apply system-wide · esc close"));
     pie.add_css_class("foot");
     pie.set_xalign(0.0);
 
@@ -75,12 +75,12 @@ pub fn panel(_palette: &Palette) -> (gtk::Widget, Rc<dyn Fn()>, Option<crate::Te
             let activa = palette::current_theme_name();
             let nombres = palette::available();
             estado.set_text(&match nombres.len() {
-                1 => "1 paleta".to_string(),
-                n => format!("{n} paletas"),
+                1 => "1 palette".to_string(),
+                n => format!("{n} palettes"),
             });
 
             if nombres.is_empty() {
-                let v = gtk::Label::new(Some("no hay ninguna paleta en palettes/"));
+                let v = gtk::Label::new(Some("no palettes in palettes/"));
                 v.add_css_class("aviso");
                 v.set_xalign(0.0);
                 lista.append(&v);
@@ -126,7 +126,7 @@ pub fn panel(_palette: &Palette) -> (gtk::Widget, Rc<dyn Fn()>, Option<crate::Te
                 }
 
                 if nombre == activa {
-                    let tag = gtk::Label::new(Some("activo"));
+                    let tag = gtk::Label::new(Some("active"));
                     tag.add_css_class("k");
                     tag.add_css_class("acc");
                     dentro.append(&tag);

@@ -519,67 +519,6 @@ pub fn lookup_pci(ids: &str, vendor: &str, device: &str) -> Option<String> {
     None
 }
 
-/// Las tarjetas graficas: su nombre de verdad si se puede resolver, y si no su driver.
-///
-/// Para la NVIDIA el propio driver publica el modelo en /proc, que es mas exacto que
-/// la tabla de PCI. Para el resto se resuelve `PCI_ID` contra `pci.ids` de hwdata, que
-/// esta instalado porque lo trae `pciutils`. Si falta, queda el driver, que es poco
-/// pero es verdad.
-pub fn gpus() -> Vec<String> {
-    let ids = fs::read_to_string("/usr/share/hwdata/pci.ids").ok();
-    let nvidia = nvidia_model();
-
-    let Ok(cards) = fs::read_dir("/sys/class/drm") else {
-        return Vec::new();
-    };
-    let mut nombres: Vec<String> = Vec::new();
-    let mut rutas: Vec<_> = cards
-        .flatten()
-        .map(|e| e.path())
-        .filter(|p| {
-            p.file_name()
-                .and_then(|n| n.to_str())
-                .map(|n| {
-                    n.starts_with("card") && n["card".len()..].chars().all(|c| c.is_ascii_digit())
-                })
-                .unwrap_or(false)
-        })
-        .collect();
-    rutas.sort();
-
-    for card in rutas {
-        let Ok(uevent) = fs::read_to_string(card.join("device/uevent")) else {
-            continue;
-        };
-        let campo = |k: &str| {
-            uevent
-                .lines()
-                .find_map(|l| l.strip_prefix(k))
-                .map(|v| v.trim().to_string())
-        };
-        let driver = campo("DRIVER=").unwrap_or_default();
-
-        let nombre = if driver == "nvidia" {
-            nvidia.clone()
-        } else {
-            campo("PCI_ID=").and_then(|pci| {
-                let (v, d) = pci.split_once(':')?;
-                lookup_pci(ids.as_deref()?, v, d)
-            })
-        };
-
-        let nombre = match nombre {
-            Some(n) => n,
-            None if !driver.is_empty() => driver,
-            None => continue,
-        };
-        if !nombres.contains(&nombre) {
-            nombres.push(nombre);
-        }
-    }
-    nombres
-}
-
 /// El modelo que publica el driver propietario de NVIDIA, si esta cargado.
 fn nvidia_model() -> Option<String> {
     let d = fs::read_dir("/proc/driver/nvidia/gpus").ok()?;
@@ -653,4 +592,182 @@ mod tests_ficha {
         assert_eq!(lookup_pci(IDS, "beef", "cafe"), None);
         assert_eq!(lookup_pci("", "1002", "1638"), None);
     }
+}
+
+// ---------------------------------------------------------------- graficas y ventiladores
+
+/// Una tarjeta grafica con lo que de ella se puede saber sin forkear nada.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct Gpu {
+    pub nombre: String,
+    /// `amdgpu`, `nvidia`, `i915`...
+    pub driver: String,
+    /// Uso en tanto por ciento. `None` cuando el driver no lo publica: la NVIDIA solo
+    /// lo da por NVML o `nvidia-smi`, y ninguna de las dos cabe en este crate.
+    pub uso: Option<u8>,
+    pub temp: Option<f64>,
+    /// VRAM usada y total, en bytes.
+    pub vram: Option<(u64, u64)>,
+    /// `false` cuando la tarjeta esta dormida. En un portatil hibrido la dedicada lo
+    /// esta casi siempre, y decirlo explica por que no hay numeros que enseñar.
+    pub despierta: bool,
+}
+
+/// Las graficas del sistema, en el orden de sus `cardN`.
+pub fn gpus() -> Vec<Gpu> {
+    let ids = fs::read_to_string("/usr/share/hwdata/pci.ids").ok();
+    let nvidia = nvidia_model();
+
+    let Ok(cards) = fs::read_dir("/sys/class/drm") else {
+        return Vec::new();
+    };
+    let mut rutas: Vec<_> = cards
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| {
+            p.file_name()
+                .and_then(|n| n.to_str())
+                .map(|n| {
+                    n.starts_with("card") && n["card".len()..].chars().all(|c| c.is_ascii_digit())
+                })
+                .unwrap_or(false)
+        })
+        .collect();
+    rutas.sort();
+
+    let mut v: Vec<Gpu> = Vec::new();
+    for card in rutas {
+        let dev = card.join("device");
+        let Ok(uevent) = fs::read_to_string(dev.join("uevent")) else {
+            continue;
+        };
+        let campo = |k: &str| {
+            uevent
+                .lines()
+                .find_map(|l| l.strip_prefix(k))
+                .map(|x| x.trim().to_string())
+        };
+        let driver = campo("DRIVER=").unwrap_or_default();
+
+        let nombre = if driver == "nvidia" {
+            nvidia.clone()
+        } else {
+            campo("PCI_ID=").and_then(|pci| {
+                let (a, b) = pci.split_once(':')?;
+                lookup_pci(ids.as_deref()?, a, b)
+            })
+        }
+        .unwrap_or_else(|| driver.clone());
+
+        if nombre.is_empty() || v.iter().any(|g| g.nombre == nombre) {
+            continue;
+        }
+
+        let leer_u64 = |f: &str| fs::read_to_string(dev.join(f)).ok()?.trim().parse().ok();
+        v.push(Gpu {
+            uso: fs::read_to_string(dev.join("gpu_busy_percent"))
+                .ok()
+                .and_then(|s| s.trim().parse::<u8>().ok())
+                .map(|u| u.min(100)),
+            temp: gpu_temp(&driver),
+            vram: match (
+                leer_u64("mem_info_vram_used"),
+                leer_u64("mem_info_vram_total"),
+            ) {
+                (Some(u), Some(t)) if t > 0 => Some((u, t)),
+                _ => None,
+            },
+            despierta: fs::read_to_string(dev.join("power/runtime_status"))
+                .map(|s| s.trim() != "suspended")
+                .unwrap_or(true),
+            nombre,
+            driver,
+        });
+    }
+    v
+}
+
+/// La temperatura de una grafica, buscando su hwmon por NOMBRE y no por numero: el
+/// numero de hwmon cambia de un arranque a otro.
+fn gpu_temp(driver: &str) -> Option<f64> {
+    let d = fs::read_dir("/sys/class/hwmon").ok()?;
+    for e in d.flatten() {
+        let n = fs::read_to_string(e.path().join("name")).ok()?;
+        if n.trim() != driver {
+            continue;
+        }
+        if let Some(mili) = fs::read_to_string(e.path().join("temp1_input"))
+            .ok()
+            .and_then(|s| s.trim().parse::<f64>().ok())
+        {
+            return Some(mili / 1000.0);
+        }
+    }
+    None
+}
+
+/// Un ventilador y las vueltas a las que va.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Ventilador {
+    pub nombre: String,
+    pub rpm: u32,
+}
+
+/// Los ventiladores, en rpm.
+///
+///   OJO CON LOS DUPLICADOS. Este portatil publica los mismos dos ventiladores por
+///   `dell_smm` y por `alienware_wmi` a la vez, asi que listarlos sin mas da cuatro
+///   donde hay dos. Se queda el primer hwmon que traiga ventiladores y se ignoran los
+///   demas: dos fuentes para el mismo dato no son dos datos.
+pub fn ventiladores() -> Vec<Ventilador> {
+    let Ok(d) = fs::read_dir("/sys/class/hwmon") else {
+        return Vec::new();
+    };
+    let mut hwmons: Vec<_> = d.flatten().map(|e| e.path()).collect();
+    hwmons.sort();
+
+    for h in hwmons {
+        let mut v = Vec::new();
+        for i in 1..=8 {
+            let Some(rpm) = fs::read_to_string(h.join(format!("fan{i}_input")))
+                .ok()
+                .and_then(|s| s.trim().parse::<u32>().ok())
+            else {
+                continue;
+            };
+            let etiqueta = fs::read_to_string(h.join(format!("fan{i}_label")))
+                .ok()
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .unwrap_or_else(|| format!("Fan {i}"));
+            v.push(Ventilador {
+                nombre: etiqueta,
+                rpm,
+            });
+        }
+        if !v.is_empty() {
+            return v;
+        }
+    }
+    Vec::new()
+}
+
+#[cfg(test)]
+mod tests_gpu {
+    use super::*;
+
+    #[test]
+    fn una_grafica_dormida_no_promete_numeros() {
+        // En un portatil hibrido la dedicada esta dormida casi siempre. El panel
+        // necesita poder decirlo en vez de enseñar un 0 % que parece un dato.
+        let g = Gpu {
+            nombre: "NVIDIA GeForce RTX 3060".into(),
+            driver: "nvidia".into(),
+            despierta: false,
+            ..Default::default()
+        };
+        assert!(g.uso.is_none());
+        assert!(!g.despierta);
+    }
+
 }

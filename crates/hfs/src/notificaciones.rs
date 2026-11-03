@@ -72,7 +72,7 @@ impl Notificaciones {
         surface.body.set_orientation(gtk::Orientation::Vertical);
         surface.body.set_spacing(8);
 
-        let (cab, cuenta) = widgets::header("Notificaciones");
+        let (cab, cuenta) = widgets::header("Notifications");
         let limpiar = gtk::Button::new();
         limpiar.add_css_class("bic");
         limpiar.set_has_frame(false);
@@ -112,9 +112,9 @@ impl Notificaciones {
             Rc::new(move || {
                 let notas = leer_historial(proxy.as_ref());
                 cuenta.set_text(&match notas.len() {
-                    0 => "vacío".to_string(),
-                    1 => "1 guardada".to_string(),
-                    n => format!("{n} guardadas"),
+                    0 => "empty".to_string(),
+                    1 => "1 saved".to_string(),
+                    n => format!("{n} saved"),
                 });
                 pintar(&lista, &notas, proxy.as_ref(), &handle, &palette);
             })
@@ -222,7 +222,7 @@ fn pintar(
 ) {
     widgets::clear(lista);
     if notas.is_empty() {
-        let l = gtk::Label::new(Some("nada pendiente"));
+        let l = gtk::Label::new(Some("nothing pending"));
         l.add_css_class("sempty");
         l.set_xalign(0.0);
         lista.append(&l);
@@ -252,7 +252,7 @@ fn pintar(
         img.set_valign(gtk::Align::Start);
 
         let cabeza = gtk::Box::new(gtk::Orientation::Horizontal, 6);
-        let app = widgets::ellipsized(Some(&n.app), "src");
+        let app = widgets::flexible(Some(&n.app), "src");
         let hora = gtk::Label::new(Some(&hora_de(n.sello_us)));
         hora.add_css_class("k");
         hora.set_hexpand(true);
@@ -263,9 +263,9 @@ fn pintar(
         let cuerpo = gtk::Box::new(gtk::Orientation::Vertical, 2);
         cuerpo.set_hexpand(true);
         cuerpo.append(&cabeza);
-        cuerpo.append(&widgets::ellipsized(Some(&n.resumen), "ti"));
+        cuerpo.append(&widgets::flexible(Some(&n.resumen), "ti"));
         if !n.cuerpo.is_empty() {
-            cuerpo.append(&widgets::ellipsized(Some(&n.cuerpo), "dt"));
+            cuerpo.append(&widgets::flexible(Some(&n.cuerpo), "dt"));
         }
 
         fila.append(&img);

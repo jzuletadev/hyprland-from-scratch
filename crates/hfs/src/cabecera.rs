@@ -46,16 +46,15 @@ pub struct Cabecera {
 }
 
 struct Medios {
+    tarjeta: gtk::Box,
     caratula: gtk::Image,
-    fuente: gtk::Label,
     titulo: gtk::Label,
     artista: gtk::Label,
     posicion: gtk::Label,
     duracion: gtk::Label,
     barra: Bar,
     play: gtk::Image,
-    vacio: gtk::Label,
-    fila: gtk::Box,
+    controles: gtk::Box,
 }
 
 struct Rendimiento {
@@ -76,6 +75,9 @@ struct Rendimiento {
     bat_detalle: gtk::Label,
     bat_barra: Bar,
     bat_salud: gtk::Label,
+    /// Una linea por grafica, en el orden de `sys::gpus()`. Se construyen al
+    /// arrancar porque las graficas no se enchufan en caliente.
+    gpus: Vec<gtk::Label>,
 }
 
 impl Cabecera {
@@ -103,23 +105,30 @@ impl Cabecera {
         pila.set_transition_type(gtk::StackTransitionType::Crossfade);
         pila.set_transition_duration(120);
 
-        let (medios, caja_medios) = construir_medios(palette);
+        let (medios, cal, reloj, caja_dash) = construir_dashboard(palette);
         let (perf, caja_perf) = construir_rendimiento(palette);
-        pila.add_named(&caja_medios, Some("medios"));
+        pila.add_named(&caja_dash, Some("medios"));
         pila.add_named(&caja_perf, Some("perf"));
 
-        let tabs = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+        // Las dos pestañas van CENTRADAS sobre el panel, como un mando de dos
+        // posiciones, y el tiempo encendido queda de nota al pie a la derecha. Un
+        // `CenterBox` es lo que centra el grupo respecto al panel entero y no
+        // respecto al hueco que deje la etiqueta de al lado.
+        let tabs = gtk::CenterBox::new();
         tabs.add_css_class("tabs");
-        let t_medios = tab("audio-x-generic-symbolic", "Medios");
-        let t_perf = tab("utilities-system-monitor-symbolic", "Rendimiento");
+        let t_medios = tab("view-grid-symbolic", "Dashboard");
+        let t_perf = tab("utilities-system-monitor-symbolic", "Performance");
         t_medios.add_css_class("on");
+        let grupo = gtk::Box::new(gtk::Orientation::Horizontal, 2);
+        grupo.add_css_class("tabs-grupo");
+        grupo.append(&t_medios);
+        grupo.append(&t_perf);
         let encendido = gtk::Label::new(None);
         encendido.add_css_class("sp");
-        encendido.set_hexpand(true);
         encendido.set_xalign(1.0);
-        tabs.append(&t_medios);
-        tabs.append(&t_perf);
-        tabs.append(&encendido);
+        encendido.set_ellipsize(gtk::pango::EllipsizeMode::End);
+        tabs.set_center_widget(Some(&grupo));
+        tabs.set_end_widget(Some(&encendido));
 
         {
             let (pila, a, b) = (pila.clone(), t_medios.clone(), t_perf.clone());
@@ -155,7 +164,7 @@ impl Cabecera {
 
         let cpu_ant: Rc<Cell<sys::CpuSample>> = Rc::new(Cell::new(sys::CpuSample::default()));
         let net_ant: Rc<Cell<sys::NetSample>> = Rc::new(Cell::new(sys::NetSample::default()));
-        let modelo = sys::cpu_model().unwrap_or_else(|| "procesador".into());
+        let modelo = sys::cpu_model().unwrap_or_else(|| "processor".into());
 
         // Un solo objeto de Wi-Fi para toda la vida del panel: crearlo en cada
         // latido serian cuatro proxys de D-Bus por segundo para leer un nombre.
@@ -168,6 +177,14 @@ impl Cabecera {
             let (cpu_ant, net_ant, historia) = (cpu_ant.clone(), net_ant.clone(), historia.clone());
             let (encendido, palette) = (encendido.clone(), palette.clone());
             Rc::new(move || {
+                if let Ok(ahora) = gtk::glib::DateTime::now_local() {
+                    reloj.hora.set_text(&fmt_fecha(&ahora, "%H:%M"));
+                    // `%A` y `%B` salen en el idioma de la sesion sin anadir nada.
+                    reloj.dia.set_text(&capitalizar(&fmt_fecha(&ahora, "%A")));
+                    // Sin el «de»: `%A` y `%B` salen en el idioma de la sesion, y
+                    // meter una preposicion castellana a mano daba «2 de November».
+                    reloj.fecha.set_text(fmt_fecha(&ahora, "%e %B").trim());
+                }
                 pintar_medios(&medios, &repro, &palette);
                 pintar_rendimiento(
                     &perf,
@@ -179,10 +196,20 @@ impl Cabecera {
                     wifi.as_ref().as_ref(),
                 );
                 if let Ok(u) = sys::uptime() {
-                    encendido.set_text(&format!("arriba {}", sys::human_duration(u)));
+                    encendido.set_text(&format!("up {}", sys::human_duration(u)));
                 }
             })
         };
+
+        {
+            // Volver a abrir y seguir en el mes al que te fuiste seria desconcertante.
+            let cal = cal.clone();
+            handle.connect_toggled(move |abierto| {
+                if abierto {
+                    cal.hoy();
+                }
+            });
+        }
 
         {
             let refrescar = refrescar.clone();
@@ -243,62 +270,161 @@ fn tab(icono: &str, texto: &str) -> gtk::Button {
     b
 }
 
-// ---------------------------------------------------------------- medios
+// ---------------------------------------------------------------- dashboard
 
+/// Las tres etiquetas del reloj.
+struct Reloj {
+    hora: gtk::Label,
+    dia: gtk::Label,
+    fecha: gtk::Label,
+}
+
+/// El dashboard: reloj, calendario y lo que suena, en esa linea.
+///
+///   EL CALENDARIO SE MUDO AQUI. Estaba en la esquina de abajo a la derecha, donde
+///   habia que ir a buscarlo, y ocupaba un panel entero para enseñar un mes. Al lado
+///   del reloj tiene mas sentido —son el mismo dato a dos escalas— y deja libre la
+///   esquina para las capturas y los accesos rapidos.
+///
+/// Medios se queda con el tercio de la derecha, que es lo que el boceto pedia: se ve
+/// lo que suena y se controla, pero deja de ocupar el panel entero para decir «no hay
+/// nada sonando».
+fn construir_dashboard(
+    palette: &Palette,
+) -> (Medios, Rc<crate::calendario::Calendario>, Reloj, gtk::Box) {
+    // --- reloj ---
+    //
+    // Tres lineas en vez de dos, y cada una con su peso: la hora manda, el dia de la
+    // semana es lo segundo que se busca y la fecha completa es la referencia. Antes
+    // eran «01:06» y «Mon 2 Nov» pegados, que ocupaban media columna y no decian
+    // nada que no cupiera en una linea.
+    let hora = gtk::Label::new(None);
+    hora.add_css_class("clock");
+    hora.set_xalign(0.5);
+    let dia = gtk::Label::new(None);
+    dia.add_css_class("clock-dia");
+    dia.set_xalign(0.5);
+    let fecha = gtk::Label::new(None);
+    fecha.add_css_class("clock-fecha");
+    fecha.set_xalign(0.5);
+
+    let caja_reloj = widgets::tile();
+    caja_reloj.add_css_class("reloj-tile");
+    caja_reloj.set_valign(gtk::Align::Fill);
+    caja_reloj.set_vexpand(true);
+    let dentro_reloj = gtk::Box::new(gtk::Orientation::Vertical, 2);
+    dentro_reloj.set_valign(gtk::Align::Center);
+    dentro_reloj.set_vexpand(true);
+    dentro_reloj.append(&hora);
+    dentro_reloj.append(&dia);
+    dentro_reloj.append(&fecha);
+    caja_reloj.append(&dentro_reloj);
+
+    // --- calendario ---
+    let cal = crate::calendario::Calendario::new();
+    let caja_cal = widgets::tile();
+    caja_cal.set_hexpand(true);
+    caja_cal.append(&cal.root);
+
+    // --- medios ---
+    let (medios, caja_medios) = construir_medios(palette);
+    caja_medios.set_hexpand(true);
+
+    let caja = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    caja.append(&caja_reloj);
+    caja.append(&caja_cal);
+    caja.append(&caja_medios);
+    (medios, cal, Reloj { hora, dia, fecha }, caja)
+}
+
+/// La primera en mayuscula. `%A` devuelve «lunes» en castellano y «Monday» en ingles;
+/// esto deja las dos igual sin saber cual es.
+fn capitalizar(s: &str) -> String {
+    let mut c = s.chars();
+    match c.next() {
+        Some(p) => p.to_uppercase().collect::<String>() + c.as_str(),
+        None => String::new(),
+    }
+}
+
+fn fmt_fecha(d: &gtk::glib::DateTime, patron: &str) -> String {
+    d.format(patron)
+        .map(|s| s.to_string())
+        .unwrap_or_else(|_| "--".into())
+}
+
+/// La tarjeta de lo que suena.
+///
+///   UNA COLUMNA, NO UNA FILA. Antes era caratula a la izquierda y texto a la
+///   derecha, que es la forma de una barra: funciona en algo ancho y bajo. Aqui la
+///   tarjeta es alta y estrecha, asi que la fila dejaba el texto flotando a media
+///   altura y los botones colgados del borde. Puesta en columna —caratula, titulo,
+///   artista, progreso, transporte— todo cae sobre el mismo eje y la tarjeta tiene
+///   un centro.
+///
+/// La tarjeta NO desaparece sin reproductor: se apaga. Un hueco del tamaño de un
+/// tercio del panel se lee como que algo falla, y la mayor parte del tiempo no suena
+/// nada.
 fn construir_medios(palette: &Palette) -> (Medios, gtk::Box) {
     let caratula = gtk::Image::from_icon_name("audio-x-generic-symbolic");
     caratula.add_css_class("art");
-    caratula.set_pixel_size(64);
+    caratula.set_pixel_size(46);
+    caratula.set_halign(gtk::Align::Center);
 
-    let fuente = widgets::ellipsized(None, "media-src");
-    let titulo = widgets::ellipsized(None, "media-title");
-    let artista = widgets::ellipsized(None, "media-sub");
+    // Centradas las dos: `flexible` las ata para que un titulo largo no ensanche la
+    // tarjeta, y `xalign` las pone sobre el eje de la caratula.
+    let titulo = widgets::flexible(None, "media-title");
+    titulo.set_xalign(0.5);
+    let artista = widgets::flexible(None, "media-sub");
+    artista.set_xalign(0.5);
 
     let posicion = gtk::Label::new(Some("0:00"));
     posicion.add_css_class("media-time");
     let duracion = gtk::Label::new(Some("0:00"));
     duracion.add_css_class("media-time");
-    let barra = Bar::new(palette, 5);
+    let barra = Bar::new(palette, 4);
+    barra.root.set_hexpand(true);
+    barra.root.set_valign(gtk::Align::Center);
 
-    let tiempos = gtk::Box::new(gtk::Orientation::Horizontal, 9);
+    let tiempos = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    tiempos.set_valign(gtk::Align::Center);
     tiempos.append(&posicion);
     tiempos.append(&barra.root);
     tiempos.append(&duracion);
 
-    let texto = gtk::Box::new(gtk::Orientation::Vertical, 3);
-    texto.set_hexpand(true);
-    texto.set_valign(gtk::Align::Center);
-    texto.append(&fuente);
-    texto.append(&titulo);
-    texto.append(&artista);
-    texto.append(&tiempos);
-
     let play = gtk::Image::from_icon_name("media-playback-start-symbolic");
-    play.set_pixel_size(22);
+    play.set_pixel_size(18);
 
-    let fila = gtk::Box::new(gtk::Orientation::Horizontal, 16);
-    fila.append(&caratula);
-    fila.append(&texto);
+    let controles = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+    controles.add_css_class("media-ctl");
+    controles.set_halign(gtk::Align::Center);
 
-    let vacio = gtk::Label::new(Some("no hay nada sonando"));
-    vacio.add_css_class("sempty");
+    let tarjeta = widgets::tile();
+    tarjeta.add_css_class("media-card");
+    let dentro = gtk::Box::new(gtk::Orientation::Vertical, 4);
+    dentro.set_valign(gtk::Align::Center);
+    dentro.set_vexpand(true);
+    dentro.append(&caratula);
+    dentro.append(&titulo);
+    dentro.append(&artista);
+    dentro.append(&tiempos);
+    dentro.append(&controles);
+    tarjeta.append(&dentro);
 
     let caja = gtk::Box::new(gtk::Orientation::Vertical, 0);
-    caja.append(&fila);
-    caja.append(&vacio);
+    caja.append(&tarjeta);
 
     (
         Medios {
+            tarjeta,
             caratula,
-            fuente,
             titulo,
             artista,
             posicion,
             duracion,
             barra,
             play,
-            vacio,
-            fila,
+            controles,
         },
         caja,
     )
@@ -389,8 +515,6 @@ impl Reproductor {
 }
 
 fn cablear_transporte(m: &Medios, player: Rc<Reproductor>, _t: &gtk::Button) {
-    let botones = gtk::Box::new(gtk::Orientation::Horizontal, 8);
-    botones.set_valign(gtk::Align::Center);
     for (icono, metodo, principal) in [
         ("media-skip-backward-symbolic", "Previous", false),
         ("", "PlayPause", true),
@@ -404,7 +528,7 @@ fn cablear_transporte(m: &Medios, player: Rc<Reproductor>, _t: &gtk::Button) {
             b.set_child(Some(&m.play));
         } else {
             let img = gtk::Image::from_icon_name(icono);
-            img.set_pixel_size(16);
+            img.set_pixel_size(15);
             b.set_child(Some(&img));
         }
         let player = player.clone();
@@ -417,15 +541,36 @@ fn cablear_transporte(m: &Medios, player: Rc<Reproductor>, _t: &gtk::Button) {
                 eprintln!("hfs: el reproductor no acepto «{metodo}»: {e}");
             }
         });
-        botones.append(&b);
+        m.controles.append(&b);
     }
-    m.fila.append(&botones);
+}
+
+/// La tarjeta sin reproductor: entera, pero apagada.
+///
+/// No se esconde. Esconderla dejaba un hueco del tamano de un tercio del panel cada
+/// vez que no habia musica —la mayor parte del tiempo— y un hueco se lee como que
+/// algo falla. La clase `off` baja el color de la caratula y del transporte, que es
+/// lo que distingue «no hay nada» de «hay algo y no se ve».
+fn medios_en_silencio(m: &Medios) {
+    m.tarjeta.add_css_class("off");
+    m.tarjeta.set_tooltip_text(None);
+    m.caratula.set_icon_name(Some("audio-x-generic-symbolic"));
+    m.titulo.set_text("Nothing playing");
+    m.artista.set_text("");
+    m.posicion.set_text("0:00");
+    m.duracion.set_text("0:00");
+    m.barra.set(0.0, palette_gris());
+    m.play.set_icon_name(Some("media-playback-start-symbolic"));
+}
+
+/// El gris del hueco de la barra cuando no hay nada que medir.
+fn palette_gris() -> Rgb {
+    Rgb { r: 90, g: 90, b: 98 }
 }
 
 fn pintar_medios(m: &Medios, repro: &Reproductor, palette: &Palette) {
     let Some((p, raiz)) = repro.actual() else {
-        m.fila.set_visible(false);
-        m.vacio.set_visible(true);
+        medios_en_silencio(m);
         return;
     };
     let (p, raiz) = (&p, Some(&raiz));
@@ -436,12 +581,10 @@ fn pintar_medios(m: &Medios, repro: &Reproductor, palette: &Palette) {
         .and_then(|v| v.get::<String>())
         .unwrap_or_default();
     if titulo.is_empty() {
-        m.fila.set_visible(false);
-        m.vacio.set_visible(true);
+        medios_en_silencio(m);
         return;
     }
-    m.fila.set_visible(true);
-    m.vacio.set_visible(false);
+    m.tarjeta.remove_css_class("off");
 
     let estado = dbus::prop::<String>(p, "PlaybackStatus").unwrap_or_default();
     let sonando = estado == "Playing";
@@ -451,17 +594,19 @@ fn pintar_medios(m: &Medios, repro: &Reproductor, palette: &Palette) {
         "media-playback-start-symbolic"
     }));
 
+    // De quien suena: al tooltip. Como renglon propio era una quinta linea en una
+    // tarjeta que ya tiene cuatro, y el icono de play ya dice si esta sonando.
     let nombre = raiz
         .and_then(|r| dbus::prop::<String>(r, "Identity"))
-        .unwrap_or_else(|| "reproductor".into());
-    m.fuente.set_text(&format!(
+        .unwrap_or_else(|| "player".into());
+    m.tarjeta.set_tooltip_text(Some(&format!(
         "{nombre} · {}",
         match estado.as_str() {
-            "Playing" => "reproduciendo",
-            "Paused" => "en pausa",
-            _ => "parado",
+            "Playing" => "playing",
+            "Paused" => "paused",
+            _ => "stopped",
         }
-    ));
+    )));
     m.titulo.set_text(&titulo);
 
     let artistas = meta
@@ -541,17 +686,29 @@ fn reloj(us: f64) -> String {
 
 // ---------------------------------------------------------------- rendimiento
 
+/// Rendimiento: DOS filas de TRES baldosas.
+///
+///   TRES POR FILA, NO CINCO. Con las dos graficas sueltas eran cinco baldosas en
+///   la fila de arriba, y cinco no caben en los 883 px de la cabecera: la ultima se
+///   salia por la derecha y la cortaba el borde del panel. Las dos graficas pasan a
+///   ser dos renglones de una sola baldosa —que es lo que son, dos de lo mismo— y
+///   los ventiladores se van a la linea de la CPU, donde ya esta la temperatura.
+///
+///   Fila 1  CPU · Memory · Disk        lo que es un porcentaje, con su anillo
+///   Fila 2  Graphics · Network · Battery
 fn construir_rendimiento(palette: &Palette) -> (Rendimiento, gtk::Box) {
     let anillo = |t: &str, icono: &str| {
-        let r = Ring::new(palette, 44);
+        let r = Ring::new(palette, 38);
         let th = gtk::Box::new(gtk::Orientation::Horizontal, 6);
         th.add_css_class("th");
         let img = gtk::Image::from_icon_name(icono);
         img.set_pixel_size(13);
         th.append(&img);
         th.append(&gtk::Label::new(Some(t)));
-        let a = widgets::ellipsized(None, "sub");
-        let b = widgets::ellipsized(None, "sub");
+        // `flexible`, no `ellipsized`: en una baldosa homogenea la etiqueta que pide
+        // su ancho natural arrastra a las otras dos y la fila se sale del panel.
+        let a = widgets::flexible(None, "sub");
+        let b = widgets::flexible(None, "sub");
         let texto = gtk::Box::new(gtk::Orientation::Vertical, 1);
         texto.set_hexpand(true);
         texto.set_valign(gtk::Align::Center);
@@ -568,22 +725,52 @@ fn construir_rendimiento(palette: &Palette) -> (Rendimiento, gtk::Box) {
     };
 
     let (cpu, cpu_sub, cpu_temp, caja_cpu) = anillo("CPU", "computer-symbolic");
-    let (mem, mem_sub, swap, caja_mem) = anillo("Memoria", "drive-harddisk-solidstate-symbolic");
-    let (disco, disco_sub, disco_dev, caja_disco) = anillo("Disco", "drive-harddisk-symbolic");
+    let (mem, mem_sub, swap, caja_mem) =
+        anillo("Memory", "drive-harddisk-solidstate-symbolic");
+    let (disco, disco_sub, disco_dev, caja_disco) = anillo("Disk", "drive-harddisk-symbolic");
 
-    let arriba = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    let arriba = gtk::Box::new(gtk::Orientation::Horizontal, 6);
     arriba.set_homogeneous(true);
     arriba.append(&caja_cpu);
     arriba.append(&caja_mem);
     arriba.append(&caja_disco);
 
+    // --- graficas: una baldosa, un renglon por tarjeta ---
+    //
+    // Sin anillo a proposito. Solo una de las dos publica uso por sysfs, asi que un
+    // anillo en una y un hueco en la otra se leia como que la segunda esta rota.
+    let th_gpu = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+    th_gpu.add_css_class("th");
+    let img = gtk::Image::from_icon_name("video-display-symbolic");
+    img.set_pixel_size(13);
+    th_gpu.append(&img);
+    th_gpu.append(&gtk::Label::new(Some("Graphics")));
+    let caja_gpu = widgets::tile();
+    caja_gpu.set_hexpand(true);
+    caja_gpu.append(&th_gpu);
+    let dentro_gpu = gtk::Box::new(gtk::Orientation::Vertical, 2);
+    dentro_gpu.set_valign(gtk::Align::Center);
+    dentro_gpu.set_vexpand(true);
+    let mut gpus = Vec::new();
+    for g in sys::gpus() {
+        let l = widgets::flexible(None, "sub");
+        // El nombre largo de la tarjeta va al tooltip: en el renglon solo cabe lo
+        // que cambia, y lo que distingue a una de otra es cual es.
+        l.set_tooltip_text(Some(&g.nombre));
+        dentro_gpu.append(&l);
+        gpus.push(l);
+    }
+    if gpus.is_empty() {
+        let l = widgets::flexible(Some("no GPU found"), "sub");
+        dentro_gpu.append(&l);
+    }
+    caja_gpu.append(&dentro_gpu);
+
     // --- red ---
     let red = gtk::DrawingArea::new();
-    red.set_content_height(34);
+    red.set_content_height(30);
     red.set_hexpand(true);
-    let red_tasas = gtk::Label::new(None);
-    red_tasas.add_css_class("sub");
-    red_tasas.set_xalign(0.0);
+    let red_tasas = widgets::flexible(None, "sub");
     let th_red = gtk::Box::new(gtk::Orientation::Horizontal, 6);
     th_red.add_css_class("th");
     let img = gtk::Image::from_icon_name("network-wireless-symbolic");
@@ -592,9 +779,10 @@ fn construir_rendimiento(palette: &Palette) -> (Rendimiento, gtk::Box) {
     red_nombre.add_css_class("sub");
     red_nombre.set_hexpand(true);
     red_nombre.set_xalign(1.0);
+    red_nombre.set_max_width_chars(1);
     red_nombre.set_ellipsize(gtk::pango::EllipsizeMode::End);
     th_red.append(&img);
-    th_red.append(&gtk::Label::new(Some("Red")));
+    th_red.append(&gtk::Label::new(Some("Network")));
     th_red.append(&red_nombre);
     let caja_red = widgets::tile();
     caja_red.set_hexpand(true);
@@ -607,26 +795,25 @@ fn construir_rendimiento(palette: &Palette) -> (Rendimiento, gtk::Box) {
     bat_estado.add_css_class("sub");
     bat_estado.set_hexpand(true);
     bat_estado.set_xalign(1.0);
+    bat_estado.set_max_width_chars(1);
+    bat_estado.set_ellipsize(gtk::pango::EllipsizeMode::End);
     let th_bat = gtk::Box::new(gtk::Orientation::Horizontal, 6);
     th_bat.add_css_class("th");
     let img = gtk::Image::from_icon_name("battery-symbolic");
     img.set_pixel_size(13);
     th_bat.append(&img);
-    th_bat.append(&gtk::Label::new(Some("Batería")));
+    th_bat.append(&gtk::Label::new(Some("Battery")));
     th_bat.append(&bat_estado);
 
     let bat_pct = gtk::Label::new(None);
     bat_pct.add_css_class("big");
-    let bat_detalle = gtk::Label::new(None);
-    bat_detalle.add_css_class("sub");
+    let bat_detalle = widgets::flexible(None, "sub");
     let linea = gtk::Box::new(gtk::Orientation::Horizontal, 8);
     linea.append(&bat_pct);
     linea.append(&bat_detalle);
 
-    let bat_barra = Bar::new(palette, 5);
-    let bat_salud = gtk::Label::new(None);
-    bat_salud.add_css_class("sub");
-    bat_salud.set_xalign(0.0);
+    let bat_barra = Bar::new(palette, 4);
+    let bat_salud = widgets::flexible(None, "sub");
 
     let caja_bat = widgets::tile();
     caja_bat.set_hexpand(true);
@@ -635,12 +822,15 @@ fn construir_rendimiento(palette: &Palette) -> (Rendimiento, gtk::Box) {
     caja_bat.append(&bat_barra.root);
     caja_bat.append(&bat_salud);
 
-    let abajo = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    let abajo = gtk::Box::new(gtk::Orientation::Horizontal, 6);
     abajo.set_homogeneous(true);
+    abajo.append(&caja_gpu);
     abajo.append(&caja_red);
     abajo.append(&caja_bat);
 
-    let caja = gtk::Box::new(gtk::Orientation::Vertical, 8);
+    // DOS filas, no cuatro. Cada fila cuesta ~70 px y el panel comparte alto con el
+    // dashboard a traves del Stack, asi que lo que sobra aqui lo paga todo el mundo.
+    let caja = gtk::Box::new(gtk::Orientation::Vertical, 6);
     caja.append(&arriba);
     caja.append(&abajo);
 
@@ -663,6 +853,7 @@ fn construir_rendimiento(palette: &Palette) -> (Rendimiento, gtk::Box) {
             bat_detalle,
             bat_barra,
             bat_salud,
+            gpus,
         },
         caja,
     )
@@ -678,6 +869,36 @@ fn pintar_rendimiento(
     historia: &Rc<RefCell<Vec<f64>>>,
     wifi: Option<&crate::red::Wifi>,
 ) {
+    // --- graficas ---
+    //
+    // Un renglon por tarjeta: la etiqueta corta delante («iGPU», «dGPU»), que es lo
+    // que de verdad se pregunta, y detras lo que el driver publique.
+    for (l, g) in p.gpus.iter().zip(sys::gpus()) {
+        let etiqueta = if g.driver == "nvidia" { "dGPU" } else { "iGPU" };
+        let mut partes: Vec<String> = Vec::new();
+        if let Some(u) = g.uso {
+            partes.push(format!("{u} %"));
+        }
+        if let Some(c) = g.temp {
+            partes.push(format!("{c:.0} °C"));
+        }
+        if let Some((u, tot)) = g.vram {
+            partes.push(format!(
+                "{} / {}",
+                sys::human_bytes(u as f64),
+                sys::human_bytes(tot as f64)
+            ));
+        }
+        if !g.despierta {
+            partes.push("asleep".into());
+        } else if partes.is_empty() {
+            // El driver propietario no publica uso ni temperatura por sysfs. Decirlo
+            // es mejor que un cero, que se leeria como un dato.
+            partes.push("active · no telemetry".into());
+        }
+        l.set_text(&format!("{etiqueta}  {}", partes.join(" · ")));
+    }
+
     // --- CPU ---
     if let Ok(s) = sys::cpu_sample() {
         let pct = sys::cpu_percent(cpu_ant.get(), s);
@@ -685,11 +906,14 @@ fn pintar_rendimiento(
         p.cpu
             .set(pct, &format!("{pct}"), widgets::umbral(palette, pct));
         p.cpu_sub.set_text(modelo);
-        p.cpu_temp.set_text(
-            &sys::cpu_temp()
-                .map(|t| format!("{t:.0} °C"))
-                .unwrap_or_default(),
-        );
+        // Temperatura y ventiladores en el mismo renglon: son el mismo asunto, y
+        // asi los ventiladores dejan de necesitar una baldosa propia.
+        let mut linea: Vec<String> = Vec::new();
+        if let Some(c) = sys::cpu_temp() {
+            linea.push(format!("{c:.0} °C"));
+        }
+        linea.push(ventiladores());
+        p.cpu_temp.set_text(&linea.join(" · "));
     }
 
     // --- memoria ---
@@ -703,7 +927,7 @@ fn pintar_rendimiento(
             sys::human_bytes(m.total_kb as f64 * 1024.0)
         ));
         p.swap.set_text(&if m.swap_total_kb == 0 {
-            "sin swap".to_string()
+            "no swap".to_string()
         } else {
             format!(
                 "swap {}",
@@ -762,9 +986,9 @@ fn pintar_rendimiento(
             };
             p.bat_pct.set_text(&format!("{} %", b.percent));
             p.bat_estado.set_text(match b.status.as_str() {
-                "Charging" => "cargando",
-                "Discharging" => "descargando",
-                "Full" => "llena",
+                "Charging" => "charging",
+                "Discharging" => "discharging",
+                "Full" => "full",
                 otro => otro,
             });
             let mut detalle = Vec::new();
@@ -778,10 +1002,10 @@ fn pintar_rendimiento(
             p.bat_barra.set(b.percent as f64 / 100.0, color);
             let mut salud = Vec::new();
             if let Some(h) = b.health {
-                salud.push(format!("salud {h} %"));
+                salud.push(format!("health {h} %"));
             }
             if let Some(c) = b.cycles {
-                salud.push(format!("{c} ciclos"));
+                salud.push(format!("{c} cycles"));
             }
             if let Some(m) = &b.model {
                 salud.push(m.clone());
@@ -790,7 +1014,7 @@ fn pintar_rendimiento(
         }
         None => {
             p.bat_pct.set_text("—");
-            p.bat_estado.set_text("sin batería");
+            p.bat_estado.set_text("no battery");
             p.bat_detalle.set_text("");
             p.bat_salud.set_text("");
             p.bat_barra.set(0.0, palette.muted);
@@ -822,4 +1046,29 @@ fn dibujar_grafico(ctx: &gtk::cairo::Context, w: f64, h: f64, pts: &[f64], color
     ctx.set_source_rgba(r, g, b, 0.85);
     ctx.set_line_width(1.2);
     ctx.stroke().ok();
+}
+
+/// Lo que dicen los ventiladores, en una linea.
+///
+/// Cero rpm no es un fallo: este portatil los para en reposo. Pero «0 rpm» se lee
+/// como que el sensor no da nada, asi que se dice con palabras.
+fn ventiladores() -> String {
+    let v = sys::ventiladores();
+    if v.is_empty() {
+        return "no fan sensors".into();
+    }
+    if v.iter().all(|f| f.rpm == 0) {
+        return "fans idle".into();
+    }
+    format!(
+        "fans {}",
+        v.iter()
+            .map(|f| if f.rpm == 0 {
+                "idle".to_string()
+            } else {
+                f.rpm.to_string()
+            })
+            .collect::<Vec<_>>()
+            .join(" · ")
+    )
 }
