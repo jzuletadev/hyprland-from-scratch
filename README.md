@@ -49,7 +49,7 @@ Everything else (locale, disk, timezone…) is up to you. Reboot into the TTY an
 Clone the repo **to this exact path** — configs and scripts refer to it:
 
 ```bash
-git clone [https://github.com/jzuletadev/hyprland-from-scratch.git](https://github.com/jzuletadev/hyprland-from-scratch.git) ~/hyprland-from-scratch
+git clone https://github.com/jzuletadev/hyprland-from-scratch.git ~/hyprland-from-scratch
 cd ~/hyprland-from-scratch
 ```
 
@@ -82,7 +82,7 @@ Optional: AUR apps (Brave, VS Code, and `blesh-git` for suggestions while typing
 need an AUR helper:
 
 ```bash
-git clone [https://aur.archlinux.org/paru.git](https://aur.archlinux.org/paru.git) /tmp/paru && (cd /tmp/paru && makepkg -si)
+git clone https://aur.archlinux.org/paru.git /tmp/paru && (cd /tmp/paru && makepkg -si)
 sed 's/#.*//' packages/aur.txt | xargs paru -S --needed
 ```
 
